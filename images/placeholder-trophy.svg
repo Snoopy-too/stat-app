@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+  <style>
+    .trophy { fill: #e9ecef; }
+    .base { fill: #dee2e6; }
+  </style>
+  <g transform="translate(75,30)">
+    <path class="trophy" d="M75,0 L75,180 C33.5,180 0,146.5 0,105 L0,0 L75,0 Z M75,0 L75,180 C116.5,180 150,146.5 150,105 L150,0 L75,0 Z"/>
+    <path class="base" d="M45,190 L105,190 L105,240 L45,240 L45,190 Z M15,250 L135,250 L135,270 L15,270 L15,250 Z"/>
+  </g>
+</svg>

@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="login-container">
         <h2>Super Admin Login</h2>
         <?php if ($error): ?>
-            beeotch<div class="error"><?php echo htmlspecialchars($error); ?></div>
+            <div class="error"><?php echo htmlspecialchars($error); ?></div>
         <?php endif; ?>
         <form method="POST" autocomplete="off">
             <div class="form-group">

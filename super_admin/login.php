@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("SELECT admin_id, username, password_hash, is_super_admin FROM admin_users WHERE username = ? AND is_deactivated = 0 LIMIT 1");
         $stmt->execute([$username]);
         $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+        
         if ($admin && $admin['is_super_admin'] && password_verify($password, $admin['password_hash'])) {
             $_SESSION['is_super_admin'] = true;
             $_SESSION['admin_id'] = $admin['admin_id'];
@@ -54,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="login-container">
         <h2>Super Admin Login</h2>
         <?php if ($error): ?>
-            <div class="error"><?php echo htmlspecialchars($error); ?></div>
+            beeotch<div class="error"><?php echo htmlspecialchars($error); ?></div>
         <?php endif; ?>
         <form method="POST" autocomplete="off">
             <div class="form-group">

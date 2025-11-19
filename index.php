@@ -1,5 +1,6 @@
 <?php
 session_start();
+// Test webhook deployment trigger
 require_once 'config/database.php';
 
 // Get club info if user is logged in

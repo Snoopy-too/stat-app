@@ -95,6 +95,18 @@
     min-width: 640px;
 }
 
+/* On mobile, don't force minimum width and allow table to shrink */
+@media (max-width: 48rem) {
+    .table-responsive {
+        overflow-x: visible;
+    }
+
+    .table-responsive table {
+        min-width: auto;
+        width: 100%;
+    }
+}
+
 .table-row--link {
     cursor: pointer;
 }
@@ -112,6 +124,7 @@
 }
 
 @media (max-width: 48rem) {
+    /* Hide table header on mobile */
     .data-table thead,
     .members-table thead,
     .stats-table thead,
@@ -121,21 +134,46 @@
         display: none;
     }
 
+    /* Convert table to block layout */
+    .data-table,
+    .members-table,
+    .stats-table,
+    .game-history,
+    .game-results,
+    .results-table {
+        border-collapse: separate;
+        border-spacing: 0;
+        display: block;
+        width: 100%;
+    }
+
+    /* Hide table body completely and use it as a container */
+    .data-table tbody,
+    .members-table tbody,
+    .stats-table tbody,
+    .game-history tbody,
+    .game-results tbody,
+    .results-table tbody {
+        display: block;
+        width: 100%;
+    }
+
+    /* Convert each row to a card */
     .data-table tbody tr,
     .members-table tbody tr,
     .stats-table tbody tr,
     .game-history tbody tr,
     .game-results tbody tr,
     .results-table tbody tr {
-        display: grid;
-        gap: var(--spacing-2);
-        padding: var(--spacing-3) 0;
-        border-bottom: 1px solid var(--color-border);
-        background: var(--color-surface);
+        display: block;
+        width: 100%;
         margin-bottom: var(--spacing-2);
-        border-radius: var(--radius-sm);
-        border: 1px solid var(--color-border);
         padding: var(--spacing-3);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        background: var(--color-surface);
+        page-break-inside: avoid;
+        break-inside: avoid;
     }
 
     .data-table tbody tr:nth-child(even),
@@ -157,6 +195,7 @@
         border-color: var(--color-primary);
     }
 
+    /* Display cells as flex rows with label and value */
     .data-table td,
     .members-table td,
     .stats-table td,
@@ -169,18 +208,23 @@
         gap: var(--spacing-2);
         padding: 0.5rem 0;
         border-bottom: none;
+        width: 100%;
+        box-sizing: border-box;
     }
 
+    /* Add labels to cells */
     .data-table td[data-label]::before,
     .members-table td[data-label]::before,
     .stats-table td[data-label]::before,
     .game-history td[data-label]::before,
     .game-results td[data-label]::before,
     .results-table td[data-label]::before {
-        display: inline-flex;
+        content: attr(data-label);
+        display: block;
         min-width: 7rem;
         color: var(--color-heading);
         font-weight: var(--font-weight-bold);
+        flex-shrink: 0;
     }
 
     /* Hide less important columns on mobile */
@@ -193,17 +237,18 @@
     .actions-cell,
     .table-actions {
         display: flex;
-        flex-wrap: wrap;
+        flex-direction: column;
+        flex-wrap: nowrap;
         gap: var(--spacing-2);
         justify-content: flex-start;
+        width: 100%;
     }
 
-    /* Reduce button padding on mobile for action buttons */
+    /* Make action buttons full width on mobile */
     .club-actions .btn,
     .actions-cell .btn,
     .table-actions .btn {
-        flex: 1;
-        min-width: 70px;
+        width: 100%;
         padding: 0.5rem 0.6rem;
         font-size: 0.85rem;
     }
@@ -231,7 +276,7 @@
 /* Horizontal scroll indicator for desktop tables */
 .table-responsive::after {
     content: '← Swipe to scroll →';
-    display: block;
+    display: none;
     text-align: center;
     font-size: 0.85rem;
     color: var(--color-text-soft);
@@ -239,8 +284,9 @@
     background: var(--color-surface-muted);
 }
 
+/* Only show scroll indicator on desktop */
 @media (min-width: 48.01rem) {
     .table-responsive::after {
-        display: none;
+        display: block;
     }
 }

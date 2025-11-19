@@ -516,6 +516,10 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
     gap: clamp(1rem, 3vw, 1.8rem);
+    /* Prevent overflow on Safari Private Mode */
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 .dashboard-stats .stat-card {
@@ -853,6 +857,26 @@
     color: var(--color-primary);
     min-width: 50px;
     text-align: right;
+}
+
+/* Safari Private Mode specific fixes */
+@supports (-webkit-touch-callout: none) {
+    .dashboard-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-components {
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .card {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
 }
 
 @media (max-width: 48rem) {

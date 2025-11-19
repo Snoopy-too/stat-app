@@ -112,3 +112,40 @@ hr {
     white-space: nowrap;
     border: 0;
 }
+
+/* Safari Private Mode and iOS overflow fixes */
+/* Ensure nothing overflows the viewport width */
+html,
+body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Prevent overflow from child elements */
+body > * {
+    max-width: 100vw;
+    overflow-x: hidden;
+}
+
+/* Fix for Safari Private Mode viewport width bug */
+@supports (-webkit-touch-callout: none) {
+    /* This applies only to Safari */
+    html {
+        width: 100vw;
+        overflow-x: hidden;
+    }
+
+    body {
+        position: relative;
+        width: 100%;
+    }
+
+    /* Ensure containers respect viewport width */
+    .container,
+    .header {
+        max-width: 100vw;
+        width: 100%;
+        overflow-x: hidden;
+    }
+}

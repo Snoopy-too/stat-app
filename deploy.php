@@ -50,7 +50,7 @@ try {
     // First, create initial log entry to confirm script is running
     file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Deployment script executed\n", FILE_APPEND);
 
-    log_message('Webhook received');
+    log_message('Webhook received from GitHub');
     log_message('Headers: ' . json_encode(getallheaders()));
     log_message('Request method: ' . $_SERVER['REQUEST_METHOD']);
 

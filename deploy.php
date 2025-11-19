@@ -10,7 +10,7 @@
  */
 
 // ===== CONFIGURATION =====
-$GITHUB_SECRET = 'your_webhook_secret_here'; // Change this to a random string
+$GITHUB_SECRET = 'kwblM60vhxB14yIxsWB14n03MvRmKnldQ9UXKBiQpQXsUDYnSl3BNeOTfDjSCrc6';
 $GITHUB_OWNER = 'Snoopy-too';
 $GITHUB_REPO = 'stat-app';
 $GITHUB_BRANCH = 'main';

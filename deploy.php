@@ -47,21 +47,33 @@ function send_response($code, $message) {
 }
 
 try {
-    log_message('Deployment script executed');
+    // First, create initial log entry to confirm script is running
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Deployment script executed\n", FILE_APPEND);
+
+    log_message('Webhook received');
+    log_message('Headers: ' . json_encode(getallheaders()));
+    log_message('Request method: ' . $_SERVER['REQUEST_METHOD']);
 
     // Get the raw POST data
     $payload = file_get_contents('php://input');
+    log_message('Payload size: ' . strlen($payload) . ' bytes');
 
     if (empty($payload)) {
+        log_message('Error: No payload received');
         send_response(400, 'No payload received');
     }
 
     // Verify webhook signature
     $signature = $_SERVER['HTTP_X_HUB_SIGNATURE_256'] ?? '';
+    log_message('Signature received: ' . substr($signature, 0, 20) . '...');
+    log_message('Secret length: ' . strlen($GITHUB_SECRET));
+
     if (!verify_github_webhook($GITHUB_SECRET, $payload, $signature)) {
-        log_message('Invalid webhook signature');
+        log_message('Invalid webhook signature - verification failed');
         send_response(403, 'Invalid signature');
     }
+
+    log_message('Webhook signature verified successfully');
 
     // Parse the JSON payload
     $data = json_decode($payload, true);

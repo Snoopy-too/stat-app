@@ -34,6 +34,7 @@ $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game History - Board Game Club StatApp</title>
     <link rel="stylesheet" href="css/styles.css">
+    <script src="js/dark-mode.js"></script>
 </head>
 <body>
     <div class="header">

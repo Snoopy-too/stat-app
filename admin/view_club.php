@@ -95,6 +95,7 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background-color: #e74c3c;
         }
     </style>
+    <script src="../js/dark-mode.js"></script>
 </head>
 <body>
     <div class="header">
@@ -169,5 +170,12 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <a href="dashboard.php" class="btn">Back to Dashboard</a>
         </div>
     </div>
+    <script src="../js/mobile-menu.js"></script>
+    <script src="../js/form-loading.js"></script>
+    <script src="../js/confirmations.js"></script>
+    <script src="../js/form-validation.js"></script>
+    <script src="../js/empty-states.js"></script>
+    <script src="../js/multi-step-form.js"></script>
+    <script src="../js/breadcrumbs.js"></script>
 </body>
 </html>

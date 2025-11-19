@@ -20,6 +20,7 @@ $security->cleanExpiredTokens();
     <title>Register - Board Game Club StatApp</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
+    <script src="js/dark-mode.js"></script>
 </head>
 <body>
     <div class="header">
@@ -32,10 +33,12 @@ $security->cleanExpiredTokens();
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
 
             <div class="form-group">
-                <label for="username">Username:</label>
+                <label for="username" class="form-field-required">Username</label>
                 <input type="text" id="username" name="username" required
                        class="form-control"
+                       placeholder="Choose your unique username"
                        minlength="2" maxlength="50">
+                <div class="field-help">Your unique identifier for the admin panel. Only letters, numbers, and underscores.</div>
                 <div class="username-requirements">
                     <div class="requirement" data-requirement="length">
                         <i class="fas fa-times"></i> Between 2 and 50 characters
@@ -51,19 +54,23 @@ $security->cleanExpiredTokens();
             </div>
 
             <div class="form-group">
-                <label for="email">Club Admin Email:</label>
-                <input type="email" id="email" name="email" required class="form-control">
+                <label for="email" class="form-field-required">Club Admin Email</label>
+                <input type="email" id="email" name="email" required class="form-control"
+                       placeholder="admin@yourdomain.com">
+                <div class="field-help">We'll use this email for your admin account login and important notifications.</div>
                 <!-- This is where the server-side error will appear -->
                 <div class="error-message" id="emailError"></div>
             </div>
 
             <div class="form-group">
-                <label for="password">Password:</label>
+                <label for="password" class="form-field-required">Password</label>
                 <div class="password-container">
                     <input type="password" id="password" name="password" required
-                        minlength="8" class="form-control">
+                        minlength="8" class="form-control"
+                        placeholder="Create a strong password">
                     <i class="password-toggle fas fa-eye"></i>
                 </div>
+                <div class="field-help">Must be at least 8 characters with uppercase, lowercase, numbers, and symbols.</div>
                 <div class="password-strength">
                     <div class="password-strength-bar"></div>
                 </div>
@@ -88,11 +95,13 @@ $security->cleanExpiredTokens();
             </div>
 
             <div class="form-group">
-                <label for="confirm_password">Confirm Password:</label>
+                <label for="confirm_password" class="form-field-required">Confirm Password</label>
                 <div class="password-container">
-                    <input type="password" id="confirm_password" name="confirm_password" required class="form-control">
+                    <input type="password" id="confirm_password" name="confirm_password" required class="form-control"
+                           placeholder="Re-enter your password">
                     <i class="password-toggle fas fa-eye"></i>
                 </div>
+                <div class="field-help">Make sure both passwords match exactly.</div>
                 <div class="error-message" id="confirmPasswordError"></div>
             </div>
 
@@ -287,5 +296,12 @@ $security->cleanExpiredTokens();
 
         });
     </script>
+    <script src="js/mobile-menu.js"></script>
+    <script src="js/form-loading.js"></script>
+    <script src="js/confirmations.js"></script>
+    <script src="js/form-validation.js"></script>
+    <script src="js/empty-states.js"></script>
+    <script src="js/multi-step-form.js"></script>
+    <script src="js/breadcrumbs.js"></script>
 </body>
 </html>

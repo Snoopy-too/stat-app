@@ -98,6 +98,7 @@ if ($club_id) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Games - Board Game Club StatApp</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/dark-mode.js"></script>
 </head>
 <body>
     <div class="header">
@@ -191,6 +192,13 @@ if ($club_id) {
             </table>
         </div>
     </div>
+    <script src="../js/mobile-menu.js"></script>
+    <script src="../js/form-loading.js"></script>
+    <script src="../js/confirmations.js"></script>
+    <script src="../js/form-validation.js"></script>
+    <script src="../js/empty-states.js"></script>
+    <script src="../js/multi-step-form.js"></script>
+    <script src="../js/breadcrumbs.js"></script>
 </body>
 <script>
 (function() {

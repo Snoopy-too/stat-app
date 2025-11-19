@@ -1,0 +1,202 @@
+/**
+ * Multi-Step Form Stepper
+ * Visualizes progress through multi-step forms
+ */
+
+.form-stepper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: clamp(2rem, 5vw, 3rem);
+    position: relative;
+}
+
+.form-stepper::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--color-border);
+    z-index: 0;
+}
+
+.form-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-2);
+    position: relative;
+    z-index: 1;
+    flex: 1;
+}
+
+.form-step:last-child {
+    flex: 0 0 auto;
+}
+
+.form-step__indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    color: var(--color-text-soft);
+    font-weight: var(--font-weight-bold);
+    transition: all var(--transition-fast);
+}
+
+.form-step__label {
+    font-size: 0.85rem;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-soft);
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Active step */
+.form-step.is-active .form-step__indicator {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+    box-shadow: 0 0 0 4px rgba(76, 122, 217, 0.15);
+}
+
+.form-step.is-active .form-step__label {
+    color: var(--color-primary);
+    font-weight: var(--font-weight-bold);
+}
+
+/* Completed step */
+.form-step.is-complete .form-step__indicator {
+    background: var(--color-success-border);
+    border-color: var(--color-success-border);
+    color: white;
+}
+
+.form-step.is-complete .form-step__indicator::after {
+    content: '✓';
+    font-size: 1.25rem;
+}
+
+.form-step.is-complete .form-step__label {
+    color: var(--color-success-text);
+}
+
+/* Disabled step */
+.form-step.is-disabled .form-step__label {
+    opacity: 0.5;
+}
+
+.form-step.is-disabled .form-step__indicator {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Step content */
+.form-step-content {
+    display: none;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.form-step-content.is-active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Step navigation buttons */
+.form-step-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--spacing-3);
+    margin-top: var(--spacing-5);
+    padding-top: var(--spacing-4);
+    border-top: 1px solid var(--color-border);
+}
+
+.form-step-nav__prev {
+    order: 1;
+}
+
+.form-step-nav__next {
+    order: 2;
+    margin-left: auto;
+}
+
+.form-step-nav__submit {
+    order: 3;
+}
+
+/* Mobile responsive */
+@media (max-width: 62rem) {
+    .form-stepper {
+        flex-wrap: wrap;
+    }
+
+    .form-step {
+        flex: 0 0 calc(50% - var(--spacing-1.5));
+    }
+
+    .form-step:nth-child(odd) {
+        margin-right: var(--spacing-3);
+    }
+
+    .form-stepper::before {
+        display: none;
+    }
+}
+
+@media (max-width: 48rem) {
+    .form-stepper {
+        margin-bottom: var(--spacing-4);
+    }
+
+    .form-step {
+        flex: 0 0 calc(50% - var(--spacing-1.5));
+    }
+
+    .form-step__label {
+        font-size: 0.75rem;
+        white-space: normal;
+    }
+
+    .form-step__indicator {
+        width: 36px;
+        height: 36px;
+        font-size: 0.85rem;
+    }
+
+    .form-step-nav {
+        flex-direction: column;
+    }
+
+    .form-step-nav .btn {
+        width: 100%;
+        order: unset;
+    }
+
+    .form-step-nav__prev,
+    .form-step-nav__next,
+    .form-step-nav__submit {
+        order: unset;
+        margin-left: 0;
+    }
+
+    .form-step-nav__submit {
+        order: 3;
+    }
+}

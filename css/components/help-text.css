@@ -1,0 +1,140 @@
+/**
+ * Help Text and Hints
+ * Better guidance for form fields
+ */
+
+.field-help {
+    font-size: 0.85rem;
+    color: var(--color-text-soft);
+    margin-top: var(--spacing-1);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-1);
+    line-height: 1.5;
+}
+
+.field-help::before {
+    content: 'ℹ';
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: rgba(76, 122, 217, 0.1);
+    border-radius: 50%;
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-top: 0.15rem;
+}
+
+.field-hint {
+    font-size: 0.85rem;
+    color: var(--color-text-soft);
+    margin-top: var(--spacing-1);
+}
+
+/* Character counter */
+.field-counter {
+    font-size: 0.8rem;
+    color: var(--color-text-soft);
+    margin-top: var(--spacing-1);
+    text-align: right;
+}
+
+.field-counter.is-warning {
+    color: var(--color-warning-text);
+}
+
+.field-counter.is-error {
+    color: var(--color-error-text);
+}
+
+/* Tooltip on hover */
+.field-tooltip {
+    position: relative;
+    cursor: help;
+    border-bottom: 1px dotted var(--color-primary);
+}
+
+.field-tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    background: var(--color-heading);
+    color: white;
+    padding: var(--spacing-2);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    white-space: normal;
+    z-index: 100;
+    margin-bottom: var(--spacing-1);
+    box-shadow: var(--shadow-md);
+}
+
+.field-tooltip:hover::before {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 10px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 8px solid var(--color-heading);
+    z-index: 100;
+}
+
+/* Required fields indicator */
+.form-required-note {
+    font-size: 0.85rem;
+    color: var(--color-text-soft);
+    margin-bottom: var(--spacing-3);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+}
+
+.form-required-note strong {
+    color: var(--color-error-border);
+    margin-left: auto;
+}
+
+/* Success state hint */
+.field-success {
+    font-size: 0.85rem;
+    color: var(--color-success-text);
+    margin-top: var(--spacing-1);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+}
+
+.field-success::before {
+    content: '✓';
+    color: var(--color-success-border);
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: rgba(46, 204, 113, 0.1);
+    border-radius: 50%;
+}
+
+/* Mobile responsive */
+@media (max-width: 48rem) {
+    .field-tooltip:hover::after,
+    .field-tooltip:hover::before {
+        display: none;
+    }
+
+    .field-tooltip {
+        border-bottom: none;
+        cursor: default;
+    }
+}

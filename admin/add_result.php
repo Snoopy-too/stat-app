@@ -126,6 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Game Result - <?php echo htmlspecialchars($game['game_name']); ?></title>
     <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/dark-mode.js"></script>
 </head>
 <body>
     <div class="header">
@@ -178,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div id="additional-places"></div>
                 
                 <div class="form-group">
-                    <button type="button" id="add-place" class="btn btn--secondary">Add Place</button>
+                    <button type="button" id="add-place" class="btn">Add Place</button>
                 </div>
                 
                 <div class="form-group">
@@ -295,5 +296,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     document.getElementById('winner_id').addEventListener('change', updatePlayerSelections);
     document.getElementById('second_place_id').addEventListener('change', updatePlayerSelections);
     </script>
+    <script src="../js/mobile-menu.js"></script>
+    <script src="../js/form-loading.js"></script>
+    <script src="../js/confirmations.js"></script>
+    <script src="../js/form-validation.js"></script>
+    <script src="../js/empty-states.js"></script>
+    <script src="../js/multi-step-form.js"></script>
+    <script src="../js/breadcrumbs.js"></script>
 </body>
 </html>

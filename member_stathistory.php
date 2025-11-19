@@ -38,6 +38,7 @@ $average_finish = $total_games > 0 ? number_format($total_points / $total_games,
     <title>Game History - <?php echo htmlspecialchars($member['nickname']); ?></title>
     <link rel="stylesheet" href="css/styles.css">
         
+    <script src="js/dark-mode.js"></script>
 </head>
 <body>
     <div class="header">
@@ -96,5 +97,12 @@ $average_finish = $total_games > 0 ? number_format($total_points / $total_games,
         <p>No game history available for this member.</p>
         <?php endif; ?>
     </div>
+    <script src="js/mobile-menu.js"></script>
+    <script src="js/form-loading.js"></script>
+    <script src="js/confirmations.js"></script>
+    <script src="js/form-validation.js"></script>
+    <script src="js/empty-states.js"></script>
+    <script src="js/multi-step-form.js"></script>
+    <script src="js/breadcrumbs.js"></script>
 </body>
 </html>

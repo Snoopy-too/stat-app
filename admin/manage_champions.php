@@ -119,6 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Champions - <?php echo htmlspecialchars($club['club_name']); ?></title>
     <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/dark-mode.js"></script>
 </head>
 <body>
     <div class="header">
@@ -318,6 +319,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             event.stopPropagation();
         });
     </script>
+    <script src="../js/mobile-menu.js"></script>
+    <script src="../js/form-loading.js"></script>
+    <script src="../js/confirmations.js"></script>
+    <script src="../js/form-validation.js"></script>
+    <script src="../js/empty-states.js"></script>
+    <script src="../js/multi-step-form.js"></script>
+    <script src="../js/breadcrumbs.js"></script>
 </body>
 <script>
 (function() {

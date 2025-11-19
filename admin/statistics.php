@@ -69,6 +69,7 @@ $monthly_growth = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <title>Statistics - Super Admin</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/dark-mode.js"></script>
 </head>
 <body>
     <div class="header">
@@ -190,5 +191,12 @@ $monthly_growth = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
         });
     </script>
+    <script src="../js/mobile-menu.js"></script>
+    <script src="../js/form-loading.js"></script>
+    <script src="../js/confirmations.js"></script>
+    <script src="../js/form-validation.js"></script>
+    <script src="../js/empty-states.js"></script>
+    <script src="../js/multi-step-form.js"></script>
+    <script src="../js/breadcrumbs.js"></script>
 </body>
 </html>

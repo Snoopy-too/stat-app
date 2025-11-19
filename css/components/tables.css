@@ -131,6 +131,30 @@
         gap: var(--spacing-2);
         padding: var(--spacing-3) 0;
         border-bottom: 1px solid var(--color-border);
+        background: var(--color-surface);
+        margin-bottom: var(--spacing-2);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--color-border);
+        padding: var(--spacing-3);
+    }
+
+    .data-table tbody tr:nth-child(even),
+    .members-table tbody tr:nth-child(even),
+    .stats-table tbody tr:nth-child(even),
+    .game-history tbody tr:nth-child(even),
+    .game-results tbody tr:nth-child(even),
+    .results-table tbody tr:nth-child(even) {
+        background: var(--color-surface);
+    }
+
+    .data-table tbody tr:hover,
+    .members-table tbody tr:hover,
+    .stats-table tbody tr:hover,
+    .game-history tbody tr:hover,
+    .game-results tbody tr:hover,
+    .results-table tbody tr:hover {
+        background: var(--color-surface-muted);
+        border-color: var(--color-primary);
     }
 
     .data-table td,
@@ -143,7 +167,7 @@
         justify-content: space-between;
         align-items: baseline;
         gap: var(--spacing-2);
-        padding: 0.25rem 0;
+        padding: 0.5rem 0;
         border-bottom: none;
     }
 
@@ -155,5 +179,48 @@
     .results-table td[data-label]::before {
         display: inline-flex;
         min-width: 7rem;
+        color: var(--color-heading);
+        font-weight: var(--font-weight-bold);
+    }
+
+    /* Hide less important columns on mobile */
+    .table-col--hide-mobile {
+        display: none;
+    }
+}
+
+/* Table column visibility utilities */
+.table-col--primary {
+    /* Always show */
+}
+
+.table-col--secondary {
+    /* Can be hidden on small screens */
+}
+
+.table-col--tertiary {
+    /* Hide on very small screens */
+}
+
+@media (max-width: 36rem) {
+    .table-col--secondary {
+        display: none;
+    }
+}
+
+/* Horizontal scroll indicator for desktop tables */
+.table-responsive::after {
+    content: '← Swipe to scroll →';
+    display: block;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--color-text-soft);
+    padding: var(--spacing-2);
+    background: var(--color-surface-muted);
+}
+
+@media (min-width: 48.01rem) {
+    .table-responsive::after {
+        display: none;
     }
 }

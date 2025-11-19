@@ -40,6 +40,7 @@ $dates2 = $stmt->fetchAll(PDO::FETCH_COLUMN);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game Days - Board Game StatApp</title>
     <link rel="stylesheet" href="css/styles.css">
+    <script src="js/dark-mode.js"></script>
 </head>
 <body>
     <div class="header">
@@ -67,5 +68,12 @@ $dates2 = $stmt->fetchAll(PDO::FETCH_COLUMN);
             </div>
         <?php endif; ?>
     </div>
+    <script src="js/mobile-menu.js"></script>
+    <script src="js/form-loading.js"></script>
+    <script src="js/confirmations.js"></script>
+    <script src="js/form-validation.js"></script>
+    <script src="js/empty-states.js"></script>
+    <script src="js/multi-step-form.js"></script>
+    <script src="js/breadcrumbs.js"></script>
 </body>
 </html>

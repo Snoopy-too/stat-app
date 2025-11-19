@@ -21,6 +21,7 @@ if (isset($_SESSION['club_id'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Board Game Club StatApp</title>
     <link rel="stylesheet" href="css/styles.css">
+    <script src="js/dark-mode.js"></script>
 </head>
 <body>
     <div class="header">
@@ -104,5 +105,6 @@ if (isset($_SESSION['club_id'])) {
             });
     });
     </script>
+    <script src="js/mobile-menu.js"></script>
 </body>
 </html>

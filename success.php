@@ -20,6 +20,7 @@ unset($_SESSION['registration_success']);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
     
+    <script src="js/dark-mode.js"></script>
 </head>
 <body>
     <div class="header">

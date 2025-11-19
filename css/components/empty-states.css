@@ -1,0 +1,120 @@
+/**
+ * Empty State Cards
+ * Displays helpful messages when no data is available
+ */
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: clamp(2rem, 6vw, 3.5rem);
+    background: linear-gradient(135deg, var(--color-surface-muted) 0%, var(--color-surface-alt) 100%);
+    border: 2px dashed var(--color-border-strong);
+    border-radius: var(--radius-lg);
+    min-height: 300px;
+    gap: var(--spacing-3);
+}
+
+.empty-state__icon {
+    font-size: clamp(2.5rem, 8vw, 4rem);
+    opacity: 0.5;
+    margin-bottom: var(--spacing-2);
+}
+
+.empty-state__title {
+    margin: 0;
+    font-size: clamp(1.25rem, 4vw, 1.75rem);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-heading);
+}
+
+.empty-state__description {
+    margin: 0;
+    color: var(--color-text-soft);
+    font-size: 0.95rem;
+    max-width: 400px;
+    line-height: 1.6;
+}
+
+.empty-state__actions {
+    display: flex;
+    gap: var(--spacing-3);
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: var(--spacing-2);
+}
+
+.empty-state__action {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+/* Empty state variants */
+.empty-state--no-members .empty-state__icon::before {
+    content: '👥';
+}
+
+.empty-state--no-games .empty-state__icon::before {
+    content: '🎲';
+}
+
+.empty-state--no-results .empty-state__icon::before {
+    content: '📊';
+}
+
+.empty-state--no-teams .empty-state__icon::before {
+    content: '🤝';
+}
+
+.empty-state--no-champions .empty-state__icon::before {
+    content: '🏆';
+}
+
+.empty-state--search .empty-state__icon::before {
+    content: '🔍';
+}
+
+.empty-state--error .empty-state__icon::before {
+    content: '⚠️';
+    opacity: 0.8;
+}
+
+/* Animation */
+.empty-state {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Mobile responsive */
+@media (max-width: 48rem) {
+    .empty-state {
+        min-height: 250px;
+        padding: clamp(1.5rem, 4vw, 2rem);
+    }
+
+    .empty-state__actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .empty-state__action {
+        width: 100%;
+    }
+
+    .empty-state__action .btn {
+        width: 100%;
+    }
+}

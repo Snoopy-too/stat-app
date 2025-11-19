@@ -155,3 +155,67 @@
     font-size: 0.9rem;
     padding: 0.125rem 0.5rem;
 }
+
+/* Button Layout Utilities */
+.btn-row {
+    display: flex;
+    gap: var(--spacing-3);
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.btn-row--center {
+    justify-content: center;
+}
+
+.btn-row--end {
+    justify-content: flex-end;
+}
+
+.btn-row--space-between {
+    justify-content: space-between;
+}
+
+.btn-row--vertical {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+/* Common button patterns */
+.btn-primary-secondary {
+    display: flex;
+    gap: var(--spacing-3);
+    flex-wrap: wrap;
+}
+
+.btn-primary-secondary .btn:first-child {
+    order: 1;
+}
+
+.btn-primary-secondary .btn--secondary {
+    order: 2;
+}
+
+@media (max-width: 48rem) {
+    .btn-row {
+        flex-direction: column;
+        gap: var(--spacing-2);
+    }
+
+    .btn-row--vertical {
+        flex-direction: column;
+    }
+
+    .btn-row--space-between {
+        justify-content: flex-start;
+    }
+
+    .btn-primary-secondary {
+        flex-direction: column;
+    }
+
+    .btn-primary-secondary .btn {
+        width: 100%;
+    }
+}

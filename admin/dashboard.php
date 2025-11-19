@@ -50,6 +50,7 @@ $total_games = array_sum(array_column($clubs, 'game_count'));
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Board Game Club StatApp</title>
     <link rel="stylesheet" href="../css/styles.css"> <!-- Link to external CSS -->
+    <script src="../js/dark-mode.js"></script>
 </head>
 <body>
     <div class="header">
@@ -146,5 +147,12 @@ $total_games = array_sum(array_column($clubs, 'game_count'));
             </div>
         </div>
     </div>
+    <script src="../js/mobile-menu.js"></script>
+    <script src="../js/form-loading.js"></script>
+    <script src="../js/confirmations.js"></script>
+    <script src="../js/form-validation.js"></script>
+    <script src="../js/empty-states.js"></script>
+    <script src="../js/multi-step-form.js"></script>
+    <script src="../js/breadcrumbs.js"></script>
 </body>
 </html>

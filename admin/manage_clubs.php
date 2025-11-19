@@ -130,15 +130,17 @@ $club_limit = 5; // Set maximum number of clubs allowed
                             </td>
                             <td class="hide-on-mobile" data-label="Created"><?php echo date('M j, Y', strtotime($club['created_at'])); ?></td>
                             <td class="hide-on-mobile" data-label="Total Plays"><?php echo $club['total_plays'] ?: 0; ?></td>
-                            <td class="actions-cell" data-label="Actions">
-                                <button type="button" class="btn" 
-                                        onclick="editClub(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>')">
-                                    Edit
-                                </button>
-                                <a href="manage_members.php?club_id=<?php echo $club['club_id']; ?>" class="btn">Members</a>
-                                <a href="manage_games.php?club_id=<?php echo $club['club_id']; ?>" class="btn">Games</a>
-                                <a href="club_teams.php?club_id=<?php echo $club['club_id']; ?>" class="btn">Teams</a>
-                                <a href="manage_logo.php?club_id=<?php echo $club['club_id']; ?>" class="btn">Club Logo</a>
+                            <td class="actions-cell table-col--primary" data-label="Actions">
+                                <div class="table-actions">
+                                    <button type="button" class="btn btn--xsmall"
+                                            onclick="editClub(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>')">
+                                        Edit
+                                    </button>
+                                    <a href="manage_members.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Members</a>
+                                    <a href="manage_games.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Games</a>
+                                    <a href="club_teams.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Teams</a>
+                                    <a href="manage_logo.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Logo</a>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>

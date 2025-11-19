@@ -358,3 +358,49 @@ label input[type="checkbox"] + span,
 label input[type="radio"] + span {
     display: inline-block;
 }
+
+/* Mobile responsive form layouts */
+@media (max-width: 48rem) {
+    .form-group {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--spacing-2);
+    }
+
+    /* Stack buttons vertically in forms on mobile */
+    .form-group .btn {
+        width: 100%;
+    }
+
+    /* Multiple buttons in form groups */
+    .form-group:has(.btn) {
+        grid-template-columns: 1fr;
+    }
+
+    .form-section-group--half,
+    .form-section-group--thirds {
+        grid-template-columns: 1fr;
+    }
+
+    /* Inline form elements (for inline form-groups) */
+    .form {
+        display: grid;
+        gap: var(--spacing-4);
+    }
+
+    .form > .form-group {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    /* Prevent form overflow */
+    .form input[type="text"],
+    .form input[type="email"],
+    .form input[type="password"],
+    .form input[type="number"],
+    .form input[type="date"],
+    .form select,
+    .form textarea {
+        max-width: 100%;
+    }
+}

@@ -868,4 +868,74 @@
         flex-direction: column;
         align-items: flex-start;
     }
+
+    /* Improve card header on mobile */
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .card-header > div:first-child {
+        width: 100%;
+    }
+
+    .card-header .btn,
+    .card-header > a {
+        width: 100%;
+        text-align: center;
+    }
+
+    /* Improve action buttons in cards */
+    .admin-card,
+    .chart-card {
+        padding: var(--spacing-2);
+    }
+
+    /* Prevent export buttons overflow */
+    .export-buttons {
+        flex-direction: column;
+    }
+
+    .export-buttons .btn {
+        width: 100%;
+    }
+
+    /* Improve action form layout */
+    .action-form {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .action-form input,
+    .action-form select,
+    .action-form .btn {
+        width: 100%;
+    }
+}
+
+/* Very small screens (under 24rem / 384px) */
+@media (max-width: 24rem) {
+    .dashboard-quick-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card {
+        min-height: 7.5rem;
+    }
+
+    .stat-card__value {
+        font-size: clamp(1.8rem, 4vw, 2.2rem);
+    }
+
+    /* Stack all buttons vertically */
+    .club-actions,
+    .table-actions {
+        flex-direction: column;
+    }
+
+    .club-actions .btn,
+    .table-actions .btn {
+        width: 100%;
+        min-width: auto;
+    }
 }

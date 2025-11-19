@@ -187,6 +187,26 @@
     .table-col--hide-mobile {
         display: none;
     }
+
+    /* Action button groups in tables */
+    .club-actions,
+    .actions-cell,
+    .table-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-2);
+        justify-content: flex-start;
+    }
+
+    /* Reduce button padding on mobile for action buttons */
+    .club-actions .btn,
+    .actions-cell .btn,
+    .table-actions .btn {
+        flex: 1;
+        min-width: 70px;
+        padding: 0.5rem 0.6rem;
+        font-size: 0.85rem;
+    }
 }
 
 /* Table column visibility utilities */

@@ -130,12 +130,12 @@ $total_games = array_sum(array_column($clubs, 'game_count'));
                                     <td data-label="Games"><?php echo $club['game_count']; ?></td>
                                     <td data-label="Games Played"><?php echo (int) ($club['games_played'] ?? 0); ?></td>
                                     <td data-label="Created"><?php echo date('M j, Y', strtotime($club['created_at'])); ?></td>
-                                    <td data-label="Actions">
+                                    <td data-label="Actions" class="table-col--primary">
                                         <div class="club-actions">
-                                            <a href="manage_members.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--small btn--pill">Members</a>
-                                            <a href="manage_games.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--small btn--pill">Games</a>
-                                            <a href="manage_champions.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--small btn--pill">Champions</a>
-                                            <a href="club_teams.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--small btn--pill">Teams</a>
+                                            <a href="manage_members.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--xsmall">Members</a>
+                                            <a href="manage_games.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--xsmall">Games</a>
+                                            <a href="manage_champions.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--xsmall">Champions</a>
+                                            <a href="club_teams.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--xsmall">Teams</a>
                                         </div>
                                     </td>
                                 </tr>

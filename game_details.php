@@ -62,19 +62,20 @@ if ($game_id > 0) {
 </head>
 <body>
     <div class="header">
-        <h1>Board Game Club StatApp</h1>
-        <a href="club_game_list.php?id=<?php echo $game ? $game['club_id'] : ''; ?>" class="button">Back to Games List</a>
+        <div class="header-title-group">
+            <h1>Board Game Club StatApp</h1>
+            <p class="header-subtitle"><?php echo $game ? htmlspecialchars($game['game_name']) : 'Game Details'; ?></p>
+        </div>
+        <a href="club_game_list.php?id=<?php echo $game ? $game['club_id'] : ''; ?>" class="btn btn--secondary">Back to Games List</a>
     </div>
 
     <div class="container">
         <?php if ($error): ?>
-            <div class="error"><?php echo htmlspecialchars($error); ?></div>
+            <div class="message message--error"><?php echo htmlspecialchars($error); ?></div>
         <?php elseif ($game): ?>
-            <div class="game-details">
-                <div class="game-header">
-                    <h2><?php echo htmlspecialchars($game['game_name']); ?></h2>
-                    <p>Club: <?php echo htmlspecialchars($game['club_name']); ?></p>
-                </div>
+            <div class="card">
+                <h2><?php echo htmlspecialchars($game['game_name']); ?></h2>
+                <p><strong>Club:</strong> <?php echo htmlspecialchars($game['club_name']); ?></p>
 
                 <?php if (count($results) > 0): ?>
                     <table class="results-table">
@@ -87,9 +88,10 @@ if ($game_id > 0) {
                         </thead>
                         <tbody>
                             <?php foreach ($results as $result): ?>
-                                <tr onclick="window.location='<?php echo $result['game_type'] === 'team' ? 'team_game_play_details.php' : 'game_play_details.php'; ?>?result_id=<?php echo $result['result_id']; ?>'" style="cursor: pointer;">
+                                <tr onclick="window.location='<?php echo $result['game_type'] === 'team' ? 'team_game_play_details.php' : 'game_play_details.php'; ?>?result_id=<?php echo $result['result_id']; ?>'" class="table-row--link">
                                     <td>
-                                        <span class="position position-<?php echo $result['position']; ?><?php echo ($result['position'] == 1) ? ' button-gold-static' : ''; ?>">
+                                        <?php $position = (int) $result['position']; ?>
+                                        <span class="position-badge position-<?php echo ($position >= 1 && $position <= 8) ? $position : 1; ?>">
                                             <?php echo htmlspecialchars($result['nickname']); ?>
                                         </span>
                                     </td>

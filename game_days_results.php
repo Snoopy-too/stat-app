@@ -58,18 +58,21 @@ try {
 </head>
 <body>
     <div class="header">
-        <h1>Board Game Club StatApp</h1>
-        <a href="game_days.php?id=<?php echo htmlspecialchars($club_id); ?>" class="button">Back to Game Days</a>
+        <div class="header-title-group">
+            <h1>Board Game Club StatApp</h1>
+            <p class="header-subtitle">Game Results for <?php echo htmlspecialchars($display_date); ?></p>
+        </div>
+        <a href="game_days.php?id=<?php echo htmlspecialchars($club_id); ?>" class="btn btn--secondary">Back to Game Days</a>
     </div>
     <div class="container">
         <h2>Game Results for <?php echo htmlspecialchars($display_date); ?></h2>
 
         <?php if (!empty($error_individual)): ?>
-            <div class="error"><?php echo htmlspecialchars($error_individual); ?></div>
+            <div class="message message--error"><?php echo htmlspecialchars($error_individual); ?></div>
         <?php endif; ?>
 
         <?php if (!empty($error_team)): ?>
-            <div class="error"><?php echo htmlspecialchars($error_team); ?></div>
+            <div class="message message--error"><?php echo htmlspecialchars($error_team); ?></div>
         <?php endif; ?>
 
         <?php if (empty($individual_results) && empty($team_results) && empty($error_individual) && empty($error_team)): ?>
@@ -94,11 +97,11 @@ try {
                         <?php foreach ($individual_results as $result): ?>
                         <tr>
                             <td>
-                                <a href="game_play_details.php?result_id=<?php echo urlencode($result['result_id']); ?>" class="game-link button-style">
+                                <a href="game_play_details.php?result_id=<?php echo urlencode($result['result_id']); ?>" class="game-link game-link--button">
                                     <?php echo htmlspecialchars($result['game_name']); ?>
                                 </a>
                             </td>
-                            <td><span class="position position-1 button-gold-static"><?php echo htmlspecialchars($result['winner_nickname']); ?></span></td>
+                            <td><span class="position-badge position-1"><?php echo htmlspecialchars($result['winner_nickname']); ?></span></td>
                             <td><?php echo htmlspecialchars($result['num_players']); ?></td>
                             <td><?php echo htmlspecialchars($result['notes'] ?? 'N/A'); ?></td>
                         </tr>
@@ -123,11 +126,11 @@ try {
                         <?php foreach ($team_results as $result): ?>
                         <tr>
                             <td>
-                                <a href="team_game_play_details.php?result_id=<?php echo urlencode($result['result_id']); ?>" class="game-link button-style">
+                                <a href="team_game_play_details.php?result_id=<?php echo urlencode($result['result_id']); ?>" class="game-link game-link--button">
                                     <?php echo htmlspecialchars($result['game_name']); ?>
                                 </a>
                             </td>
-                            <td><span class="position position-1 button-gold-static"><?php echo htmlspecialchars($result['winner_team_name']); ?></span></td>
+                            <td><span class="position-badge position-1"><?php echo htmlspecialchars($result['winner_team_name']); ?></span></td>
                             <td><?php echo htmlspecialchars($result['notes'] ?? 'N/A'); ?></td>
                         </tr>
                         <?php endforeach; ?>

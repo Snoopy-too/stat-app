@@ -68,16 +68,19 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </head>
 <body>
     <div class="header">
-        <h1>Game Results - <?php echo htmlspecialchars($game['game_name']); ?></h1>
-        <a href="manage_games.php?club_id=<?php echo $club_id; ?>" class="button">Back to Games</a>
+        <div class="header-title-group">
+            <h1>Game Results</h1>
+            <p class="header-subtitle"><?php echo htmlspecialchars($game['game_name']); ?></p>
+        </div>
+        <a href="manage_games.php?club_id=<?php echo $club_id; ?>" class="btn btn--secondary">Back to Games</a>
     </div>
     
     <div class="container">
         <?php if (isset($_SESSION['error'])): ?>
-            <div class="message error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+            <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
         <?php endif; ?>
         <?php if (isset($_SESSION['success_message'])): ?>
-            <div class="success"><?php echo $_SESSION['success_message']; ?></div>
+            <div class="message message--success"><?php echo $_SESSION['success_message']; ?></div>
             <?php unset($_SESSION['success_message']); ?>
         <?php endif; ?>
 
@@ -108,7 +111,7 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <td><?php echo htmlspecialchars($result['winner_name']); ?></td>
                                 <td>
                                     <a href="<?php echo $result['game_type'] === 'individual' ? 'view_result.php' : 'view_team_result.php'; ?>?result_id=<?php echo $result['result_id']; ?>" 
-                                       class="button">View Details</a>
+                                       class="btn">View Details</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -116,11 +119,11 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </table>
             <?php endif; ?>
             
-            <div class="actions" style="margin-top: 20px;">
+            <div class="btn-group">
                 <a href="add_result.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game_id; ?>" 
-                   class="button">Add New Result</a>
+                   class="btn">Add New Result</a>
                 <a href="add_team_result.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game_id; ?>" 
-                   class="button">Add New Team Result</a>
+                   class="btn">Add New Team Result</a>
             </div>
         </div>
     </div>

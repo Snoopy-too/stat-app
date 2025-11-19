@@ -1,0 +1,159 @@
+.data-table,
+.members-table,
+.stats-table,
+.game-history,
+.game-results,
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--spacing-5);
+    background: var(--color-surface);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.data-table th,
+.members-table th,
+.stats-table th,
+.game-history th,
+.game-results th,
+.results-table th {
+    background: var(--color-navy);
+    color: rgba(255, 255, 255, 0.92);
+    padding: 0.95rem 1.1rem;
+    font-weight: 600;
+    font-size: 0.96rem;
+    border-bottom: 3px solid rgba(255, 255, 255, 0.12);
+}
+
+.data-table td,
+.members-table td,
+.stats-table td,
+.game-history td,
+.game-results td,
+.results-table td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+    font-size: 0.95rem;
+}
+
+.data-table tbody tr:nth-child(even),
+.members-table tbody tr:nth-child(even),
+.stats-table tbody tr:nth-child(even),
+.game-history tbody tr:nth-child(even),
+.game-results tbody tr:nth-child(even),
+.results-table tbody tr:nth-child(even) {
+    background: rgba(76, 122, 217, 0.06);
+}
+
+.data-table tbody tr:hover,
+.members-table tbody tr:hover,
+.stats-table tbody tr:hover,
+.game-history tbody tr:hover,
+.game-results tbody tr:hover,
+.results-table tbody tr:hover {
+    background: rgba(52, 152, 219, 0.08);
+}
+
+.data-table td[data-label]::before,
+.members-table td[data-label]::before,
+.stats-table td[data-label]::before,
+.game-history td[data-label]::before,
+.game-results td[data-label]::before,
+.results-table td[data-label]::before {
+    content: attr(data-label);
+    display: none;
+    font-weight: var(--font-weight-semibold);
+    margin-right: var(--spacing-3);
+    color: var(--color-text-soft);
+}
+
+.table-actions {
+    display: flex;
+    gap: var(--spacing-2);
+    flex-wrap: wrap;
+}
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: rgba(31, 42, 68, 0.25);
+    border-radius: 999px;
+}
+
+.table-responsive table {
+    min-width: 640px;
+}
+
+.table-row--link {
+    cursor: pointer;
+}
+
+@media (max-width: 62rem) {
+    .data-table,
+    .members-table,
+    .stats-table,
+    .game-history,
+    .game-results,
+    .results-table {
+        box-shadow: none;
+        border-radius: var(--radius-sm);
+    }
+}
+
+@media (max-width: 48rem) {
+    .data-table thead,
+    .members-table thead,
+    .stats-table thead,
+    .game-history thead,
+    .game-results thead,
+    .results-table thead {
+        display: none;
+    }
+
+    .data-table tbody tr,
+    .members-table tbody tr,
+    .stats-table tbody tr,
+    .game-history tbody tr,
+    .game-results tbody tr,
+    .results-table tbody tr {
+        display: grid;
+        gap: var(--spacing-2);
+        padding: var(--spacing-3) 0;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .data-table td,
+    .members-table td,
+    .stats-table td,
+    .game-history td,
+    .game-results td,
+    .results-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: var(--spacing-2);
+        padding: 0.25rem 0;
+        border-bottom: none;
+    }
+
+    .data-table td[data-label]::before,
+    .members-table td[data-label]::before,
+    .stats-table td[data-label]::before,
+    .game-history td[data-label]::before,
+    .game-results td[data-label]::before,
+    .results-table td[data-label]::before {
+        display: inline-flex;
+        min-width: 7rem;
+    }
+}

@@ -43,13 +43,16 @@ $dates2 = $stmt->fetchAll(PDO::FETCH_COLUMN);
 </head>
 <body>
     <div class="header">
-        <h1>Board Game Club StatApp</h1>
-        <a href="club_stats.php?id=<?php echo htmlspecialchars($club_id); ?>" class="button">Back to Club Stats</a>
+        <div class="header-title-group">
+            <h1>Board Game Club StatApp</h1>
+            <p class="header-subtitle">Game Days</p>
+        </div>
+        <a href="club_stats.php?id=<?php echo htmlspecialchars($club_id); ?>" class="btn btn--secondary">Back to Club Stats</a>
     </div>
     <div class="container">
         <h2>Game Days</h2>
         <?php if (!empty($error)): ?>
-            <div class="error"><?php echo htmlspecialchars($error); ?></div>
+            <div class="message message--error"><?php echo htmlspecialchars($error); ?></div>
         <?php elseif (count($dates) > 0): ?>
             <div class="games-grid">
                 <?php foreach ($dates as $date): ?>

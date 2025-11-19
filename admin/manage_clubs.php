@@ -70,21 +70,22 @@ $club_limit = 5; // Set maximum number of clubs allowed
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Clubs - Board Game Club StatApp</title>
     <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="../css/club-logo.css">
-    <link rel="stylesheet" href="../css/clubs-mobile.css">
 </head>
 <body>
     <div class="header">
-        <h1>Manage Clubs</h1>
-        <a href="dashboard.php" class="button">Back to Dashboard</a>
+        <div class="header-title-group">
+            <h1>Manage Clubs</h1>
+            <p class="header-subtitle">Create and edit your clubs</p>
+        </div>
+        <a href="dashboard.php" class="btn btn--secondary">Back to Dashboard</a>
     </div>
     
     <div class="container">
         <?php if (isset($_SESSION['success'])): ?>
-            <div class="message success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
+            <div class="message message--success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
         <?php endif; ?>
         <?php if (isset($_SESSION['error'])): ?>
-            <div class="message error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+            <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
         <?php endif; ?>
 
         <?php if ($club_count < $club_limit): ?>
@@ -94,7 +95,7 @@ $club_limit = 5; // Set maximum number of clubs allowed
                 <div class="form-group">
                     <input type="text" name="club_name" placeholder="Club Name" required class="form-control" pattern="[a-zA-Z0-9\s_-]+" title="Only letters, numbers, spaces, dashes and underscores are allowed">
                     <input type="hidden" name="action" value="create">
-                    <button type="submit" class="button">Create Club</button>
+                    <button type="submit" class="btn">Create Club</button>
                 </div>
             </form>
         </div>
@@ -129,14 +130,14 @@ $club_limit = 5; // Set maximum number of clubs allowed
                             <td class="hide-on-mobile" data-label="Created"><?php echo date('M j, Y', strtotime($club['created_at'])); ?></td>
                             <td class="hide-on-mobile" data-label="Total Plays"><?php echo $club['total_plays'] ?: 0; ?></td>
                             <td class="actions-cell" data-label="Actions">
-                                <button type="button" class="button" 
+                                <button type="button" class="btn" 
                                         onclick="editClub(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>')">
                                     Edit
                                 </button>
-                                <a href="manage_members.php?club_id=<?php echo $club['club_id']; ?>" class="button">Members</a>
-                                <a href="manage_games.php?club_id=<?php echo $club['club_id']; ?>" class="button">Games</a>
-                                <a href="club_teams.php?club_id=<?php echo $club['club_id']; ?>" class="button">Teams</a>
-                                <a href="manage_logo.php?club_id=<?php echo $club['club_id']; ?>" class="button">Club Logo</a>
+                                <a href="manage_members.php?club_id=<?php echo $club['club_id']; ?>" class="btn">Members</a>
+                                <a href="manage_games.php?club_id=<?php echo $club['club_id']; ?>" class="btn">Games</a>
+                                <a href="club_teams.php?club_id=<?php echo $club['club_id']; ?>" class="btn">Teams</a>
+                                <a href="manage_logo.php?club_id=<?php echo $club['club_id']; ?>" class="btn">Club Logo</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -145,8 +146,8 @@ $club_limit = 5; // Set maximum number of clubs allowed
         </div>
     </div>
     <!-- Edit Club Modal -->
-    <div id="editClubModal" class="modal" style="display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
-        <div class="modal-content" style="background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px;">
+    <div id="editClubModal" class="modal">
+        <div class="modal__dialog">
             <form id="editClubForm" method="POST">
                 <input type="hidden" name="action" value="edit">
                 <input type="hidden" name="club_id" id="edit_club_id">
@@ -155,34 +156,36 @@ $club_limit = 5; // Set maximum number of clubs allowed
                     <input type="text" name="club_name" id="edit_club_name" required class="form-control" pattern="[a-zA-Z0-9\s_-]+" title="Only letters, numbers, spaces, dashes and underscores are allowed">
                 </div>
                 <div class="form-group">
-                    <button type="submit" class="button">Save Changes</button>
-                    <button type="button" class="button" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" class="btn">Save Changes</button>
+                    <button type="button" class="btn" onclick="closeEditModal()">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
+        const modal = document.getElementById('editClubModal');
+        const modalDialog = modal.querySelector('.modal__dialog');
+
         function editClub(clubId, clubName) {
             document.getElementById('edit_club_id').value = clubId;
             document.getElementById('edit_club_name').value = clubName;
-            document.getElementById('editClubModal').style.display = 'block';
+            modal.classList.add('is-open');
         }
 
         function closeEditModal() {
-            document.getElementById('editClubModal').style.display = 'none';
+            modal.classList.remove('is-open');
         }
 
         // Close modal when clicking outside of it
         window.onclick = function(event) {
-            const modal = document.getElementById('editClubModal');
             if (event.target === modal) {
-                modal.style.display = 'none';
+                closeEditModal();
             }
         };
 
         // Prevent event propagation from modal content
-        document.querySelector('.modal-content').addEventListener('click', function(event) {
+        modalDialog.addEventListener('click', function(event) {
             event.stopPropagation();
         });
     </script>

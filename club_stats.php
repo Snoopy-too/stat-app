@@ -40,17 +40,16 @@ if ($club_id > 0) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Statistics - Board Game StatApp</title>
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/club-logo.css">
 </head>
 <body>
     <div class="header">
         <h1>Board Game Club StatApp</h1>
-        <a href="index.php" class="button">Back to Home</a>
+        <a href="index.php" class="btn">Back to Home</a>
     </div>
 
     <div class="container">
         <?php if ($error): ?>
-            <div class="error"><?php echo htmlspecialchars($error); ?></div>
+            <div class="message message--error"><?php echo htmlspecialchars($error); ?></div>
         <?php elseif ($club): ?>
             <div class="club-profile card">
                 <div class="club-header">
@@ -61,15 +60,15 @@ if ($club_id > 0) {
                 </div>
 
                 <div class="stats-grid">
-                    <a href="club_game_list.php?id=<?php echo $club_id; ?>" class="stat-card button" style="width: auto; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <a href="club_game_list.php?id=<?php echo $club_id; ?>" class="card-link card-link--stat">
                         <h3>Games</h3>
                         <div class="stat-number"><?php echo $club['game_count']; ?></div>
                     </a>
-                    <a href="club_game_results.php?id=<?php echo $club_id; ?>" class="stat-card button" style="width: auto; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <a href="club_game_results.php?id=<?php echo $club_id; ?>" class="card-link card-link--stat">
                         <h3>Total Plays</h3>
                         <div class="stat-number"><?php echo $club['play_count']; ?></div>
                     </a>
-                    <a href="game_days.php?id=<?php echo $club_id; ?>" class="stat-card button" style="width: auto; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <a href="game_days.php?id=<?php echo $club_id; ?>" class="card-link card-link--stat">
                         <h3>Game Days</h3>
                         <div class="stat-number">&#128197;</div>
                     </a>
@@ -112,36 +111,10 @@ if ($club_id > 0) {
                     <div class="members-section">
                         <h3>Club Members</h3>
                         <div class="members-list">
-                                                        <style>
-                                .members-list {
-                                    display: grid;
-                                    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                                    gap: 15px;
-                                }
-                                .member-item {
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: space-between;
-                                    padding: 10px;
-                                    background-color: #f8f9fa;
-                                    border-radius: 5px;
-                                }
-                                .view-btn {
-                                    padding: 5px 15px;
-                                    background-color: #3498db;
-                                    color: white;
-                                    text-decoration: none;
-                                    border-radius: 3px;
-                                    font-size: 0.9em;
-                                }
-                                .view-btn:hover {
-                                    background-color: #2980b9;
-                                }
-                            </style>
                             <?php foreach ($members as $member): ?>
                                 <div class="member-item">
                                     <span class="member-nickname"><?php echo htmlspecialchars($member['nickname']); ?></span>
-                                    <a href="member_stathistory.php?id=<?php echo urlencode($member['member_id']); ?>" class="view-btn">View</a>
+                                    <a href="member_stathistory.php?id=<?php echo urlencode($member['member_id']); ?>" class="btn btn--subtle btn--small">View</a>
                                 </div>
                             <?php endforeach; ?>
                         </div>
@@ -157,39 +130,6 @@ if ($club_id > 0) {
                     <div class="teams-section">
                         <h3>Club Teams</h3>
                         <div class="teams-list">
-                            <style>
-                                .teams-list {
-                                    margin-top: 20px;
-                                }
-                                .team-block {
-                                    margin-bottom: 25px;
-                                    background-color: #f5f6fa;
-                                    border: 1px solid #e1e8ef;
-                                    border-radius: 6px;
-                                    padding: 16px;
-                                }
-                                .team-title {
-                                    font-weight: bold;
-                                    font-size: 1.12em;
-                                    margin-bottom: 8px;
-                                }
-                                .team-members {
-                                    margin-left: 15px;
-                                    display: flex;
-                                    flex-wrap: wrap;
-                                    gap: 10px;
-                                }
-                                .team-member-item {
-                                    padding: 5px 10px;
-                                    background-color: #eef3fa;
-                                    border-radius: 4px;
-                                }
-                                .team-empty-msg {
-                                    color: #888;
-                                    margin-left: 5px;
-                                    font-style: italic;
-                                }
-                            </style>
                             <?php foreach ($teams as $team): ?>
                                 <div class="team-block">
                                     <div class="team-title">

@@ -44,12 +44,12 @@ if ($result_id > 0) {
 <body>
     <div class="header">
         <h1>Board Game Club StatApp</h1>
-        <a href="game_details.php?id=<?php echo $result ? $result['game_id'] : ''; ?>" class="button">Back to Game Details</a>
+        <a href="game_details.php?id=<?php echo $result ? $result['game_id'] : ''; ?>" class="btn">Back to Game Details</a>
     </div>
 
     <div class="container">
         <?php if ($error): ?>
-            <div class="message error"><?php echo htmlspecialchars($error); ?></div>
+            <div class="message message--error"><?php echo htmlspecialchars($error); ?></div>
         <?php elseif ($result): ?>
             <div class="card game-play-details">
                 <h2>Team Game Play Details</h2>

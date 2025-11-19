@@ -1,0 +1,110 @@
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-4);
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    font-weight: var(--font-weight-medium);
+    color: var(--color-heading);
+}
+
+.form-control,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+select,
+textarea {
+    width: 100%;
+    padding: 0.65rem 0.8rem;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--color-border-strong);
+    background: #f5f7fa;
+    font-size: 1rem;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+    color: var(--color-text);
+    box-shadow: 0 1px 6px rgba(52, 152, 219, 0.06);
+}
+
+.form-control:focus-visible,
+input[type="text"]:focus-visible,
+input[type="email"]:focus-visible,
+input[type="password"]:focus-visible,
+input[type="number"]:focus-visible,
+input[type="date"]:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.18);
+    background: #fff;
+}
+
+textarea {
+    min-height: 6.5rem;
+    resize: vertical;
+}
+
+input[type="file"] {
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--color-border-strong);
+    background: #f5f7fa;
+    cursor: pointer;
+}
+
+input[type="file"]:hover {
+    border-color: var(--color-primary);
+    background: rgba(164, 206, 247, 0.18);
+}
+
+.form-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    flex-wrap: wrap;
+    margin-top: var(--spacing-4);
+}
+
+.form-actions .btn + .btn {
+    margin-left: 0;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.input-group .form-control {
+    flex: 1;
+}
+
+.field-hint {
+    font-size: 0.9rem;
+    color: var(--color-text-soft);
+}
+
+.error-message,
+.form-error {
+    color: var(--color-error-text);
+    font-size: 0.9rem;
+    min-height: 1.1rem;
+}
+
+.form-control.is-invalid {
+    border-color: var(--color-error-border);
+    box-shadow: 0 0 0 3px rgba(228, 55, 55, 0.15);
+    background: rgba(249, 219, 219, 0.3);
+}
+
+.input-inline {
+    width: 7.5rem;
+}

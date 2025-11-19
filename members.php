@@ -39,15 +39,15 @@ $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php endif; ?>
                 </div>
                 <div class="member-actions">
-                    <a href="edit_member.php?id=<?php echo $member['member_id']; ?>" class="button">Edit</a>
-                    <a href="view_stats.php?id=<?php echo $member['member_id']; ?>" class="button">Stats</a>
+                    <a href="edit_member.php?id=<?php echo $member['member_id']; ?>" class="btn">Edit</a>
+                    <a href="view_stats.php?id=<?php echo $member['member_id']; ?>" class="btn">Stats</a>
                 </div>
             </div>
             <?php endforeach; ?>
         </div>
 
-        <a href="add_member.php" class="button">Add New Member</a>
-        <a href="dashboard.php" class="button">Back to Dashboard</a>
+        <a href="add_member.php" class="btn">Add New Member</a>
+        <a href="dashboard.php" class="btn">Back to Dashboard</a>
     </div>
 </body>
 </html>

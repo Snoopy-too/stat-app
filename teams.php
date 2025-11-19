@@ -40,15 +40,15 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="team-list">
             <?php foreach ($teams as $team): ?>
             <div class="team-item">
-                <a href="edit_team.php?id=<?php echo $team['team_id']; ?>" class="button edit-button">Edit</a>
+                <a href="edit_team.php?id=<?php echo $team['team_id']; ?>" class="btn btn--secondary">Edit</a>
                 <div class="team-name"><?php echo htmlspecialchars($team['team_name']); ?></div>
                 <div class="team-members">Members: <?php echo htmlspecialchars($team['members']); ?></div>
             </div>
             <?php endforeach; ?>
         </div>
 
-        <a href="add_team.php" class="button">Add New Team</a>
-        <a href="dashboard.php" class="button">Back to Dashboard</a>
+        <a href="add_team.php" class="btn">Add New Team</a>
+        <a href="dashboard.php" class="btn">Back to Dashboard</a>
     </div>
 </body>
 </html>

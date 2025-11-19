@@ -1,0 +1,30 @@
+.modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-4);
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 40;
+}
+
+.modal.is-open {
+    display: flex;
+}
+
+.modal__dialog {
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    width: min(32rem, 100%);
+    padding: clamp(1.2rem, 3vw, 1.8rem);
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(17, 24, 39, 0.08);
+    position: relative;
+}
+
+.modal__close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+}

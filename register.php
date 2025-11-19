@@ -20,79 +20,14 @@ $security->cleanExpiredTokens();
     <title>Register - Board Game Club StatApp</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
-    <style>
-        .password-container {
-            position: relative;
-            margin-bottom: 1rem;
-        }
-
-        .password-toggle {
-            position: absolute;
-            right: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            color: #666;
-            z-index: 1;
-        }
-
-        .password-strength {
-            margin-top: 0.5rem;
-            height: 4px;
-            background-color: #eee;
-            border-radius: 2px;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .password-strength-bar {
-            height: 100%;
-            width: 0;
-            transition: width 0.3s ease;
-        }
-
-        .password-requirements {
-            margin-top: 0.5rem;
-            font-size: 0.875rem;
-            color: #666;
-        }
-
-        .username-requirements .requirement,
-        .password-requirements .requirement {
-            margin-top: 0.25rem;
-        }
-
-        .username-requirements .requirement i,
-        .password-requirements .requirement i {
-            margin-right: 0.5rem;
-        }
-
-        .username-requirements .requirement.valid,
-        .password-requirements .requirement.valid {
-            color: #28a745;
-        }
-
-        .username-requirements .requirement.invalid,
-        .password-requirements .requirement.invalid {
-            color: #dc3545;
-        }
-
-        .error-message {
-            color: #dc3545;
-            margin-top: 0.5rem;
-            font-size: 0.875rem;
-            /* Ensure space is allocated even when empty initially */
-            min-height: 1.2em;
-        }
-    </style>
 </head>
 <body>
     <div class="header">
         <h1>Board Game Club StatApp</h1>
         <h2>Register</h2>
     </div>
-    <div class="container">
-    <div class="card">
+    <div class="container container--narrow auth-shell">
+    <div class="card auth-card">
         <form id="registrationForm" action="process_registration.php" method="POST" novalidate>
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
 
@@ -162,10 +97,11 @@ $security->cleanExpiredTokens();
             </div>
 
             <div class="form-group">
-                <button type="submit" class="button" disabled>Register</button>
-                <a href="admin/login.php" class="button button-secondary">Back to Login</a>
+                <button type="submit" class="btn" disabled>Register</button>
+                <a href="admin/login.php" class="btn btn--secondary">Back to Login</a>
             </div>
         </form>
+    </div>
     </div>
     
     <script>

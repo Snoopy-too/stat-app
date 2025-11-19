@@ -102,15 +102,15 @@ if ($club_id) {
 <body>
     <div class="header">
         <h1>Manage Games <?php echo $club_name ? "- $club_name" : ''; ?></h1>
-        <a href="<?php echo $club_id ? 'manage_clubs.php' : 'dashboard.php'; ?>" class="button">Back</a>
+        <a href="<?php echo $club_id ? 'manage_clubs.php' : 'dashboard.php'; ?>" class="btn">Back</a>
     </div>
     
     <div class="container">
         <?php if (isset($_SESSION['success'])): ?>
-            <div class="message success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
+            <div class="message message--success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
         <?php endif; ?>
         <?php if (isset($_SESSION['error'])): ?>
-            <div class="message error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+            <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
         <?php endif; ?>
 
         <?php if ($club_id): ?>
@@ -127,7 +127,7 @@ if ($club_id) {
                     <input type="number" name="max_players" placeholder="Max Players" required min="1" class="form-control">
                 </div>
                 <input type="hidden" name="action" value="create">
-                <button type="submit" class="button">Add Game</button>
+                <button type="submit" class="btn">Add Game</button>
             </form>
         </div>
         <?php endif; ?>
@@ -141,8 +141,8 @@ if ($club_id) {
                     <div class="form-group">
                         <input type="text" name="search" placeholder="Search games..." 
                                value="<?php echo htmlspecialchars($search); ?>" class="form-control">
-                        <button type="submit" class="button">Filter</button>
-                        <a href="?<?php echo $club_id ? 'club_id=' . $club_id : ''; ?>" class="button">Reset</a>
+                        <button type="submit" class="btn">Filter</button>
+                        <a href="?<?php echo $club_id ? 'club_id=' . $club_id : ''; ?>" class="btn">Reset</a>
                     </div>
                 </form>
             </div>
@@ -181,9 +181,9 @@ if ($club_id) {
                             <td data-label="Total Plays"><?php echo $game['total_plays']; ?></td>
                             <td>
                                 <a href="edit_game.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game['game_id']; ?>" 
-                                   class="button">Edit</a>
+                                   class="btn">Edit</a>
                                 <a href="results.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game['game_id']; ?>" 
-                                   class="button">Results</a>
+                                   class="btn">Results</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>

@@ -55,66 +55,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - Board Game Club StatApp</title>
     <link rel="stylesheet" href="../css/styles.css">
-    <style>
-        .login-form {
-            width: 300px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .submit-button {
-            width: 100%;
-            padding: 10px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-        }
-        .submit-button:hover {
-            background-color: #2980b9;
-        }
-        .links {
-            margin-top: 15px;
-        }
-        .links a {
-            color: #3498db;
-            text-decoration: none;
-            margin: 0 10px;
-            transition: color 0.3s;
-        }
-        .links a:hover {
-            color: #2980b9;
-        }
-    </style>
 </head>
 <body>
     <div class="header">
-        <h1>Board Game Club StatApp</h1>
-        <h2>Admin Login</h2>
-        <a href="../index.php" class="button">&larr; Back to Main Site</a>
+        <div class="header-title-group">
+            <h1>Board Game Club StatApp</h1>
+            <p class="header-subtitle">Admin Login</p>
+        </div>
+        <a href="../index.php" class="btn btn--secondary">&larr; Back to Main Site</a>
     </div>
-    <div class="login-form">
-        <?php if (isset($_SESSION['error'])): ?>
-            <div class="error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
-        <?php endif; ?>
-        <form action="login.php" method="POST">
-            <div class="form-group">
-                <label for="username">Admin Username:</label>
-                <input type="text" id="username" name="username" required class="form-control">
+
+    <div class="container container--narrow auth-shell">
+        <div class="card auth-card">
+            <?php if (isset($_SESSION['error'])): ?>
+                <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+            <?php endif; ?>
+            <form action="login.php" method="POST" class="stack">
+                <div class="form-group">
+                    <label for="username">Admin Username:</label>
+                    <input type="text" id="username" name="username" required class="form-control" autofocus>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required class="form-control">
+                </div>
+                <button type="submit" class="btn btn--block">Login</button>
+            </form>
+            <div class="text-center mt-3">
+                <a href="../register.php" class="btn btn--link">Register your club</a>
             </div>
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required class="form-control">
-            </div>
-            <button type="submit" class="submit-button">Login</button>
-        </form>
-        <div class="links">
-            <a href="../register.php">Register your club</a>
         </div>
     </div>
 </body>

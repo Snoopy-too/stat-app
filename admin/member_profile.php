@@ -86,13 +86,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     </div>
     <div class="container">
         <?php if (isset($_SESSION['success'])): ?>
-            <div class="message success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
+            <div class="message message--success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
         <?php endif; ?>
         <?php if (isset($_SESSION['error'])): ?>
-            <div class="message error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+            <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
         <?php endif; ?>
         <div class="action-buttons">
-            <a href="club_leaderboard.php?club_id=<?php echo $member['club_id']; ?>" class="button">View Club Leaderboard</a>
+            <a href="club_leaderboard.php?club_id=<?php echo $member['club_id']; ?>" class="btn">View Club Leaderboard</a>
         </div>
         <div class="profile-grid">
             <div class="stats-card">
@@ -119,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                         <label for="notes">Notes</label>
                         <textarea id="notes" name="notes" rows="4"><?php echo htmlspecialchars($member['notes'] ?? ''); ?></textarea>
                     </div>
-                    <button type="submit" name="update_profile" class="button">Update Profile</button>
+                    <button type="submit" name="update_profile" class="btn">Update Profile</button>
                 </form>
             </div>
         </div>

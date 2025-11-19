@@ -50,6 +50,28 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$member_id, $member_id, $member_id, $member_id, $member_id, $member_id, $member_id, $member_id, $game_id, $member_id, $member_id, $member_id, $member_id, $member_id, $member_id, $member_id, $member_id]);
 $game_history = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+function ordinal_suffix($number) {
+    $n = (int) $number;
+    if ($n <= 0) {
+        return $n;
+    }
+    $suffix = 'th';
+    if (!in_array(($n % 100), [11, 12, 13], true)) {
+        switch ($n % 10) {
+            case 1:
+                $suffix = 'st';
+                break;
+            case 2:
+                $suffix = 'nd';
+                break;
+            case 3:
+                $suffix = 'rd';
+                break;
+        }
+    }
+    return $n . $suffix;
+}
 ?>
 
 <!DOCTYPE html>
@@ -59,112 +81,51 @@ $game_history = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($game['game_name']); ?> History - <?php echo htmlspecialchars($member['nickname']); ?></title>
     <link rel="stylesheet" href="css/styles.css">
-    <style>
-        .history-container {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 20px;
-        }
-        .member-stats {
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        .member-name {
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: #2c3e50;
-        }
-        .game-history {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            padding: 15px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-        th {
-            background-color: #f8f9fa;
-            color: #2c3e50;
-            font-weight: 600;
-        }
-        tr:hover {
-            background-color: #f8f9fa;
-        }
-        .position-1 {
-            color: #f1c40f;
-            font-weight: bold;
-        }
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-            padding: 8px 16px;
-            background-color: #3498db;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-        .back-link:hover {
-            background-color: #2980b9;
-            text-decoration: none;
-        }
-    </style>
 </head>
 <body>
     <div class="header">
-        <h1>Board Game Club StatApp</h1>
-        <a href="member_stathistory.php?id=<?php echo $member_id; ?>" class="button">&larr; Back to Member Stats</a>
+        <div class="header-title-group">
+            <h1>Board Game Club StatApp</h1>
+            <p class="header-subtitle"><?php echo htmlspecialchars($member['nickname']); ?>'s <?php echo htmlspecialchars($game['game_name']); ?> history</p>
+        </div>
+        <a href="member_stathistory.php?id=<?php echo $member_id; ?>" class="btn btn--secondary">&larr; Back to Member Stats</a>
     </div>
 
-    <div class="history-container">
-        <h1 class="member-name">
-            <?php echo htmlspecialchars($member['nickname']); ?>'s
-            <?php echo htmlspecialchars($game['game_name']); ?> History
-        </h1>
-        
-        <?php if (count($game_history) > 0): ?>
-        <table class="game-history">
-            <thead>
-                <tr>
-                    <th>Date Played</th>
-                    <th>Place</th>
-                    <th>Number of Players</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($game_history as $game): ?>
-                <tr>
-                    <td><?php echo date('F j Y', strtotime($game['game_date'])); ?></td>
-                    <td class="<?php echo $game['position'] == 1 ? 'winner' : ''; ?>">
-                        <?php 
-                        if ($game['position'] == 1) echo 'Winner';
-                        elseif ($game['position'] == 2) echo 'Second Place';
-                        elseif ($game['position'] == 3) echo 'Third Place';
-                        elseif ($game['position'] == 4) echo 'Fourth Place';
-                        else echo $game['position'] . 'th Place';
-                        ?>
-                    </td>
-                    <td><?php echo $game['num_players']; ?></td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-        <?php else: ?>
-        <p>No game history available for this game.</p>
-        <?php endif; ?>
+    <div class="container container--narrow">
+        <div class="card">
+            <h2><?php echo htmlspecialchars($member['nickname']); ?>’s <?php echo htmlspecialchars($game['game_name']); ?> History</h2>
+            <?php if (count($game_history) > 0): ?>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date Played</th>
+                        <th>Place</th>
+                        <th>Number of Players</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($game_history as $entry): ?>
+                    <tr>
+                        <td><?php echo date('F j, Y', strtotime($entry['game_date'])); ?></td>
+                        <td>
+                            <?php if (!empty($entry['position'])): ?>
+                                <?php $position = (int) $entry['position']; ?>
+                                <span class="position-badge position-<?php echo $position >=1 && $position <=8 ? $position : 1; ?>">
+                                    <?php echo $position === 1 ? 'Winner' : ordinal_suffix($position); ?>
+                                </span>
+                            <?php else: ?>
+                                —
+                            <?php endif; ?>
+                        </td>
+                        <td><?php echo $entry['num_players']; ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            <?php else: ?>
+            <p>No game history available for this game.</p>
+            <?php endif; ?>
+        </div>
     </div>
 </body>
 </html>

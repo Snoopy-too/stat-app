@@ -144,97 +144,146 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="header">
-        <h1>Manage Members - <?php echo htmlspecialchars($club['club_name']); ?></h1>
-        <a href="dashboard.php" class="button">Back to Dashboard</a>
+        <div class="header-title-group">
+            <h1>Manage Members</h1>
+            <p class="header-subtitle"><?php echo htmlspecialchars($club['club_name']); ?></p>
+        </div>
+        <div class="header-actions">
+            <a href="dashboard.php" class="btn btn--secondary btn--small">Back to Dashboard</a>
+        </div>
     </div>
 
-    <div class="container">
+    <div class="container container--wide">
         <?php if (isset($_SESSION['success'])): ?>
-            <div class="message success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
+            <div class="message message--success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
         <?php endif; ?>
         
         <?php if (isset($_SESSION['error'])): ?>
-            <div class="message error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+            <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
         <?php endif; ?>
 
         <div class="card">
-            <h2>Add New Member</h2>
-            <form method="POST" class="form">
-                <div class="form-group">
-                    <input type="text" name="member_name" placeholder="Full Name" required class="form-control">
-                    <input type="text" name="nickname" placeholder="Nickname (for public display)" required class="form-control">
-                    <input type="email" name="email" placeholder="Email Address" required class="form-control">
-                    <select name="club_id" required class="form-control">
-                        <option value="">Select Club</option>
-                        <?php foreach ($admin_clubs as $club): ?>
-                            <option value="<?php echo $club['club_id']; ?>" <?php echo ($club_id == $club['club_id']) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($club['club_name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <input type="hidden" name="action" value="create">
-                    <button type="submit" class="button">Add Member</button>
+            <div class="card-header">
+                <div>
+                    <h2>Add New Member</h2>
+                    <p class="card-subtitle card-subtitle--muted">Create a member profile and assign their display nickname.</p>
+                </div>
+            </div>
+            <form method="POST" class="stack">
+                <input type="hidden" name="action" value="create">
+                <div class="grid grid--columns-3">
+                    <div class="form-group">
+                        <label for="member_name">Full Name</label>
+                        <input type="text" id="member_name" name="member_name" placeholder="Full Name" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="nickname">Nickname</label>
+                        <input type="text" id="nickname" name="nickname" placeholder="Nickname (for public display)" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" placeholder="Email Address" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="club_id">Club</label>
+                        <select name="club_id" id="club_id" required class="form-control">
+                            <option value="">Select Club</option>
+                            <?php foreach ($admin_clubs as $club_option): ?>
+                                <option value="<?php echo $club_option['club_id']; ?>" <?php echo ($club_id == $club_option['club_id']) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($club_option['club_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn">Add Member</button>
                 </div>
             </form>
         </div>
 
         <div class="card">
-            <div class="filters">
-                <form method="GET" class="search-form" id="filter-form">
+            <div class="card-header card-header--stack">
+                <div>
+                    <h2>Members</h2>
+                    <p class="card-subtitle card-subtitle--muted">Currently managing <?php echo count($members); ?> member<?php echo count($members) === 1 ? '' : 's'; ?>.</p>
+                </div>
+            </div>
+            <div class="card-toolbar">
+                <form method="GET" class="toolbar-group toolbar-group--grow" id="filter-form">
                     <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
-                    <div class="form-group">
-                        <input type="text" name="search" placeholder="Search members..." 
+                    <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
+                    <input type="hidden" name="order" value="<?php echo strtolower($order); ?>">
+                    <div class="input-group">
+                        <input type="text" name="search" placeholder="Search members..."
                                value="<?php echo htmlspecialchars($search); ?>" class="form-control">
-                        
-                        <select name="status" id="status-filter" class="filter-select">
+                        <select name="status" id="status-filter" class="form-control form-control--sm">
                             <option value="all" <?php echo $status_filter === 'all' ? 'selected' : ''; ?>>All Status</option>
                             <option value="active" <?php echo $status_filter === 'active' ? 'selected' : ''; ?>>Active</option>
                             <option value="inactive" <?php echo $status_filter === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
                         </select>
+                        <button type="submit" class="btn btn--subtle btn--small">Apply</button>
+                        <a href="?club_id=<?php echo $club_id; ?>" class="btn btn--ghost btn--small">Reset</a>
                     </div>
                 </form>
-            </div>
-
-            <div class="bulk-actions">
-                <form method="POST" id="bulk-form">
-                    <select name="bulk_action" class="filter-select">
+                <form method="POST" class="toolbar-group" id="bulk-form">
+                    <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
+                    <select name="bulk_action" class="form-control form-control--sm">
                         <option value="">Bulk Actions</option>
                         <option value="bulk_activate">Activate Selected</option>
                         <option value="bulk_deactivate">Deactivate Selected</option>
                     </select>
-                    <button type="submit" class="button" onclick="return confirmBulkAction()">Apply</button>
+                    <button type="submit" class="btn btn--subtle btn--small" onclick="return confirmBulkAction()">Apply</button>
                 </form>
             </div>
 
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th><input type="checkbox" id="select-all"></th>
-                        <th>Club</th>
-                        <th>
-                            <a href="?club_id=<?php echo $club_id; ?>&sort=member_name&order=<?php echo $sort === 'member_name' && $order === 'asc' ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo $status_filter; ?>" class="sort-link">
-                                Name <?php echo $sort === 'member_name' ? ($order === 'asc' ? '^' : 'v') : ''; ?>
-                            </a>
-                        </th>
-                        <th>
-                            <a href="?club_id=<?php echo $club_id; ?>&sort=nickname&order=<?php echo $sort === 'nickname' && $order === 'asc' ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo $status_filter; ?>" class="sort-link">
-                                Nickname <?php echo $sort === 'nickname' ? ($order === 'asc' ? '^' : 'v') : ''; ?>
-                            </a>
-                        </th>
-                        <th>
-                            <a href="?club_id=<?php echo $club_id; ?>&sort=email&order=<?php echo $sort === 'email' && $order === 'asc' ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo $status_filter; ?>" class="sort-link">
-                                Email <?php echo $sort === 'email' ? ($order === 'asc' ? '^' : 'v') : ''; ?>
-                            </a>
-                        </th>
-                        <th>
-                            <a href="?club_id=<?php echo $club_id; ?>&sort=status&order=<?php echo $sort === 'status' && $order === 'asc' ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo $status_filter; ?>" class="sort-link">
-                                Status <?php echo $sort === 'status' ? ($order === 'asc' ? '^' : 'v') : ''; ?>
-                            </a>
-                        </th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="select-all"></th>
+                            <th>Club</th>
+                            <th>
+                                <a href="?club_id=<?php echo $club_id; ?>&sort=member_name&order=<?php echo ($sort === 'member_name' && strtolower($order) === 'asc') ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo $status_filter; ?>" class="table-sort-link sort-link">
+                                    <span>Name</span>
+                                    <?php if ($sort === 'member_name'): ?>
+                                        <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
+                                    <?php endif; ?>
+                                </a>
+                            </th>
+                            <th>
+                                <a href="?club_id=<?php echo $club_id; ?>&sort=nickname&order=<?php echo ($sort === 'nickname' && strtolower($order) === 'asc') ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo $status_filter; ?>" class="table-sort-link sort-link">
+                                    <span>Nickname</span>
+                                    <?php if ($sort === 'nickname'): ?>
+                                        <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
+                                    <?php endif; ?>
+                                </a>
+                            </th>
+                            <th>
+                                <a href="?club_id=<?php echo $club_id; ?>&sort=email&order=<?php echo ($sort === 'email' && strtolower($order) === 'asc') ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo $status_filter; ?>" class="table-sort-link sort-link">
+                                    <span>Email</span>
+                                    <?php if ($sort === 'email'): ?>
+                                        <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
+                                    <?php endif; ?>
+                                </a>
+                            </th>
+                            <th>
+                                <a href="?club_id=<?php echo $club_id; ?>&sort=status&order=<?php echo ($sort === 'status' && strtolower($order) === 'asc') ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo $status_filter; ?>" class="table-sort-link sort-link">
+                                    <span>Status</span>
+                                    <?php if ($sort === 'status'): ?>
+                                        <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
+                                    <?php endif; ?>
+                                </a>
+                            </th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if (empty($members)): ?>
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">No members match your current filters.</td>
+                        </tr>
+                    <?php endif; ?>
                     <?php foreach ($members as $member): ?>
                         <tr>
                             <td>
@@ -250,14 +299,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <?php echo ucfirst($member['status']); ?>
                                 </span>
                             </td>
-                            <td>
-                                <a href="edit_member.php?club_id=<?php echo $club_id; ?>&member_id=<?php echo $member['member_id']; ?>" 
-                                   class="button">Edit</a>
+                            <td data-label="Actions">
+                                <div class="btn-group">
+                                    <a href="edit_member.php?club_id=<?php echo $club_id; ?>&member_id=<?php echo $member['member_id']; ?>" 
+                                       class="btn btn--subtle btn--xsmall btn--pill">Edit</a>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 

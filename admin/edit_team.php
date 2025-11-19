@@ -82,14 +82,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_team'])) {
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
+    <div class="header">
+        <div class="header-title-group">
             <h1>Edit Team</h1>
-            <a href="club_teams.php?club_id=<?php echo $club_id; ?>" class="button">Back to Teams</a>
+            <p class="header-subtitle"><?php echo htmlspecialchars($team['team_name']); ?></p>
         </div>
+        <div class="header-actions">
+            <a href="club_teams.php?club_id=<?php echo $club_id; ?>" class="btn btn--secondary btn--small">Back to Teams</a>
+        </div>
+    </div>
 
+    <div class="container container--narrow">
         <?php if (isset($_SESSION['error'])): ?>
-            <div class="alert alert-error">
+            <div class="message message--error">
                 <?php 
                 echo htmlspecialchars($_SESSION['error']); 
                 unset($_SESSION['error']);
@@ -98,61 +103,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_team'])) {
         <?php endif; ?>
 
         <div class="card">
-            <form method="POST" class="form">
-                <div class="form-group">
-                    <label for="team_name">Team Name:</label>
-                    <input type="text" id="team_name" name="team_name" value="<?php echo htmlspecialchars($team['team_name']); ?>" required class="form-control">
+            <div class="card-header">
+                <div>
+                    <h2>Team Details</h2>
+                    <p class="card-subtitle card-subtitle--muted">Update the team name and roster assignments.</p>
+                </div>
+            </div>
+            <form method="POST" class="stack">
+                <div class="grid grid--columns-2">
+                    <div class="form-group">
+                        <label for="team_name">Team Name</label>
+                        <input type="text" id="team_name" name="team_name" value="<?php echo htmlspecialchars($team['team_name']); ?>" required class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="member1">Member 1 (Required)</label>
+                        <select id="member1" name="member1" required class="form-control">
+                            <option value="">Select Member</option>
+                            <?php foreach ($members as $member): ?>
+                                <option value="<?php echo $member['member_id']; ?>" <?php echo $member['member_id'] == $team['member1_id'] ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($member['member_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="member2">Member 2</label>
+                        <select id="member2" name="member2" class="form-control">
+                            <option value="">Select Member</option>
+                            <?php foreach ($members as $member): ?>
+                                <option value="<?php echo $member['member_id']; ?>" <?php echo $member['member_id'] == $team['member2_id'] ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($member['member_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="member3">Member 3</label>
+                        <select id="member3" name="member3" class="form-control">
+                            <option value="">Select Member</option>
+                            <?php foreach ($members as $member): ?>
+                                <option value="<?php echo $member['member_id']; ?>" <?php echo $member['member_id'] == $team['member3_id'] ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($member['member_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="member4">Member 4</label>
+                        <select id="member4" name="member4" class="form-control">
+                            <option value="">Select Member</option>
+                            <?php foreach ($members as $member): ?>
+                                <option value="<?php echo $member['member_id']; ?>" <?php echo $member['member_id'] == $team['member4_id'] ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($member['member_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="member1">Member 1 (Required):</label>
-                    <select id="member1" name="member1" required class="form-control">
-                        <option value="">Select Member</option>
-                        <?php foreach ($members as $member): ?>
-                            <option value="<?php echo $member['member_id']; ?>" <?php echo $member['member_id'] == $team['member1_id'] ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($member['member_name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                <div class="form-actions">
+                    <button type="submit" name="update_team" class="btn">Update Team</button>
                 </div>
-
-                <div class="form-group">
-                    <label for="member2">Member 2:</label>
-                    <select id="member2" name="member2" class="form-control">
-                        <option value="">Select Member</option>
-                        <?php foreach ($members as $member): ?>
-                            <option value="<?php echo $member['member_id']; ?>" <?php echo $member['member_id'] == $team['member2_id'] ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($member['member_name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="member3">Member 3:</label>
-                    <select id="member3" name="member3" class="form-control">
-                        <option value="">Select Member</option>
-                        <?php foreach ($members as $member): ?>
-                            <option value="<?php echo $member['member_id']; ?>" <?php echo $member['member_id'] == $team['member3_id'] ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($member['member_name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="member4">Member 4:</label>
-                    <select id="member4" name="member4">
-                        <option value="">Select Member</option>
-                        <?php foreach ($members as $member): ?>
-                            <option value="<?php echo $member['member_id']; ?>" <?php echo $member['member_id'] == $team['member4_id'] ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($member['member_name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <button type="submit" name="update_team" class="button">Update Team</button>
             </form>
         </div>
     </div>

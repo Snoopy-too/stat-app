@@ -1,0 +1,92 @@
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.65rem;
+    border-radius: var(--radius-sm);
+    font-weight: var(--font-weight-medium);
+    font-size: 0.92rem;
+}
+
+.status-badge--active {
+    background: #e9fbd7;
+    color: #33790b;
+}
+
+.status-badge--inactive {
+    background: #fde6e2;
+    color: #be372d;
+}
+
+.button-gold-static {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.3rem 0.85rem;
+    border-radius: 999px;
+    background: #f1c40f;
+    color: #222d4a;
+    font-weight: var(--font-weight-semibold);
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+.winner-name {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.3rem 0.85rem;
+    background: #f1c40f;
+    color: #222d4a;
+    border-radius: 999px;
+    font-weight: var(--font-weight-semibold);
+    max-width: 100%;
+    text-align: center;
+    word-break: break-word;
+}
+
+.position-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem 1.1rem;
+    border-radius: var(--radius-sm);
+    font-weight: var(--font-weight-bold);
+    font-size: 0.95rem;
+    color: #fff;
+    min-width: 7rem;
+    text-align: center;
+}
+
+.position-1 {
+    background: #f1c40f;
+    color: #222d4a;
+}
+
+.position-2 {
+    background: #bdc3c7;
+    color: #222d4a;
+}
+
+.position-3 {
+    background: #cd7f32;
+}
+
+.position-4 {
+    background: #95a5a6;
+}
+
+.position-5 {
+    background: #7f8c8d;
+}
+
+.position-6 {
+    background: #666666;
+}
+
+.position-7 {
+    background: #555555;
+}
+
+.position-8 {
+    background: #444444;
+}

@@ -87,19 +87,19 @@ $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Su
                     <input type="text" id="location" name="location"
                            value="<?php echo htmlspecialchars($club['location']); ?>">
                 </div>
-                <button type="submit" class="button">Save Changes</button>
+                <button type="submit" class="btn">Save Changes</button>
             </form>
 
             <div class="danger-zone">
                 <h3>Danger Zone</h3>
                 <p>Once you delete your club, there is no going back. Please be certain.</p>
-                <a href="delete_club.php" class="button delete-button"
+                <a href="delete_club.php" class="btn btn--danger"
                    onclick="return confirm('Are you sure you want to delete your club? This action cannot be undone!')">
                     Delete Club
                 </a>
             </div>
         </div>
-        <a href="dashboard.php" class="button">Back to Dashboard</a>
+        <a href="dashboard.php" class="btn">Back to Dashboard</a>
     </div>
 </body>
 </html>

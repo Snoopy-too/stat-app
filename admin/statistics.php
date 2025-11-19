@@ -68,91 +68,22 @@ $monthly_growth = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Statistics - Super Admin</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        .header {
-            background-color: #2c3e50;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        .container {
-            width: 95%;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .stat-card {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        .stat-number {
-            font-size: 36px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin: 10px 0;
-        }
-        .chart-container {
-            background-color: white;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-            background-color: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .data-table th, .data-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        .data-table th {
-            background-color: #34495e;
-            color: white;
-        }
-        .button {
-            background-color: #3498db;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-        }
-    </style>
+    <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
     <div class="header">
-        <h1>Platform Statistics</h1>
+        <div class="header-title-group">
+            <h1>Platform Statistics</h1>
+            <p class="header-subtitle">High level view of club and game activity</p>
+        </div>
+        <a href="dashboard.php" class="btn btn--secondary">Back to Dashboard</a>
     </div>
 
-    <div class="container">
-        <div class="export-buttons" style="margin-bottom: 20px;">
-            <a href="export_stats.php?type=all" class="button">Export Overview</a>
-            <a href="export_stats.php?type=clubs" class="button">Export Club Data</a>
-            <a href="export_stats.php?type=games" class="button">Export Game Data</a>
+    <div class="container container--wide container--flush">
+        <div class="export-buttons">
+            <a href="export_stats.php?type=all" class="btn">Export Overview</a>
+            <a href="export_stats.php?type=clubs" class="btn">Export Club Data</a>
+            <a href="export_stats.php?type=games" class="btn">Export Game Data</a>
         </div>
         
         <div class="stats-grid">
@@ -174,11 +105,11 @@ $monthly_growth = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
 
-        <div class="chart-container">
+        <div class="chart-card">
             <canvas id="growthChart"></canvas>
         </div>
 
-        <div class="chart-container">
+        <div class="chart-card">
             <h2>Most Active Clubs</h2>
             <table class="data-table">
                 <thead>
@@ -200,7 +131,7 @@ $monthly_growth = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </table>
         </div>
 
-        <div class="chart-container">
+        <div class="chart-card">
             <h2>Most Popular Games</h2>
             <table class="data-table">
                 <thead>
@@ -221,8 +152,6 @@ $monthly_growth = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </tbody>
             </table>
         </div>
-
-        <a href="dashboard.php" class="button">Back to Dashboard</a>
     </div>
 
     <script>

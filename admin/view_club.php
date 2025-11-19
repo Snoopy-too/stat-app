@@ -160,13 +160,13 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
 
         <div>
-            <a href="edit_club.php?id=<?php echo $club_id; ?>" class="button">Edit Club</a>
+            <a href="edit_club.php?id=<?php echo $club_id; ?>" class="btn">Edit Club</a>
             <a href="../delete_club.php?id=<?php echo $club_id; ?>" 
-               class="button delete-button"
+               class="btn btn--danger"
                onclick="return confirm('Are you sure you want to delete this club?')">
                 Delete Club
             </a>
-            <a href="dashboard.php" class="button">Back to Dashboard</a>
+            <a href="dashboard.php" class="btn">Back to Dashboard</a>
         </div>
     </div>
 </body>

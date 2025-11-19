@@ -45,65 +45,63 @@ $admins = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Admin Control Panel</title>
     <link rel="stylesheet" href="../css/styles.css">
-    <style>
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-        th { background: #3498db; color: #fff; }
-        .deactivated { background: #f8d7da; }
-        .action-form { display: inline-block; margin: 0 2px; }
-        .btn { padding: 4px 10px; border: none; border-radius: 4px; cursor: pointer; }
-        .btn-danger { background: #e74c3c; color: #fff; }
-        .btn-success { background: #2ecc71; color: #fff; }
-        .btn-warning { background: #f1c40f; color: #fff; }
-        .btn-info { background: #3498db; color: #fff; }
-        .input-inline { width: 120px; }
-    </style>
 </head>
 <body>
     <div class="header">
-        <h1>Super Admin Control Panel</h1>
-        <a href="logout.php" class="button">Logout</a>
+        <div class="header-title-group">
+            <h1>Super Admin Control Panel</h1>
+            <p class="header-subtitle">Manage administrator accounts</p>
+        </div>
+        <a href="logout.php" class="btn btn--secondary">Logout</a>
     </div>
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Super Admin</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-        <?php foreach ($admins as $admin): ?>
-        <tr class="<?php echo $admin['is_deactivated'] ? 'deactivated' : ''; ?>">
-            <td><?php echo htmlspecialchars($admin['admin_id']); ?></td>
-            <td><?php echo htmlspecialchars($admin['username']); ?></td>
-            <td>
-                <form class="action-form" method="POST" style="display:inline;">
-                    <input type="hidden" name="admin_id" value="<?php echo $admin['admin_id']; ?>">
-                    <input type="hidden" name="action" value="change_email">
-                    <input class="input-inline" type="email" name="new_email" value="<?php echo htmlspecialchars($admin['email']); ?>" required>
-                    <button class="btn btn-info" type="submit">Update</button>
-                </form>
-            </td>
-            <td><?php echo $admin['is_super_admin'] ? 'Yes' : 'No'; ?></td>
-            <td><?php echo $admin['is_deactivated'] ? 'Deactivated' : 'Active'; ?></td>
-            <td>
-                <?php if (!$admin['is_super_admin']): ?>
-                    <form class="action-form" method="POST">
-                        <input type="hidden" name="admin_id" value="<?php echo $admin['admin_id']; ?>">
-                        <input type="hidden" name="action" value="<?php echo $admin['is_deactivated'] ? 'activate' : 'deactivate'; ?>">
-                        <button class="btn <?php echo $admin['is_deactivated'] ? 'btn-success' : 'btn-danger'; ?>" type="submit"><?php echo $admin['is_deactivated'] ? 'Activate' : 'Deactivate'; ?></button>
-                    </form>
-                <?php endif; ?>
-                <form class="action-form" method="POST">
-                    <input type="hidden" name="admin_id" value="<?php echo $admin['admin_id']; ?>">
-                    <input type="hidden" name="action" value="change_password">
-                    <input class="input-inline" type="password" name="new_password" placeholder="New Password" minlength="6" required>
-                    <button class="btn btn-warning" type="submit">Change Password</button>
-                </form>
-            </td>
-        </tr>
-        <?php endforeach; ?>
-    </table>
+    <div class="container container--flush">
+        <table class="data-table admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Super Admin</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($admins as $admin): ?>
+                <tr class="<?php echo $admin['is_deactivated'] ? 'deactivated' : ''; ?>">
+                    <td><?php echo htmlspecialchars($admin['admin_id']); ?></td>
+                    <td><?php echo htmlspecialchars($admin['username']); ?></td>
+                    <td>
+                        <form class="action-form" method="POST">
+                            <input type="hidden" name="admin_id" value="<?php echo $admin['admin_id']; ?>">
+                            <input type="hidden" name="action" value="change_email">
+                            <input class="form-control input-inline" type="email" name="new_email" value="<?php echo htmlspecialchars($admin['email']); ?>" required>
+                            <button class="btn btn--info btn--small" type="submit">Update</button>
+                        </form>
+                    </td>
+                    <td><?php echo $admin['is_super_admin'] ? 'Yes' : 'No'; ?></td>
+                    <td><?php echo $admin['is_deactivated'] ? 'Deactivated' : 'Active'; ?></td>
+                    <td>
+                        <div class="btn-group">
+                            <?php if (!$admin['is_super_admin']): ?>
+                                <form class="action-form" method="POST">
+                                    <input type="hidden" name="admin_id" value="<?php echo $admin['admin_id']; ?>">
+                                    <input type="hidden" name="action" value="<?php echo $admin['is_deactivated'] ? 'activate' : 'deactivate'; ?>">
+                                    <button class="btn <?php echo $admin['is_deactivated'] ? 'btn--success' : 'btn--danger'; ?>" type="submit"><?php echo $admin['is_deactivated'] ? 'Activate' : 'Deactivate'; ?></button>
+                                </form>
+                            <?php endif; ?>
+                            <form class="action-form" method="POST">
+                                <input type="hidden" name="admin_id" value="<?php echo $admin['admin_id']; ?>">
+                                <input type="hidden" name="action" value="change_password">
+                                <input class="form-control input-inline" type="password" name="new_password" placeholder="New Password" minlength="6" required>
+                                <button class="btn btn--warning btn--small" type="submit">Change Password</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
 </body>
 </html>

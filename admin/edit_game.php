@@ -51,12 +51,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 <body>
     <div class="header">
         <h1>Edit Game - <?php echo htmlspecialchars($game['game_name']); ?></h1>
-        <a href="manage_games.php?club_id=<?php echo $club_id; ?>" class="button">Back to Games</a>
+        <a href="manage_games.php?club_id=<?php echo $club_id; ?>" class="btn">Back to Games</a>
     </div>
 
     <div class="container">
         <?php if (isset($_SESSION['error'])): ?>
-            <div class="message error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+            <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
         <?php endif; ?>
 
         <div class="card">
@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 </div>
                 <input type="hidden" name="action" value="update">
                 <div class="form-group">
-                    <button type="submit" class="button">Update Game</button>
+                    <button type="submit" class="btn">Update Game</button>
                 </div>
             </form>
         </div>

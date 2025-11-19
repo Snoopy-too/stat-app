@@ -58,93 +58,36 @@ $statuses = ['active', 'suspended', 'inactive'];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Club - Super Admin</title>
-    <style>
-        body {
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        .header {
-            background-color: #2c3e50;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        .container {
-            width: 80%;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .edit-form {
-            background-color: white;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        .form-group textarea {
-            height: 100px;
-            resize: vertical;
-        }
-        .button {
-            background-color: #3498db;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            margin: 5px;
-        }
-        .error {
-            color: #e74c3c;
-            margin-bottom: 15px;
-        }
-    </style>
+    <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
     <div class="header">
-        <h1>Edit Club</h1>
-        <h2><?php echo htmlspecialchars($club['club_name']); ?></h2>
+        <div class="header-title-group">
+            <h1>Edit Club</h1>
+            <p class="header-subtitle"><?php echo htmlspecialchars($club['club_name']); ?></p>
+        </div>
+        <a href="view_club.php?id=<?php echo $club_id; ?>" class="btn btn--secondary">Cancel</a>
     </div>
 
-    <div class="container">
-        <div class="edit-form">
+    <div class="container container--narrow">
+        <div class="card">
             <?php if (isset($_SESSION['error'])): ?>
-                <div class="error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+                <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
             <?php endif; ?>
 
-            <form method="POST">
+            <form method="POST" class="stack">
                 <div class="form-group">
                     <label for="club_name">Club Name:</label>
-                    <input type="text" id="club_name" name="club_name" required
+                    <input type="text" id="club_name" name="club_name" class="form-control" required
                            value="<?php echo htmlspecialchars($club['club_name']); ?>">
                 </div>
                 <div class="form-group">
                     <label for="description">Description:</label>
-                    <textarea id="description" name="description"><?php echo htmlspecialchars($club['description']); ?></textarea>
+                    <textarea id="description" name="description" class="form-control"><?php echo htmlspecialchars($club['description']); ?></textarea>
                 </div>
                 <div class="form-group">
                     <label for="meeting_day">Meeting Day:</label>
-                    <select id="meeting_day" name="meeting_day">
+                    <select id="meeting_day" name="meeting_day" class="form-control">
                         <?php foreach ($days as $day): ?>
                             <option value="<?php echo $day; ?>"
                                 <?php echo ($day == $club['meeting_day']) ? 'selected' : ''; ?>>
@@ -155,17 +98,17 @@ $statuses = ['active', 'suspended', 'inactive'];
                 </div>
                 <div class="form-group">
                     <label for="meeting_time">Meeting Time:</label>
-                    <input type="time" id="meeting_time" name="meeting_time"
+                    <input type="time" id="meeting_time" name="meeting_time" class="form-control"
                            value="<?php echo htmlspecialchars($club['meeting_time']); ?>">
                 </div>
                 <div class="form-group">
                     <label for="location">Meeting Location:</label>
-                    <input type="text" id="location" name="location"
+                    <input type="text" id="location" name="location" class="form-control"
                            value="<?php echo htmlspecialchars($club['location']); ?>">
                 </div>
                 <div class="form-group">
                     <label for="status">Club Status:</label>
-                    <select id="status" name="status">
+                    <select id="status" name="status" class="form-control">
                         <?php foreach ($statuses as $status): ?>
                             <option value="<?php echo $status; ?>"
                                 <?php echo ($status == $club['status']) ? 'selected' : ''; ?>>
@@ -174,8 +117,10 @@ $statuses = ['active', 'suspended', 'inactive'];
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <button type="submit" class="button">Save Changes</button>
-                <a href="view_club.php?id=<?php echo $club_id; ?>" class="button">Cancel</a>
+                <div class="form-actions">
+                    <button type="submit" class="btn">Save Changes</button>
+                    <a href="view_club.php?id=<?php echo $club_id; ?>" class="btn btn--subtle">Cancel</a>
+                </div>
             </form>
         </div>
     </div>

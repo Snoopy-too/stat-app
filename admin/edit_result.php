@@ -95,12 +95,12 @@ $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <body>
     <div class="header">
         <h1>Edit Game Result - <?php echo htmlspecialchars($result['game_name']); ?></h1>
-        <a href="view_result.php?result_id=<?php echo $result_id; ?>" class="button">Back to Result</a>
+        <a href="view_result.php?result_id=<?php echo $result_id; ?>" class="btn">Back to Result</a>
     </div>
     
     <div class="container">
         <?php if (isset($_SESSION['error'])): ?>
-            <div class="message error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+            <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
         <?php endif; ?>
 
         <form method="POST" class="form-card">
@@ -146,7 +146,7 @@ $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <?php endfor; ?>
 
             <div class="form-group">
-                <button type="submit" class="button">Update Result</button>
+                <button type="submit" class="btn">Update Result</button>
             </div>
         </form>
     </div>

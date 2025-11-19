@@ -21,7 +21,7 @@ if (!$member) {
 
 // Get member's game statistics
 $stmt = $pdo->prepare("
-    SELECT g.game_name, 
+    SELECT g.game_name,
            COUNT(*) as total_plays,
            SUM(CASE WHEN gr.placement = 1 THEN 1 ELSE 0 END) as wins,
            AVG(gr.placement) as avg_placement
@@ -42,65 +42,20 @@ $stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Player Stats - Board Game Club StatApp</title>
-    <style>
-        body {
-            background-color: #e0ffe0;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        .header {
-            background-color: #d0ffd0;
-            padding: 20px;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .container {
-            width: 80%;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .stats-container {
-            background-color: white;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        .stats-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        .stats-table th, .stats-table td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        .stats-table th {
-            background-color: #f8f9fa;
-        }
-        .button {
-            background-color: #4285f4;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-        }
-    </style>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <div class="header">
-        <h1>Player Statistics</h1>
-        <h2><?php echo htmlspecialchars($member['full_name']); ?></h2>
+        <div class="header-title-group">
+            <h1>Player Statistics</h1>
+            <p class="header-subtitle"><?php echo htmlspecialchars($member['full_name']); ?></p>
+        </div>
+        <a href="members.php" class="btn btn--secondary">Back to Members</a>
     </div>
 
-    <div class="container">
+    <div class="container container--narrow">
         <div class="stats-container">
-            <table class="stats-table">
+            <table class="data-table">
                 <thead>
                     <tr>
                         <th>Game</th>
@@ -120,10 +75,14 @@ $stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <td><?php echo round($game['avg_placement'], 2); ?></td>
                     </tr>
                     <?php endforeach; ?>
+                    <?php if (empty($stats)): ?>
+                    <tr>
+                        <td colspan="5">No recorded plays yet for this member.</td>
+                    </tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
-        <a href="members.php" class="button">Back to Members</a>
     </div>
 </body>
 </html>

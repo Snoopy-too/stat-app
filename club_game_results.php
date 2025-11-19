@@ -76,48 +76,59 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game Results - <?php echo htmlspecialchars($club['club_name']); ?></title>
     <link rel="stylesheet" href="css/styles.css">
-    </style>
 </head>
 <body>
     <div class="header">
-        <h1>Board Game Club StatApp</h1>
-        <a href="club_stats.php?id=<?php echo $club_id; ?>" class="button">Back to Club Stats</a>
+        <div class="header-title-group">
+            <h1>Club Game Results</h1>
+            <p class="header-subtitle"><?php echo htmlspecialchars($club['club_name']); ?></p>
+        </div>
+        <div class="header-actions">
+            <a href="club_stats.php?id=<?php echo $club_id; ?>" class="btn btn--secondary btn--small">Back to Club Stats</a>
+        </div>
     </div>
 
-    <div class="container">
-        <div class="game-results-container">
-        <h2><?php echo htmlspecialchars($club['club_name']); ?>'s Game Results</h2>
+    <div class="container container--wide">
+        <div class="card">
+            <div class="card-header card-header--stack">
+                <div>
+                    <h2>Game History</h2>
+                    <p class="card-subtitle card-subtitle--muted">Sorted chronologically across individual and team results.</p>
+                </div>
+            </div>
 
-        <?php if (isset($game_results) && count($game_results) > 0): ?>
-        <table class="game-results">
-            <thead>
-                <tr>
-                    <th><a href="?id=<?php echo $club_id; ?>&sort=played_at&order=<?php echo ($sort_column === 'played_at' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="sort-link" onclick="saveScroll()">Date Played<?php if ($sort_column === 'played_at') echo $order === 'ASC' ? ' ▲' : ' ▼'; ?></a></th>
-                    <th><a href="?id=<?php echo $club_id; ?>&sort=game_name&order=<?php echo ($sort_column === 'game_name' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="sort-link" onclick="saveScroll()">Game<?php if ($sort_column === 'game_name') echo $order === 'ASC' ? ' ▲' : ' ▼'; ?></a></th>
-                    <th><a href="?id=<?php echo $club_id; ?>&sort=game_type&order=<?php echo ($sort_column === 'game_type' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="sort-link" onclick="saveScroll()">Type<?php if ($sort_column === 'game_type') echo $order === 'ASC' ? ' ▲' : ' ▼'; ?></a></th>
-                    <th><a href="?id=<?php echo $club_id; ?>&sort=winner_identifier&order=<?php echo ($sort_column === 'winner_identifier' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="sort-link" onclick="saveScroll()">Winner / Team<?php if ($sort_column === 'winner_identifier') echo $order === 'ASC' ? ' ▲' : ' ▼'; ?></a></th>
-                    <th><a href="?id=<?php echo $club_id; ?>&sort=participants&order=<?php echo ($sort_column === 'participants' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="sort-link" onclick="saveScroll()">Participants<?php if ($sort_column === 'participants') echo $order === 'ASC' ? ' ▲' : ' ▼'; ?></a></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($game_results as $result): ?>
-                <tr>
-                    <td data-label="Date Played"><?php echo date('F j, Y', strtotime($result['played_at'])); ?></td>
-                    <td data-label="Game">
-                        <a href="<?php echo $result['game_type'] === 'Team' ? 'team_game_play_details.php' : 'game_play_details.php'; ?>?result_id=<?php echo urlencode($result['record_id']); ?>" class="game-link">
-                            <?php echo htmlspecialchars($result['game_name']); ?>
-                        </a>
-                    </td>
-                    <td data-label="Type"><?php echo htmlspecialchars($result['game_type']); ?></td>
-                    <td data-label="Winner / Team"><span class="position position-1 button-gold-static"><?php echo htmlspecialchars($result['winner_identifier']); ?></span></td>
-                    <td data-label="Participants"><?php echo htmlspecialchars($result['participants']); ?> <?php echo ($result['game_type'] === 'Individual') ? 'Players' : 'Teams'; ?></td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-        <?php else: ?>
-        <p>No game results available for this club.</p>
-        <?php endif; ?>
+            <?php if (!empty($game_results)): ?>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th><a href="?id=<?php echo $club_id; ?>&sort=played_at&order=<?php echo ($sort_column === 'played_at' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Date Played</span><?php if ($sort_column === 'played_at'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
+                            <th><a href="?id=<?php echo $club_id; ?>&sort=game_name&order=<?php echo ($sort_column === 'game_name' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Game</span><?php if ($sort_column === 'game_name'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
+                            <th><a href="?id=<?php echo $club_id; ?>&sort=game_type&order=<?php echo ($sort_column === 'game_type' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Type</span><?php if ($sort_column === 'game_type'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
+                            <th><a href="?id=<?php echo $club_id; ?>&sort=winner_identifier&order=<?php echo ($sort_column === 'winner_identifier' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Winner / Team</span><?php if ($sort_column === 'winner_identifier'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
+                            <th><a href="?id=<?php echo $club_id; ?>&sort=participants&order=<?php echo ($sort_column === 'participants' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Participants</span><?php if ($sort_column === 'participants'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($game_results as $result): ?>
+                        <tr>
+                            <td data-label="Date Played"><?php echo date('F j, Y', strtotime($result['played_at'])); ?></td>
+                            <td data-label="Game">
+                                <a href="<?php echo $result['game_type'] === 'Team' ? 'team_game_play_details.php' : 'game_play_details.php'; ?>?result_id=<?php echo urlencode($result['record_id']); ?>" class="game-link">
+                                    <?php echo htmlspecialchars($result['game_name']); ?>
+                                </a>
+                            </td>
+                            <td data-label="Type"><?php echo htmlspecialchars($result['game_type']); ?></td>
+                            <td data-label="Winner / Team"><span class="position-badge position-1"><?php echo htmlspecialchars($result['winner_identifier']); ?></span></td>
+                            <td data-label="Participants"><?php echo htmlspecialchars($result['participants']); ?> <?php echo ($result['game_type'] === 'Individual') ? 'Players' : 'Teams'; ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php else: ?>
+                <p>No game results available for this club.</p>
+            <?php endif; ?>
         </div>
     </div>
 </body>

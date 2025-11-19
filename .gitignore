@@ -1,0 +1,29 @@
+# Configuration files with sensitive data
+config/
+
+# Zip files (backups)
+*.zip
+
+# Logs
+logs/
+
+# System files
+.DS_Store
+.env
+.env.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Database dumps (unless you want to track them)
+*.sql
+
+# Node modules (if using)
+node_modules/
+
+# Composer vendor (if using)
+vendor/

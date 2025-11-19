@@ -44,15 +44,15 @@ $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="history-list">
             <?php foreach ($history as $game): ?>
             <div class="history-item">
-                <a href="edit_history.php?id=<?php echo $game['history_id']; ?>" class="button edit-button">Edit</a>
+                <a href="edit_history.php?id=<?php echo $game['history_id']; ?>" class="btn btn--secondary">Edit</a>
                 <div class="game-date"><?php echo date('F j, Y', strtotime($game['play_date'])); ?></div>
                 <div class="game-name"><?php echo htmlspecialchars($game['game_name']); ?></div>
                 <div class="game-results">Results: <?php echo htmlspecialchars($game['results']); ?></div>
             </div>
             <?php endforeach; ?>
         </div>
-        <a href="add_history.php" class="button">Add New Game Session</a>
-        <a href="dashboard.php" class="button">Back to Dashboard</a>
+        <a href="add_history.php" class="btn">Add New Game Session</a>
+        <a href="dashboard.php" class="btn">Back to Dashboard</a>
     </div>
 </body>
 </html>

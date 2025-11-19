@@ -53,42 +53,59 @@ $total_games = array_sum(array_column($clubs, 'game_count'));
 </head>
 <body>
     <div class="header">
-        <h1>Admin Dashboard</h1>
-        <div class="header-links dropdown"> <!-- Use classes from styles.css -->
-            <button class="dropbtn login-link">Account ▼</button>
-            <div class="dropdown-content">
-                <a href="./change_password.php">Change Password</a>
-                <a href="./logout.php">Logout</a>
+        <div class="header-title-group">
+            <h1>Admin Dashboard</h1>
+            <p class="header-subtitle">Monitor membership and game activity</p>
+        </div>
+        <div class="header-actions">
+            <div class="dropdown header-account">
+                <button type="button" class="btn btn--secondary btn--small dropdown__toggle">Account ▼</button>
+                <div class="dropdown__menu">
+                    <a href="../index.php">View Main Site</a>
+                    <a href="manage_clubs.php">Manage Clubs</a>
+                </div>
             </div>
+            <a href="change_password.php" class="btn btn--secondary btn--small">Change Password</a>
+            <a href="logout.php" class="btn btn--secondary btn--small">Logout</a>
         </div>
     </div>
 
-    <!-- Removed the inline <style> block for dropdowns -->
-
     <div class="container">
-        <div class="stats-overview grid">
-            <div class="card stat-card">
-                <h3>Total Clubs</h3>
-                <div class="stat-number"><?php echo count($clubs); ?></div>
+        <div class="dashboard-stats">
+            <div class="card stat-card stat-card--navy">
+                <span class="stat-card__label">Total Clubs</span>
+                <div class="stat-card__body">
+                    <span class="stat-card__value"><?php echo count($clubs); ?></span>
+                    <span class="stat-card__meta">Active clubs under your account</span>
+                </div>
             </div>
-            <div class="card stat-card">
-                <h3>Total Members</h3>
-                <div class="stat-number"><?php echo $total_members; ?></div>
+            <div class="card stat-card stat-card--sky">
+                <span class="stat-card__label">Total Members</span>
+                <div class="stat-card__body">
+                    <span class="stat-card__value"><?php echo $total_members; ?></span>
+                    <span class="stat-card__meta">Across all managed clubs</span>
+                </div>
             </div>
-            <div class="card stat-card">
-                <h3>Total Games</h3>
-                <div class="stat-number"><?php echo $total_games; ?></div>
+            <div class="card stat-card stat-card--neutral">
+                <span class="stat-card__label">Total Games</span>
+                <div class="stat-card__body">
+                    <span class="stat-card__value"><?php echo $total_games; ?></span>
+                    <span class="stat-card__meta">Available in your libraries</span>
+                </div>
             </div>
         </div>
 
-        <div class="action-buttons">
-            <a href="manage_clubs.php" class="button">Manage Clubs</a>
-        </div>
-
-        <div class="card">
-            <h2>Club Overview</h2>
-            <div class="table-responsive"> <!-- Added for better mobile table handling -->
-                <table class="data-table">
+        <div class="dashboard-components">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2>Club Overview</h2>
+                        <p class="card-subtitle card-subtitle--muted">Snapshot of club health and activity</p>
+                    </div>
+                    <a href="manage_clubs.php" class="btn btn--small btn--pill">Manage Clubs</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
                     <thead>
                         <tr>
                             <th>Club Name</th>
@@ -110,19 +127,22 @@ $total_games = array_sum(array_column($clubs, 'game_count'));
                                     <td data-label="Club Name"><?php echo htmlspecialchars($club['club_name']); ?></td>
                                     <td data-label="Members"><?php echo $club['member_count']; ?></td>
                                     <td data-label="Games"><?php echo $club['game_count']; ?></td>
-                                    <td data-label="Games Played"><?php echo $club['games_played']; ?></td>
+                                    <td data-label="Games Played"><?php echo (int) ($club['games_played'] ?? 0); ?></td>
                                     <td data-label="Created"><?php echo date('M j, Y', strtotime($club['created_at'])); ?></td>
                                     <td data-label="Actions">
-                                        <a href="manage_members.php?club_id=<?php echo $club['club_id']; ?>" class="button">Members</a>
-                                        <a href="manage_games.php?club_id=<?php echo $club['club_id']; ?>" class="button">Games</a>
-                                        <a href="manage_champions.php?club_id=<?php echo $club['club_id']; ?>" class="button">Champions</a>
-                                        <a href="club_teams.php?club_id=<?php echo $club['club_id']; ?>" class="button">Teams</a>
+                                        <div class="club-actions">
+                                            <a href="manage_members.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--small btn--pill">Members</a>
+                                            <a href="manage_games.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--small btn--pill">Games</a>
+                                            <a href="manage_champions.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--small btn--pill">Champions</a>
+                                            <a href="club_teams.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--small btn--pill">Teams</a>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </tbody>
-                </table>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

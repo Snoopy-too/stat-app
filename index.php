@@ -23,32 +23,51 @@ if (isset($_SESSION['club_id'])) {
 </head>
 <body>
     <div class="header">
-        <h1>Board Game Club StatApp</h1>
-        <h2>Stats for <span id="clubName"><?php echo htmlspecialchars($club_name); ?></span></h2>
-        <?php if (isset($_SESSION['is_super_admin'])): ?>
-            <a href="admin/dashboard.php" class="button">Admin Dashboard</a>
-        <?php else: ?>
-            <div class="auth-links">
-                <a href="admin/login.php" class="button">Login</a>
-                <a href="register.php" class="button">Register</a>
-            </div>
-        <?php endif; ?>
+        <div class="header-title-group">
+            <h1>Board Game Club StatApp</h1>
+            <p class="header-subtitle">Stats for <span id="clubName"><?php echo htmlspecialchars($club_name); ?></span></p>
+        </div>
+        <div class="header-actions">
+            <?php if (isset($_SESSION['is_super_admin'])): ?>
+                <a href="admin/dashboard.php" class="btn btn--secondary btn--small">Admin Dashboard</a>
+            <?php else: ?>
+                <a href="admin/login.php" class="btn btn--secondary btn--small">Login</a>
+                <a href="register.php" class="btn btn--small">Register</a>
+            <?php endif; ?>
+        </div>
     </div>
-    <div class="container">
-        <div class="sales-pitch card">
-            <h2>Welcome to Board Game StatApp!</h2>
-            <p>Track your board gaming journey like never before! Our platform offers:</p>
+    <div class="container container--narrow">
+        <div class="card hero-card">
+            <div class="card-header">
+                <div>
+                    <h2>Welcome to Board Game StatApp</h2>
+                    <p class="card-subtitle">Everything your club needs to track plays, celebrate champions, and grow community.</p>
+                </div>
+            </div>
+            <p>From small weekly meetups to large competitive leagues, our tools keep your members, games, and results organized in one intuitive dashboard.</p>
             <ul>
                 <li>📊 Comprehensive game statistics and play tracking</li>
-                <li>👥 Member management for your gaming club</li>
-                <li>🎲 Game library organization</li>
-                <li>📈 Detailed play history and analytics</li>
+                <li>👥 Member management and champion history</li>
+                <li>🎲 Curated game library with team support</li>
+                <li>📈 Insightful analytics for every club night</li>
             </ul>
-            <p>Join today and take your board gaming experience to the next level!</p>
+            <div class="hero-actions">
+                <a href="register.php" class="btn">Start Your Club</a>
+                <?php if (!isset($_SESSION['is_super_admin'])): ?>
+                    <a href="admin/login.php" class="btn btn--ghost">Preview Admin Tools</a>
+                <?php else: ?>
+                    <a href="admin/dashboard.php" class="btn btn--ghost">Go to Dashboard</a>
+                <?php endif; ?>
+            </div>
         </div>
 
-        <div class="search-section card">
-            <h2>Find a Board Game Club</h2>
+        <div class="card search-card">
+            <div class="card-header">
+                <div>
+                    <h2>Find a Board Game Club</h2>
+                    <p class="card-subtitle card-subtitle--muted">Browse public clubs to explore their stats and champions.</p>
+                </div>
+            </div>
             <div class="search-box">
                 <input type="text" id="clubSearch" placeholder="Search for clubs..." class="form-control">
             </div>

@@ -38,35 +38,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Admin Login</title>
     <link rel="stylesheet" href="../css/styles.css">
-    <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; }
-        .login-container { max-width: 400px; margin: 80px auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .login-container h2 { text-align: center; margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; }
-        input[type="text"], input[type="password"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-        .btn { width: 100%; padding: 10px; background: #3498db; color: #fff; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
-        .btn:hover { background: #217dbb; }
-        .error { color: #e74c3c; text-align: center; margin-bottom: 10px; }
-    </style>
 </head>
 <body>
-    <div class="login-container">
-        <h2>Super Admin Login</h2>
-        <?php if ($error): ?>
-            <div class="error"><?php echo htmlspecialchars($error); ?></div>
-        <?php endif; ?>
-        <form method="POST" autocomplete="off">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required autofocus>
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button class="btn" type="submit">Login</button>
-        </form>
+    <div class="header">
+        <div class="header-title-group">
+            <h1>Board Game Club StatApp</h1>
+            <p class="header-subtitle">Super Admin Login</p>
+        </div>
+    </div>
+
+    <div class="container container--narrow auth-shell">
+        <div class="card auth-card">
+            <h2 class="text-center">Sign In</h2>
+            <?php if ($error): ?>
+                <div class="message message--error"><?php echo htmlspecialchars($error); ?></div>
+            <?php endif; ?>
+            <form method="POST" autocomplete="off" class="stack">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" class="form-control" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-control" required>
+                </div>
+                <button class="btn btn--block" type="submit">Login</button>
+            </form>
+        </div>
     </div>
 </body>
 </html>

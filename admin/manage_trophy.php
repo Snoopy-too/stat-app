@@ -69,25 +69,25 @@ if (!$club) {
 </head>
 <body>
     <div class="header">
-        <h1>Manage Trophy Image - <?php echo htmlspecialchars($club['club_name']); ?></h1>
-        <a href="dashboard.php" class="button">Back to Dashboard</a>
+        <div class="header-title-group">
+            <h1>Manage Trophy Image</h1>
+            <p class="header-subtitle"><?php echo htmlspecialchars($club['club_name']); ?></p>
+        </div>
+        <a href="dashboard.php" class="btn btn--secondary">Back to Dashboard</a>
     </div>
     
-    <div class="container">
-        
+    <div class="container container--narrow">
         <?php if (isset($error)): ?>
-            <div class="error"><?php echo $error; ?></div>
+            <div class="message message--error"><?php echo $error; ?></div>
         <?php endif; ?>
         
         <?php if (isset($success)): ?>
-            <div class="success"><?php echo $success; ?></div>
+            <div class="message message--success"><?php echo $success; ?></div>
         <?php endif; ?>
         
         <div class="card">
-            <div class="card-header">
-                <h2>Current Trophy Image</h2>
-            </div>
-            <div class="card-body text-center">
+            <h2>Current Trophy Image</h2>
+            <div class="text-center">
                 <?php if ($club['champ_image']): ?>
                     <img src="../<?php echo htmlspecialchars($club['champ_image']); ?>" alt="Trophy" class="trophy-image" onerror="this.src='../images/placeholder-trophy.svg'">
                 <?php else: ?>
@@ -97,14 +97,15 @@ if (!$club) {
             </div>
         </div>
         
-        <form action="manage_trophy.php?club_id=<?php echo $club_id; ?>" method="post" enctype="multipart/form-data">
+        <form action="manage_trophy.php?club_id=<?php echo $club_id; ?>" method="post" enctype="multipart/form-data" class="stack">
             <div class="form-group">
                 <label for="trophy_image">Upload New Trophy Image:</label>
-                <input type="file" id="trophy_image" name="trophy_image" accept="image/jpeg,image/png,image/gif" required>
+                <input type="file" id="trophy_image" name="trophy_image" class="form-control" accept="image/jpeg,image/png,image/gif" required>
+                <span class="field-hint">Allowed formats: JPG, PNG, GIF. Max size 5MB.</span>
             </div>
-            <div class="action-buttons">
-                <button type="submit" class="button">Update Trophy Image</button>
-                <a href="dashboard.php" class="button">Cancel</a>
+            <div class="form-actions">
+                <button type="submit" class="btn">Update Trophy Image</button>
+                <a href="dashboard.php" class="btn btn--subtle">Cancel</a>
             </div>
         </form>
     </div>

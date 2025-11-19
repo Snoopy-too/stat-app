@@ -59,15 +59,15 @@ foreach ($champions as $champion) {
                         </div>
                     </div>
                     <a href="edit_champion.php?id=<?php echo $champion['champion_id']; ?>" 
-                       class="button edit-button">Edit</a>
+                       class="btn btn--secondary">Edit</a>
                 </div>
                 <?php endforeach; ?>
             </div>
             <?php endforeach; ?>
         </div>
 
-        <a href="add_champion.php" class="button">Add New Champion</a>
-        <a href="dashboard.php" class="button">Back to Dashboard</a>
+        <a href="add_champion.php" class="btn">Add New Champion</a>
+        <a href="dashboard.php" class="btn">Back to Dashboard</a>
     </div>
 </body>
 </html>

@@ -42,12 +42,15 @@ if ($club_id > 0) {
 </head>
 <body>
     <div class="header">
-        <h1>Board Game Club StatApp</h1>
-        <a href="club_stats.php?id=<?php echo $club_id; ?>" class="button">Back to Club Stats</a>
+        <div class="header-title-group">
+            <h1>Board Game Club StatApp</h1>
+            <p class="header-subtitle">Club Games</p>
+        </div>
+        <a href="club_stats.php?id=<?php echo $club_id; ?>" class="btn btn--secondary">Back to Club Stats</a>
     </div>
     <div class="container">
         <?php if ($error): ?>
-            <div class="error"><?php echo htmlspecialchars($error); ?></div>
+            <div class="message message--error"><?php echo htmlspecialchars($error); ?></div>
         <?php elseif ($club): ?>
             <h2><?php echo htmlspecialchars($club['club_name']); ?>'s Games</h2>
             <?php if (count($games) > 0): ?>

@@ -68,12 +68,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div class="header">
         <h1>Edit Member</h1>
-        <a href="manage_members.php?club_id=<?php echo $club_id; ?>" class="button">Back to Members</a>
+        <a href="manage_members.php?club_id=<?php echo $club_id; ?>" class="btn">Back to Members</a>
     </div>
 
     <div class="container">
         <?php if (isset($_SESSION['error'])): ?>
-            <div class="message error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+            <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
         <?php endif; ?>
 
         <div class="card">
@@ -103,8 +103,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <option value="inactive" <?php echo $member['status'] === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
                     </select>
 
-                    <button type="submit" class="button">Update Member</button>
-                    <a href="manage_members.php?club_id=<?php echo $club_id; ?>" class="button">Cancel</a>
+                    <button type="submit" class="btn">Update Member</button>
+                    <a href="manage_members.php?club_id=<?php echo $club_id; ?>" class="btn">Cancel</a>
                 </div>
             </form>
         </div>

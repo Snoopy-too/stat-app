@@ -42,7 +42,7 @@ $average_finish = $total_games > 0 ? number_format($total_points / $total_games,
 <body>
     <div class="header">
         <h1>Board Game Club StatApp</h1>
-        <a href="club_stats.php?id=<?php echo $member['club_id']; ?>" class="button">&larr; Back to Club Stats</a>
+        <a href="club_stats.php?id=<?php echo $member['club_id']; ?>" class="btn">&larr; Back to Club Stats</a>
     </div>
 
     <div class="history-container">

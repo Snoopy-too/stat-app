@@ -45,16 +45,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="header">
-        <h1>Change Password</h1>
+        <div class="header-title-group">
+            <h1>Change Password</h1>
+            <p class="header-subtitle">Update your administrator credentials</p>
+        </div>
+        <a href="dashboard.php" class="btn btn--secondary">Back to Dashboard</a>
     </div>
     <div class="container">
         <div class="card">
             
             <?php if (isset($_SESSION['error'])): ?>
-                <div class="error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+                <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
             <?php endif; ?>
             
-            <form method="POST">
+            <form method="POST" class="stack">
                 <div class="form-group">
                     <label for="current_password">Current Password:</label>
                     <input type="password" id="current_password" name="current_password" class="form-control" required>
@@ -67,11 +71,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="confirm_password">Confirm New Password:</label>
                     <input type="password" id="confirm_password" name="confirm_password" class="form-control" required>
                 </div>
-                <button type="submit" class="button">Change Password</button>
+                <div class="form-actions">
+                    <button type="submit" class="btn">Change Password</button>
+                    <a href="dashboard.php" class="btn btn--subtle">Cancel</a>
+                </div>
             </form>
-            <div class="action-buttons">
-                <a href="dashboard.php" class="button button-secondary">Back to Dashboard</a>
-            </div>
         </div>
     </div>
 </body>

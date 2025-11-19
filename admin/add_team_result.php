@@ -114,20 +114,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="header">
-        <h1>Add Team Game Result</h1>
-        <h2><?php echo htmlspecialchars($game['game_name']); ?></h2>
+        <div class="header-title-group">
+            <h1>Add Team Game Result</h1>
+            <p class="header-subtitle"><?php echo htmlspecialchars($game['game_name']); ?></p>
+        </div>
+        <a href="results.php?game_id=<?php echo $game_id; ?>&club_id=<?php echo $club_id; ?>" class="btn btn--secondary">Back to Results</a>
     </div>
     <div class="container">
         <div class="card">
             <?php if (isset($error)): ?>
-                <div class="error"><?php echo $error; ?></div>
+                <div class="message message--error"><?php echo $error; ?></div>
             <?php endif; ?>
             <?php if (isset($_SESSION['success_message'])): ?>
-                <div class="success"><?php echo $_SESSION['success_message']; ?></div>
+                <div class="message message--success"><?php echo $_SESSION['success_message']; ?></div>
                 <?php unset($_SESSION['success_message']); ?>
             <?php endif; ?>
             
-            <form method="POST">
+            <form method="POST" class="stack">
                 <div class="form-group">
                     <label for="played_at">Date Played:</label>
                     <input type="datetime-local" id="played_at" name="played_at" required class="form-control">
@@ -160,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div id="additional-places"></div>
                 
                 <div class="form-group">
-                    <button type="button" id="add-place" class="button button-secondary">Add Place</button>
+                    <button type="button" id="add-place" class="btn btn--secondary">Add Place</button>
                 </div>
                 
                 <div class="form-group">
@@ -173,10 +176,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <textarea id="notes" name="notes" class="form-control" rows="4"></textarea>
                 </div>
                 
-                <div class="form-group">
-                    <button type="submit" class="button">Save Result</button>
+                <div class="form-actions">
+                    <button type="submit" class="btn">Save Result</button>
                     <a href="results.php?game_id=<?php echo $game_id; ?>&club_id=<?php echo $club_id; ?>" 
-                       class="button button-secondary">Cancel</a>
+                       class="btn btn--subtle">Cancel</a>
                 </div>
             </form>
         </div>
@@ -221,8 +224,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const placeDiv = document.createElement('div');
         placeDiv.className = 'form-group';
         placeDiv.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="flex-grow: 1;">
+            <div class="cluster items-start gap-md">
+                <div class="w-100">
                     <label for="place_${placeCount}">${placeCount}${getOrdinalSuffix(placeCount)} Place Team:</label>
                     <select id="place_${placeCount}" name="additional_places[]" class="form-control">
                         <option value="">Select Team</option>
@@ -230,7 +233,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             .map(opt => `<option value="${opt.value}">${opt.text}</option>`).join('')}
                     </select>
                 </div>
-                <button type="button" class="button button-secondary remove-place" style="margin-top: 20px;">Remove</button>
+                <button type="button" class="btn btn--secondary remove-place mt-3">Remove</button>
             </div>
         `;
         

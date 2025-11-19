@@ -122,68 +122,90 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="header">
-        <h1>Manage Champions - <?php echo htmlspecialchars($club['club_name']); ?></h1>
-        <a href="dashboard.php" class="button">Back to Dashboard</a>
+        <div class="header-title-group">
+            <h1>Manage Champions</h1>
+            <p class="header-subtitle"><?php echo htmlspecialchars($club['club_name']); ?></p>
+        </div>
+        <div class="header-actions">
+            <a href="manage_trophy.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle btn--small">Manage Trophy</a>
+            <a href="dashboard.php" class="btn btn--secondary btn--small">Back to Dashboard</a>
+        </div>
     </div>
 
-    <div class="container">
+    <div class="container container--wide">
         <?php if (isset($_SESSION['success'])): ?>
-            <div class="message success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
+            <div class="message message--success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
         <?php endif; ?>
         
         <?php if (isset($_SESSION['error'])): ?>
-            <div class="message error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+            <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
         <?php endif; ?>
 
-        <a href="manage_trophy.php?club_id=<?php echo $club_id; ?>" class="button manage-trophy-link">Manage Trophy</a>
-
         <div class="card">
-            <h2>Add New Champion</h2>
-            <form method="POST" class="form">
-                <div class="form-group">
-                    <select name="member_id" required class="form-control">
-                        <option value="">Select Member</option>
-                        <?php foreach ($members as $member): ?>
-                            <option value="<?php echo $member['member_id']; ?>">
-                                <?php echo htmlspecialchars($member['member_name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <input type="date" name="champ_date" value="<?php echo date('Y-m-d'); ?>" required class="form-control">
-                    <textarea name="champ_comments" placeholder="Champion Comments" class="form-control" rows="3"></textarea>
-                    <input type="hidden" name="action" value="create">
-                    <button type="submit" class="button">Add Champion</button>
+            <div class="card-header">
+                <div>
+                    <h2>Add New Champion</h2>
+                    <p class="card-subtitle card-subtitle--muted">Recognize the latest club champion and capture their story.</p>
+                </div>
+            </div>
+            <form method="POST" class="stack">
+                <input type="hidden" name="action" value="create">
+                <div class="grid grid--columns-3">
+                    <div class="form-group">
+                        <label for="member_id">Champion</label>
+                        <select name="member_id" id="member_id" required class="form-control">
+                            <option value="">Select Member</option>
+                            <?php foreach ($members as $member): ?>
+                                <option value="<?php echo $member['member_id']; ?>">
+                                    <?php echo htmlspecialchars($member['member_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="champ_date">Date Awarded</label>
+                        <input type="date" id="champ_date" name="champ_date" value="<?php echo date('Y-m-d'); ?>" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="champ_comments">Champion Notes</label>
+                        <textarea id="champ_comments" name="champ_comments" placeholder="Champion comments" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn">Add Champion</button>
                 </div>
             </form>
         </div>
 
         <div class="card">
-            <div class="filters">
-                <form method="GET" class="search-form">
+            <div class="card-header card-header--stack">
+                <div>
+                    <h2>Champion History</h2>
+                    <p class="card-subtitle card-subtitle--muted"><?php echo count($champions); ?> recorded champion<?php echo count($champions) === 1 ? '' : 's'; ?>.</p>
+                </div>
+            </div>
+            <div class="card-toolbar">
+                <form method="GET" class="toolbar-group toolbar-group--grow search-form">
                     <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
-                    <div class="form-group">
+                    <div class="input-group">
                         <input type="text" name="search" placeholder="Search champions..." 
                                value="<?php echo htmlspecialchars($search); ?>" class="form-control">
-                        
-                        
-                        
-                        <button type="submit" class="button">Filter</button>
-                        <a href="?club_id=<?php echo $club_id; ?>" class="button">Reset</a>
+                        <button type="submit" class="btn btn--subtle btn--small">Filter</button>
+                        <a href="?club_id=<?php echo $club_id; ?>" class="btn btn--ghost btn--small">Reset</a>
                     </div>
                 </form>
-            </div>
-
-            <div class="bulk-actions">
-                <form method="POST" id="bulk-form">
-                    <select name="bulk_action" class="filter-select">
+                <form method="POST" class="toolbar-group" id="bulk-form">
+                    <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
+                    <select name="bulk_action" class="form-control form-control--sm">
                         <option value="">Bulk Actions</option>
                         <option value="bulk_delete">Delete Selected</option>
                     </select>
-                    <button type="submit" class="button" onclick="return confirmBulkAction()">Apply</button>
+                    <button type="submit" class="btn btn--subtle btn--small" onclick="return confirmBulkAction()">Apply</button>
                 </form>
             </div>
 
-            <table class="data-table">
+            <div class="table-responsive">
+                <table class="data-table">
                 <thead>
                     <tr>
                         <th><input type="checkbox" id="select-all"></th>
@@ -194,6 +216,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </tr>
                 </thead>
                 <tbody>
+                    <?php if (empty($champions)): ?>
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">No champions have been recorded yet.</td>
+                        </tr>
+                    <?php endif; ?>
                     <?php foreach ($champions as $champion): ?>
                         <tr>
                             <td>
@@ -204,20 +231,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <td data-label="Date"><?php echo date('F j Y', strtotime($champion['date'])); ?></td>
                             <td data-label="Comments"><?php echo htmlspecialchars($champion['champ_comments']); ?></td>
                             <td data-label="Actions">
-                                <button class="button" onclick="editChampion(<?php echo $champion['ID']; ?>, <?php echo $champion['member_id']; ?>, '<?php echo $champion['date']; ?>', '<?php echo addslashes($champion['champ_comments']); ?>')">
-                                    Edit
-                                </button>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn--subtle btn--xsmall btn--pill" onclick="editChampion(<?php echo $champion['ID']; ?>, <?php echo $champion['member_id']; ?>, '<?php echo $champion['date']; ?>', '<?php echo addslashes($champion['champ_comments']); ?>')">
+                                        Edit
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
-            </table>
+                </table>
+            </div>
         </div>
     </div>
 
     <!-- Edit Champion Modal -->
-    <div id="editChampionModal" class="modal" style="display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
-        <div class="modal-content" style="background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px;">
+    <div id="editChampionModal" class="modal">
+        <div class="modal__dialog">
             <form id="editChampionForm" method="POST">
                 <input type="hidden" name="action" value="edit">
                 <input type="hidden" name="champion_id" id="edit_champion_id">
@@ -240,8 +270,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <textarea name="edit_comments" id="edit_comments" class="form-control" rows="3"></textarea>
                 </div>
                 <div class="form-group">
-                    <button type="submit" class="button">Save Changes</button>
-                    <button type="button" class="button" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" class="btn">Save Changes</button>
+                    <button type="button" class="btn" onclick="closeEditModal()">Cancel</button>
                 </div>
             </form>
         </div>
@@ -263,25 +293,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             return confirm('Are you sure you want to perform this action on the selected members?');
         }
 
+        const championModal = document.getElementById('editChampionModal');
+        const championModalDialog = championModal.querySelector('.modal__dialog');
+
         function editChampion(championId, memberId, date, comments) {
             document.getElementById('edit_champion_id').value = championId;
             document.getElementById('edit_member_id').value = memberId;
             document.getElementById('edit_date').value = date;
             document.getElementById('edit_comments').value = comments;
-            document.getElementById('editChampionModal').style.display = 'block';
+            championModal.classList.add('is-open');
         }
 
         function closeEditModal() {
-            document.getElementById('editChampionModal').style.display = 'none';
+            championModal.classList.remove('is-open');
         }
 
-        // Close modal when clicking outside of it
-        window.onclick = function(event) {
-            const modal = document.getElementById('editChampionModal');
-            if (event.target == modal) {
-                modal.style.display = 'none';
+        championModal.addEventListener('click', function(event) {
+            if (event.target === championModal) {
+                closeEditModal();
             }
-        }
+        });
+
+        championModalDialog.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
     </script>
 </body>
 <script>

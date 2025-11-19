@@ -77,30 +77,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Club Logo - Board Game Club StatApp</title>
     <link rel="stylesheet" href="../css/styles.css">
-    <style>
-        .logo-preview {
-            max-width: 200px;
-            max-height: 200px;
-            margin: 20px 0;
-        }
-        .logo-container {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-    </style>
 </head>
 <body>
     <div class="header">
-        <h1>Manage Club Logo</h1>
-        <a href="manage_clubs.php" class="button">Back to Clubs</a>
+        <div class="header-title-group">
+            <h1>Manage Club Logo</h1>
+            <p class="header-subtitle"><?php echo htmlspecialchars($club['club_name']); ?></p>
+        </div>
+        <a href="manage_clubs.php" class="btn btn--secondary">Back to Clubs</a>
     </div>
     
-    <div class="container">
+    <div class="container container--narrow">
         <?php if (isset($_SESSION['success'])): ?>
-            <div class="message success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
+            <div class="message message--success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
         <?php endif; ?>
         <?php if (isset($_SESSION['error'])): ?>
-            <div class="message error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+            <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
         <?php endif; ?>
 
         <div class="card">
@@ -109,24 +101,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="logo-container">
                 <?php if ($club['logo_image']): ?>
                     <img src="../images/club_logos/<?php echo htmlspecialchars($club['logo_image']); ?>" alt="Club Logo" class="logo-preview">
-                    <form method="POST" style="margin-top: 10px;">
+                    <form method="POST" class="stack stack--sm">
                         <input type="hidden" name="remove_logo" value="1">
-                        <button type="submit" class="button" onclick="return confirm('Are you sure you want to remove the logo?')">Remove Logo</button>
+                        <button type="submit" class="btn btn--danger" onclick="return confirm('Are you sure you want to remove the logo?')">Remove Logo</button>
                     </form>
                 <?php else: ?>
                     <p>No logo uploaded yet</p>
                 <?php endif; ?>
             </div>
 
-            <form method="POST" enctype="multipart/form-data" class="form">
+            <form method="POST" enctype="multipart/form-data" class="stack">
                 <div class="form-group">
                     <label for="logo">Upload New Logo:</label>
-                    <input type="file" name="logo" id="logo" accept="image/jpeg,image/png,image/gif" required>
-                    <small>Maximum file size: 5MB. Allowed formats: JPG, PNG, GIF</small>
+                    <input type="file" name="logo" id="logo" class="form-control" accept="image/jpeg,image/png,image/gif" required>
+                    <span class="field-hint">Maximum file size: 5MB. Allowed formats: JPG, PNG, GIF.</span>
                 </div>
-                <div class="form-group">
-                    <button type="submit" class="button">Upload Logo</button>
-                </div>
+                <button type="submit" class="btn">Upload Logo</button>
             </form>
         </div>
     </div>

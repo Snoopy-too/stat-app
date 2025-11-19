@@ -48,17 +48,17 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     Played <?php echo $game['play_count']; ?> times
                 </div>
                 <div>
-                    <a href="edit_game.php?id=<?php echo $game['game_id']; ?>" class="button edit-button">Edit</a>
+                    <a href="edit_game.php?id=<?php echo $game['game_id']; ?>" class="btn btn--secondary">Edit</a>
                     <a href="delete_game.php?id=<?php echo $game['game_id']; ?>" 
-                       class="button delete-button"
+                       class="btn btn--danger"
                        onclick="return confirm('Are you sure you want to delete this game?')">Delete</a>
                 </div>
             </div>
             <?php endforeach; ?>
         </div>
 
-        <a href="add_game.php" class="button">Add New Game</a>
-        <a href="dashboard.php" class="button">Back to Dashboard</a>
+        <a href="add_game.php" class="btn">Add New Game</a>
+        <a href="dashboard.php" class="btn">Back to Dashboard</a>
     </div>
 </body>
 </html>

@@ -94,20 +94,23 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teams - <?php echo htmlspecialchars($club['club_name']); ?></title>
     <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="../css/mobile.css">
     <script src="../js/team-validation.js"></script>
 </head>
 <body>
     <div class="header">
-        <h1>Teams - <?php echo htmlspecialchars($club['club_name']); ?></h1>
-        <a href="dashboard.php" class="button">Back to Dashboard</a>
+        <div class="header-title-group">
+            <h1>Teams</h1>
+            <p class="header-subtitle"><?php echo htmlspecialchars($club['club_name']); ?></p>
+        </div>
+        <div class="header-actions">
+            <a href="dashboard.php" class="btn btn--secondary btn--small">Back to Dashboard</a>
+        </div>
     </div>
 
-    <div class="container">
+    <div class="container container--wide">
 
-        
         <?php if (isset($_SESSION['success'])): ?>
-            <div class="message success">
+            <div class="message message--success">
                 <?php 
                 echo htmlspecialchars($_SESSION['success']); 
                 unset($_SESSION['success']);
@@ -116,7 +119,7 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <?php endif; ?>
         
         <?php if (isset($_SESSION['error'])): ?>
-            <div class="message error">
+            <div class="message message--error">
                 <?php 
                 echo htmlspecialchars($_SESSION['error']); 
                 unset($_SESSION['error']);
@@ -125,61 +128,66 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <?php endif; ?>
 
         <div class="card">
-            <h2>Create New Team</h2>
-            <form method="POST" class="form">
-                <div class="form-group">
-                    <label for="team_name">Team Name:</label>
-                    <input type="text" id="team_name" name="team_name" required class="form-control">
+            <div class="card-header">
+                <div>
+                    <h2>Create New Team</h2>
+                    <p class="card-subtitle card-subtitle--muted">Build a team roster using members of this club.</p>
                 </div>
-
-                <div class="form-group">
-                    <label for="member1">Member 1 (Required):</label>
-                    <select id="member1" name="member1" required class="form-control">
-                        <option value="">Select Member</option>
-                        <?php foreach ($members as $member): ?>
-                            <option value="<?php echo $member['member_id']; ?>">
-                                <?php echo htmlspecialchars($member['member_name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+            </div>
+            <form method="POST" class="stack">
+                <div class="grid grid--columns-2">
+                    <div class="form-group">
+                        <label for="team_name">Team Name</label>
+                        <input type="text" id="team_name" name="team_name" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="member1">Member 1 (Required)</label>
+                        <select id="member1" name="member1" required class="form-control">
+                            <option value="">Select Member</option>
+                            <?php foreach ($members as $member): ?>
+                                <option value="<?php echo $member['member_id']; ?>">
+                                    <?php echo htmlspecialchars($member['member_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="member2">Member 2</label>
+                        <select id="member2" name="member2" class="form-control">
+                            <option value="">Select Member</option>
+                            <?php foreach ($members as $member): ?>
+                                <option value="<?php echo $member['member_id']; ?>">
+                                    <?php echo htmlspecialchars($member['member_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="member3">Member 3</label>
+                        <select id="member3" name="member3" class="form-control">
+                            <option value="">Select Member</option>
+                            <?php foreach ($members as $member): ?>
+                                <option value="<?php echo $member['member_id']; ?>">
+                                    <?php echo htmlspecialchars($member['member_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="member4">Member 4</label>
+                        <select id="member4" name="member4" class="form-control">
+                            <option value="">Select Member</option>
+                            <?php foreach ($members as $member): ?>
+                                <option value="<?php echo $member['member_id']; ?>">
+                                    <?php echo htmlspecialchars($member['member_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label for="member2">Member 2:</label>
-                    <select id="member2" name="member2" class="form-control">
-                        <option value="">Select Member</option>
-                        <?php foreach ($members as $member): ?>
-                            <option value="<?php echo $member['member_id']; ?>">
-                                <?php echo htmlspecialchars($member['member_name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                <div class="form-actions">
+                    <button type="submit" name="create_team" class="btn">Create Team</button>
                 </div>
-
-                <div class="form-group">
-                    <label for="member3">Member 3:</label>
-                    <select id="member3" name="member3" class="form-control">
-                        <option value="">Select Member</option>
-                        <?php foreach ($members as $member): ?>
-                            <option value="<?php echo $member['member_id']; ?>">
-                                <?php echo htmlspecialchars($member['member_name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="member4">Member 4:</label>
-                    <select id="member4" name="member4" class="form-control">
-                        <option value="">Select Member</option>
-                        <?php foreach ($members as $member): ?>
-                            <option value="<?php echo $member['member_id']; ?>">
-                                <?php echo htmlspecialchars($member['member_name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <button type="submit" name="create_team" class="button">Create Team</button>
             </form>
         </div>
         <script>
@@ -219,10 +227,16 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </script>
 
         <div class="card">
-            <h2>Existing Teams</h2>
+            <div class="card-header card-header--stack">
+                <div>
+                    <h2>Existing Teams</h2>
+                    <p class="card-subtitle card-subtitle--muted"><?php echo count($teams); ?> team<?php echo count($teams) === 1 ? '' : 's'; ?> on record.</p>
+                </div>
+            </div>
             <?php if (empty($teams)): ?>
                 <p>No teams created yet.</p>
             <?php else: ?>
+                <div class="table-responsive">
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -254,13 +268,16 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </td>
                                 <td data-label="Created"><?php echo date('M j, Y', strtotime($team['created_at'])); ?></td>
                                 <td data-label="Actions" class="action-buttons">
-                                    <a href="edit_team.php?team_id=<?php echo $team['team_id']; ?>&club_id=<?php echo $club_id; ?>" class="button button-small">Edit</a>
-                                    <a href="delete_team.php?team_id=<?php echo $team['team_id']; ?>&club_id=<?php echo $club_id; ?>" class="button button-small button-danger" onclick="return confirm('Are you sure you want to delete this team?')">Delete</a>
+                                    <div class="btn-group">
+                                        <a href="edit_team.php?team_id=<?php echo $team['team_id']; ?>&club_id=<?php echo $club_id; ?>" class="btn btn--subtle btn--xsmall btn--pill">Edit</a>
+                                        <a href="delete_team.php?team_id=<?php echo $team['team_id']; ?>&club_id=<?php echo $club_id; ?>" class="btn btn--danger btn--xsmall btn--pill" onclick="return confirm('Are you sure you want to delete this team?')">Delete</a>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
             <?php endif; ?>
         </div>
     </div>

@@ -72,17 +72,17 @@ if ($minutes > 0 || $hours == 0) {
     <div class="header">
         <h1>Game Result Details - <?php echo htmlspecialchars($result['game_name']); ?></h1>
         <div class="header-buttons">
-            <a href="edit_result.php?result_id=<?php echo $result_id; ?>" class="button">Edit Result</a>
-            <a href="results.php?club_id=<?php echo $result['club_id']; ?>&game_id=<?php echo $result['game_id']; ?>" class="button">Back to Results</a>
+            <a href="edit_result.php?result_id=<?php echo $result_id; ?>" class="btn">Edit Result</a>
+            <a href="results.php?club_id=<?php echo $result['club_id']; ?>&game_id=<?php echo $result['game_id']; ?>" class="btn">Back to Results</a>
         </div>
     </div>
     
     <div class="container">
         <?php if (isset($_SESSION['error'])): ?>
-            <div class="message error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+            <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
         <?php endif; ?>
         <?php if (isset($_SESSION['success'])): ?>
-            <div class="message success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
+            <div class="message message--success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
         <?php endif; ?>
 
         <div class="card">

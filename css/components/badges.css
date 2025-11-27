@@ -1,92 +1,111 @@
 .status-badge {
     display: inline-flex;
     align-items: center;
-    padding: 0.2rem 0.65rem;
-    border-radius: var(--radius-sm);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-pill);
     font-weight: var(--font-weight-medium);
-    font-size: 0.92rem;
-}
-
-.status-badge--active {
-    background: #e9fbd7;
-    color: #33790b;
-}
-
-.status-badge--inactive {
-    background: #fde6e2;
-    color: #be372d;
-}
-
-.button-gold-static {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.3rem 0.85rem;
-    border-radius: 999px;
-    background: #f1c40f;
-    color: #222d4a;
-    font-weight: var(--font-weight-semibold);
-    font-size: 0.95rem;
+    font-size: var(--font-size-xs);
+    line-height: 1;
     white-space: nowrap;
 }
 
+.status-badge--active {
+    background: var(--color-success-bg);
+    color: var(--color-success-text);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.status-badge--inactive {
+    background: var(--color-error-bg);
+    color: var(--color-error-text);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.status-badge--pending {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+/* Gold Badge (Winner/Champion) */
+.button-gold-static,
 .winner-name {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.3rem 0.85rem;
-    background: #f1c40f;
-    color: #222d4a;
-    border-radius: 999px;
-    font-weight: var(--font-weight-semibold);
+    padding: 0.35rem 1rem;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%);
+    color: #78350f;
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.winner-name {
     max-width: 100%;
-    text-align: center;
     word-break: break-word;
 }
 
+/* Position Badges */
 .position-badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.45rem 1.1rem;
-    border-radius: var(--radius-sm);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
     font-weight: var(--font-weight-bold);
-    font-size: 0.95rem;
+    font-size: var(--font-size-sm);
     color: #fff;
-    min-width: 7rem;
+    min-width: 3rem;
     text-align: center;
+    line-height: 1;
+    box-shadow: var(--shadow-xs);
 }
 
 .position-1 {
-    background: #f1c40f;
-    color: #222d4a;
+    background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+    color: #fff;
+    box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.3);
 }
 
 .position-2 {
-    background: #bdc3c7;
-    color: #222d4a;
+    background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    color: #fff;
 }
 
 .position-3 {
-    background: #cd7f32;
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    /* Bronze-ish */
 }
 
-.position-4 {
-    background: #95a5a6;
-}
-
-.position-5 {
-    background: #7f8c8d;
-}
-
-.position-6 {
-    background: #666666;
-}
-
-.position-7 {
-    background: #555555;
-}
-
+.position-4,
+.position-5,
+.position-6,
+.position-7,
 .position-8 {
-    background: #444444;
+    background: var(--color-surface-muted);
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+    box-shadow: none;
+}
+
+/* Link Tag (from buttons.css cleanup) */
+.link-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-primary-soft);
+    color: var(--color-primary-strong);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    transition: background-color var(--transition-fast);
+}
+
+.link-tag:hover {
+    background: var(--color-primary-muted);
+    text-decoration: none;
 }

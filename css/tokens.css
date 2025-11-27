@@ -1,90 +1,119 @@
 :root {
-    --font-family-base: 'Segoe UI', Arial, sans-serif;
-    --font-size-base: 1rem;
+    /* Typography */
+    --font-family-base: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    
+    --font-size-xs: 0.75rem;    /* 12px */
+    --font-size-sm: 0.875rem;   /* 14px */
+    --font-size-base: 1rem;     /* 16px */
+    --font-size-lg: 1.125rem;   /* 18px */
+    --font-size-xl: 1.25rem;    /* 20px */
+    --font-size-2xl: 1.5rem;    /* 24px */
+    --font-size-3xl: 1.875rem;  /* 30px */
+    --font-size-4xl: 2.25rem;   /* 36px */
+
+    --line-height-tight: 1.2;
     --line-height-base: 1.6;
+    --line-height-loose: 1.8;
+
     --font-weight-regular: 400;
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
     --font-weight-bold: 700;
 
-    --color-background: #f6f7fb;
+    /* Colors - Indigo/Violet Theme */
+    /* Primary Brand Colors */
+    --color-primary: #6366f1;          /* Indigo 500 */
+    --color-primary-strong: #4f46e5;   /* Indigo 600 */
+    --color-primary-soft: #e0e7ff;     /* Indigo 100 */
+    --color-primary-muted: #c7d2fe;    /* Indigo 200 */
+    --color-primary-contrast: #ffffff;
+
+    /* Secondary/Accent Colors */
+    --color-accent: #8b5cf6;           /* Violet 500 */
+    --color-accent-strong: #7c3aed;    /* Violet 600 */
+    --color-accent-soft: #ede9fe;      /* Violet 100 */
+
+    /* Neutral / Slate Scale */
+    --color-background: #f8fafc;       /* Slate 50 */
     --color-surface: #ffffff;
-    --color-surface-muted: #f8fafd;
-    --color-surface-alt: #f5f7fc;
+    --color-surface-muted: #f1f5f9;    /* Slate 100 */
+    --color-surface-alt: #e2e8f0;      /* Slate 200 */
+    
+    --color-text: #0f172a;             /* Slate 900 */
+    --color-text-muted: #475569;       /* Slate 600 */
+    --color-text-soft: #94a3b8;        /* Slate 400 */
+    --color-heading: #1e293b;          /* Slate 800 */
 
-    --color-text: #222222;
-    --color-text-muted: #5a6570;
-    --color-text-soft: #6f7a91;
-    --color-heading: #2a2a4a;
+    --color-border: #e2e8f0;           /* Slate 200 */
+    --color-border-strong: #cbd5e1;    /* Slate 300 */
 
-    --color-border: #e3e8f1;
-    --color-border-strong: #b8c4d8;
+    /* Header Specific */
+    --color-header-bg: rgba(255, 255, 255, 0.85);
+    --color-header-text: #0f172a;
+    --header-backdrop-blur: 12px;
 
-    --color-header-bg: #2a2a4a;
-    --color-header-text: #ffffff;
+    /* Semantic Colors */
+    --color-success-bg: #dcfce7;       /* Emerald 100 */
+    --color-success-border: #10b981;   /* Emerald 500 */
+    --color-success-text: #166534;     /* Emerald 800 */
 
-    --color-primary: #4c7ad9;
-    --color-primary-strong: #2d5bb8;
-    --color-primary-soft: #dbe6ff;
-    --color-primary-muted: #a9c2ff;
+    --color-error-bg: #fee2e2;         /* Red 100 */
+    --color-error-border: #ef4444;     /* Red 500 */
+    --color-error-text: #991b1b;       /* Red 800 */
 
-    --color-accent: #2d5bb8;
-    --color-accent-strong: #1b3e8c;
-    --color-navy: #1f2a44;
-    --color-navy-soft: #273352;
-    --color-navy-tint: rgba(31, 42, 68, 0.05);
-    --color-sky: #4c7ad9;
-    --color-sky-soft: #dbe6ff;
-    --color-sky-tint: rgba(76, 122, 217, 0.12);
+    --color-warning-bg: #fef3c7;       /* Amber 100 */
+    --color-warning-text: #92400e;     /* Amber 800 */
 
-    --color-success-bg: #d7f8e1;
-    --color-success-border: #16a765;
-    --color-success-text: #146036;
+    --color-focus-ring: rgba(99, 102, 241, 0.4); /* Indigo ring */
 
-    --color-error-bg: #f9dbdb;
-    --color-error-border: #e43737;
-    --color-error-text: #a12a2c;
+    /* Radius */
+    --radius-xs: 0.25rem;   /* 4px */
+    --radius-sm: 0.5rem;    /* 8px */
+    --radius-md: 0.75rem;   /* 12px */
+    --radius-lg: 1rem;      /* 16px */
+    --radius-xl: 1.5rem;    /* 24px */
+    --radius-pill: 9999px;
 
-    --color-warning-bg: #fef3c7;
-    --color-warning-text: #92400e;
+    /* Shadows (Colored Shadows) */
+    --shadow-color: 220 3% 15%;
+    --shadow-strength: 1%;
 
-    --color-focus-ring: rgba(52, 152, 219, 0.4);
+    --shadow-xs: 0 1px 2px -1px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 9%));
+    --shadow-sm: 0 3px 5px -2px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 3%)), 
+                 0 7px 14px -5px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 5%));
+    --shadow-md: 0 -1px 3px 0 hsl(var(--shadow-color) / calc(var(--shadow-strength) + 2%)), 
+                 0 1px 2px -5px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 2%)), 
+                 0 2px 5px -5px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 4%)), 
+                 0 4px 12px -5px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 5%)), 
+                 0 12px 15px -5px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 7%));
+    --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
 
-    --radius-xs: 4px;
-    --radius-sm: 6px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-pill: 999px;
+    /* Transitions */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-medium: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
-    --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.08);
-    --shadow-sm: 0 2px 8px rgba(17, 24, 39, 0.07);
-    --shadow-md: 0 4px 18px rgba(44, 73, 163, 0.1);
-    --shadow-lg: 0 8px 40px rgba(68, 68, 68, 0.13);
-
-    --transition-fast: 0.18s ease-in-out;
-    --transition-medium: 0.26s ease;
-
+    /* Spacing */
     --spacing-1: 0.25rem;
     --spacing-2: 0.5rem;
     --spacing-3: 0.75rem;
     --spacing-4: 1rem;
     --spacing-5: 1.5rem;
     --spacing-6: 2rem;
-    --spacing-7: 2.5rem;
     --spacing-8: 3rem;
+    --spacing-10: 4rem;
+    --spacing-12: 6rem;
 
-    --container-max: 72rem;
-    --container-wide: 80rem;
-
-    --bp-desktop: 75rem;
-    --bp-tablet: 62rem;
-    --bp-phablet: 48rem;
-    --bp-mobile: 36rem;
+    /* Layout */
+    --container-max: 80rem;    /* 1280px */
+    --container-wide: 90rem;   /* 1440px */
+    --header-height: 4.5rem;
 }
 
 @media (min-width: 90rem) {
     :root {
-        --container-max: 78rem;
-        --container-wide: 86rem;
+        --container-max: 85rem;
     }
 }

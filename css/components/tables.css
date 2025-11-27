@@ -1,3 +1,4 @@
+/* Table Base */
 .data-table,
 .members-table,
 .stats-table,
@@ -5,58 +6,71 @@
 .game-results,
 .results-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    /* Allows border radius */
+    border-spacing: 0;
     margin-bottom: var(--spacing-5);
     background: var(--color-surface);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-lg);
     overflow: hidden;
     box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border);
 }
 
+/* Header */
 .data-table th,
 .members-table th,
 .stats-table th,
 .game-history th,
 .game-results th,
 .results-table th {
-    background: var(--color-navy);
-    color: rgba(255, 255, 255, 0.92);
-    padding: 0.95rem 1.1rem;
-    font-weight: 600;
-    font-size: 0.96rem;
-    border-bottom: 3px solid rgba(255, 255, 255, 0.12);
+    background: var(--color-surface-muted);
+    color: var(--color-heading);
+    padding: 1rem 1.25rem;
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--color-border-strong);
+    text-align: left;
 }
 
+/* Cells */
 .data-table td,
 .members-table td,
 .stats-table td,
 .game-history td,
 .game-results td,
 .results-table td {
-    padding: 0.85rem 1rem;
+    padding: 1rem 1.25rem;
     border-bottom: 1px solid var(--color-border);
     vertical-align: middle;
-    font-size: 0.95rem;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    transition: background-color var(--transition-fast);
 }
 
-.data-table tbody tr:nth-child(even),
-.members-table tbody tr:nth-child(even),
-.stats-table tbody tr:nth-child(even),
-.game-history tbody tr:nth-child(even),
-.game-results tbody tr:nth-child(even),
-.results-table tbody tr:nth-child(even) {
-    background: rgba(76, 122, 217, 0.06);
+/* Row Hover */
+.data-table tbody tr:hover td,
+.members-table tbody tr:hover td,
+.stats-table tbody tr:hover td,
+.game-history tbody tr:hover td,
+.game-results tbody tr:hover td,
+.results-table tbody tr:hover td {
+    background: var(--color-surface-muted);
 }
 
-.data-table tbody tr:hover,
-.members-table tbody tr:hover,
-.stats-table tbody tr:hover,
-.game-history tbody tr:hover,
-.game-results tbody tr:hover,
-.results-table tbody tr:hover {
-    background: rgba(52, 152, 219, 0.08);
+/* Last Row Border Fix */
+.data-table tbody tr:last-child td,
+.members-table tbody tr:last-child td,
+.stats-table tbody tr:last-child td,
+.game-history tbody tr:last-child td,
+.game-results tbody tr:last-child td,
+.results-table tbody tr:last-child td {
+    border-bottom: none;
 }
 
+/* Mobile Responsive Labels */
 .data-table td[data-label]::before,
 .members-table td[data-label]::before,
 .stats-table td[data-label]::before,
@@ -67,64 +81,60 @@
     display: none;
     font-weight: var(--font-weight-semibold);
     margin-right: var(--spacing-3);
-    color: var(--color-text-soft);
+    color: var(--color-text-muted);
 }
 
+/* Actions */
 .table-actions {
     display: flex;
     gap: var(--spacing-2);
     flex-wrap: wrap;
 }
 
+/* Responsive Wrapper */
 .table-responsive {
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+}
+
+/* Remove outer border from table when inside responsive wrapper to avoid double border */
+.table-responsive .data-table,
+.table-responsive .members-table,
+.table-responsive .stats-table,
+.table-responsive .game-history,
+.table-responsive .game-results,
+.table-responsive .results-table {
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+    margin-bottom: 0;
 }
 
 .table-responsive::-webkit-scrollbar {
     height: 8px;
 }
 
+.table-responsive::-webkit-scrollbar-track {
+    background: var(--color-surface-muted);
+}
+
 .table-responsive::-webkit-scrollbar-thumb {
-    background: rgba(31, 42, 68, 0.25);
-    border-radius: 999px;
+    background: var(--color-border-strong);
+    border-radius: var(--radius-pill);
 }
 
-.table-responsive table {
-    min-width: 640px;
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-muted);
 }
 
-/* On mobile, don't force minimum width and allow table to shrink */
+/* Mobile Layout (Card View) */
 @media (max-width: 48rem) {
-    .table-responsive {
-        overflow-x: visible;
-    }
 
-    .table-responsive table {
-        min-width: auto;
-        width: 100%;
-    }
-}
-
-.table-row--link {
-    cursor: pointer;
-}
-
-@media (max-width: 62rem) {
-    .data-table,
-    .members-table,
-    .stats-table,
-    .game-history,
-    .game-results,
-    .results-table {
-        box-shadow: none;
-        border-radius: var(--radius-sm);
-    }
-}
-
-@media (max-width: 48rem) {
-    /* Hide table header on mobile */
     .data-table thead,
     .members-table thead,
     .stats-table thead,
@@ -134,31 +144,28 @@
         display: none;
     }
 
-    /* Convert table to block layout */
     .data-table,
     .members-table,
     .stats-table,
     .game-history,
     .game-results,
     .results-table {
-        border-collapse: separate;
-        border-spacing: 0;
         display: block;
-        width: 100%;
+        border: none;
+        background: transparent;
+        box-shadow: none;
     }
 
-    /* Hide table body completely and use it as a container */
     .data-table tbody,
     .members-table tbody,
     .stats-table tbody,
     .game-history tbody,
     .game-results tbody,
     .results-table tbody {
-        display: block;
-        width: 100%;
+        display: grid;
+        gap: var(--spacing-4);
     }
 
-    /* Convert each row to a card */
     .data-table tbody tr,
     .members-table tbody tr,
     .stats-table tbody tr,
@@ -166,36 +173,13 @@
     .game-results tbody tr,
     .results-table tbody tr {
         display: block;
-        width: 100%;
-        margin-bottom: var(--spacing-2);
-        padding: var(--spacing-3);
+        background: var(--color-surface);
         border: 1px solid var(--color-border);
-        border-radius: var(--radius-sm);
-        background: var(--color-surface);
-        page-break-inside: avoid;
-        break-inside: avoid;
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-4);
+        box-shadow: var(--shadow-sm);
     }
 
-    .data-table tbody tr:nth-child(even),
-    .members-table tbody tr:nth-child(even),
-    .stats-table tbody tr:nth-child(even),
-    .game-history tbody tr:nth-child(even),
-    .game-results tbody tr:nth-child(even),
-    .results-table tbody tr:nth-child(even) {
-        background: var(--color-surface);
-    }
-
-    .data-table tbody tr:hover,
-    .members-table tbody tr:hover,
-    .stats-table tbody tr:hover,
-    .game-history tbody tr:hover,
-    .game-results tbody tr:hover,
-    .results-table tbody tr:hover {
-        background: var(--color-surface-muted);
-        border-color: var(--color-primary);
-    }
-
-    /* Display cells as flex rows with label and value */
     .data-table td,
     .members-table td,
     .stats-table td,
@@ -204,89 +188,49 @@
     .results-table td {
         display: flex;
         justify-content: space-between;
-        align-items: baseline;
-        gap: var(--spacing-2);
-        padding: 0.5rem 0;
-        border-bottom: none;
-        width: 100%;
-        box-sizing: border-box;
+        align-items: center;
+        padding: var(--spacing-2) 0;
+        border-bottom: 1px solid var(--color-border);
+        text-align: right;
     }
 
-    /* Add labels to cells */
+    .data-table td:last-child,
+    .members-table td:last-child,
+    .stats-table td:last-child,
+    .game-history td:last-child,
+    .game-results td:last-child,
+    .results-table td:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .data-table td:first-child,
+    .members-table td:first-child,
+    .stats-table td:first-child,
+    .game-history td:first-child,
+    .game-results td:first-child,
+    .results-table td:first-child {
+        padding-top: 0;
+    }
+
     .data-table td[data-label]::before,
     .members-table td[data-label]::before,
     .stats-table td[data-label]::before,
     .game-history td[data-label]::before,
     .game-results td[data-label]::before,
     .results-table td[data-label]::before {
-        content: attr(data-label);
         display: block;
-        min-width: 7rem;
-        color: var(--color-heading);
-        font-weight: var(--font-weight-bold);
-        flex-shrink: 0;
+        text-align: left;
+        margin-right: auto;
     }
 
-    /* Hide less important columns on mobile */
-    .table-col--hide-mobile {
-        display: none;
-    }
-
-    /* Action button groups in tables */
-    .club-actions,
-    .actions-cell,
+    /* Action buttons full width */
     .table-actions {
-        display: flex;
-        flex-direction: column;
-        flex-wrap: nowrap;
-        gap: var(--spacing-2);
-        justify-content: flex-start;
         width: 100%;
+        margin-top: var(--spacing-2);
     }
 
-    /* Make action buttons full width on mobile */
-    .club-actions .btn,
-    .actions-cell .btn,
     .table-actions .btn {
-        width: 100%;
-        padding: 0.5rem 0.6rem;
-        font-size: 0.85rem;
-    }
-}
-
-/* Table column visibility utilities */
-.table-col--primary {
-    /* Always show */
-}
-
-.table-col--secondary {
-    /* Can be hidden on small screens */
-}
-
-.table-col--tertiary {
-    /* Hide on very small screens */
-}
-
-@media (max-width: 36rem) {
-    .table-col--secondary {
-        display: none;
-    }
-}
-
-/* Horizontal scroll indicator for desktop tables */
-.table-responsive::after {
-    content: '← Swipe to scroll →';
-    display: none;
-    text-align: center;
-    font-size: 0.85rem;
-    color: var(--color-text-soft);
-    padding: var(--spacing-2);
-    background: var(--color-surface-muted);
-}
-
-/* Only show scroll indicator on desktop */
-@media (min-width: 48.01rem) {
-    .table-responsive::after {
-        display: block;
+        flex: 1;
     }
 }

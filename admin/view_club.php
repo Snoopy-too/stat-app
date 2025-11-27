@@ -74,7 +74,7 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: #2c3e50;
         }
         .recent-games, .top-games {
-            background-color: white;
+            background-color: var(--color-surface);
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;

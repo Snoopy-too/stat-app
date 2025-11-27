@@ -58,6 +58,9 @@ $total_games = array_sum(array_column($clubs, 'game_count'));
             <p class="header-subtitle">Monitor membership and game activity</p>
         </div>
         <div class="header-actions">
+            <button type="button" class="btn btn--icon theme-toggle" data-theme-toggle aria-label="Toggle dark mode">
+                <span class="theme-toggle__icon" data-theme-icon>🌙</span>
+            </button>
             <a href="account.php" class="btn btn--secondary btn--small">⚙️ Account</a>
             <a href="../index.php" class="btn btn--secondary btn--small">View Site</a>
             <a href="logout.php" class="btn btn--secondary btn--small">Logout</a>

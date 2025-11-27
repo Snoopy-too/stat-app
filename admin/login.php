@@ -138,6 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
+    <!--
     <script src="../js/mobile-menu.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>
@@ -145,5 +146,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="../js/empty-states.js"></script>
     <script src="../js/multi-step-form.js"></script>
     <script src="../js/breadcrumbs.js"></script>
+    -->
 </body>
 </html>

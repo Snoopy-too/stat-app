@@ -54,8 +54,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['login_time'] = time();
 
                         error_log("Login successful for user: " . $username);
+                        echo "<pre>DEBUG: Login successful! Session data: " . print_r($_SESSION, true) . "</pre>";
+                        echo "<pre>DEBUG: About to redirect to dashboard.php</pre>";
+                        echo "<pre>DEBUG: Headers sent? " . (headers_sent() ? 'YES' : 'NO') . "</pre>";
                         header("Location: dashboard.php");
                         exit();
+                    } else {
+                        echo "<pre>DEBUG: Password verification FAILED</pre>";
+                        echo "<pre>DEBUG: Entered password length: " . strlen($password) . "</pre>";
+                        echo "<pre>DEBUG: Hash from DB: " . substr($admin['password_hash'], 0, 20) . "...</pre>";
                     }
                     // Log failed password verification
                     $security->logLoginAttempt($username, $ipAddress, false);

@@ -12,7 +12,9 @@
       "Bash(curl:*)",
       "Bash(php:*)",
       "WebFetch(domain:montoyahome.com)",
-      "Bash(unzip:*)"
+      "Bash(unzip:*)",
+      "Bash(dir /s /b:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

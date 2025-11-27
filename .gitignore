@@ -1,11 +1,16 @@
 # Configuration files with sensitive data
 config/
 
+# Deployment secrets (never commit!)
+config/.env.deploy
+.env.deploy
+
 # Zip files (backups)
 *.zip
 
 # Logs
 logs/
+deploy.log
 
 # System files
 .DS_Store

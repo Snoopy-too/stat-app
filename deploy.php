@@ -3,17 +3,26 @@
  * GitHub Webhook Deployment Script
  *
  * This script receives GitHub webhooks and automatically deploys your app
- * to your Bluehost hosting account.
+ * to your hosting account.
  *
- * SECURITY: Change $GITHUB_SECRET to a unique value and set the same
- * value in your GitHub webhook settings.
+ * SECURITY: Configuration is loaded from config/.env.deploy
+ * Never commit .env.deploy to version control!
  */
 
 // ===== CONFIGURATION =====
-$GITHUB_SECRET = 'kwblM60vhxB14yIxsWB14n03MvRmKnldQ9UXKBiQpQXsUDYnSl3BNeOTfDjSCrc6';
-$GITHUB_OWNER = 'Snoopy-too';
-$GITHUB_REPO = 'stat-app';
-$GITHUB_BRANCH = 'main';
+// Load secure deployment configuration
+$deploy_config = __DIR__ . '/config/.env.deploy';
+if (!file_exists($deploy_config)) {
+    http_response_code(500);
+    die('Deployment configuration not found. Copy config/EXAMPLE.env.deploy to config/.env.deploy');
+}
+require_once $deploy_config;
+
+// Use constants from config file
+$GITHUB_SECRET = GITHUB_WEBHOOK_SECRET;
+$GITHUB_OWNER = GITHUB_OWNER;
+$GITHUB_REPO = GITHUB_REPO;
+$GITHUB_BRANCH = GITHUB_BRANCH;
 
 // Directories to preserve (won't be overwritten)
 $PRESERVE_DIRS = ['config'];

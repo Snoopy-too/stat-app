@@ -1,11 +1,15 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/helpers.php';
+require_once '../includes/SecurityUtils.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
     header("Location: login.php");
     exit();
 }
+
+$security = new SecurityUtils($pdo);
 
 // Get club_id from URL
 $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : null;
@@ -23,6 +27,13 @@ if ($club_id) {
 
 // Handle game creation/deletion
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
+        $_SESSION['error'] = "Invalid security token. Please try again.";
+        header("Location: manage_games.php" . ($club_id ? "?club_id=$club_id" : ""));
+        exit();
+    }
+
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'create' && !empty($_POST['game_name'])) {
             $stmt = $pdo->prepare("INSERT INTO games (club_id, game_name, min_players, max_players) VALUES (?, ?, ?, ?)");
@@ -89,6 +100,9 @@ if ($club_id) {
     $club = $stmt->fetch(PDO::FETCH_ASSOC);
     $club_name = $club ? $club['club_name'] : '';
 }
+
+// Generate CSRF token for forms
+$csrf_token = $security->generateCSRFToken();
 ?>
 
 <!DOCTYPE html>
@@ -107,17 +121,14 @@ if ($club_id) {
     </div>
     
     <div class="container">
-        <?php if (isset($_SESSION['success'])): ?>
-            <div class="message message--success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
-        <?php endif; ?>
-        <?php if (isset($_SESSION['error'])): ?>
-            <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
-        <?php endif; ?>
+        <?php display_session_message('success'); ?>
+        <?php display_session_message('error'); ?>
 
         <?php if ($club_id): ?>
         <div class="card">
             <h2>Add New Game</h2>
             <form method="POST" class="form">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <div class="form-group">
                     <input type="text" name="game_name" placeholder="Game Name" required class="form-control">
                 </div>

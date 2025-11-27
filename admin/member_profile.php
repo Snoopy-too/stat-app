@@ -1,12 +1,15 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/helpers.php';
+require_once '../includes/SecurityUtils.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
     header("Location: login.php");
     exit();
 }
 
+$security = new SecurityUtils($pdo);
 $member_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 // Get member details with club info
@@ -47,6 +50,13 @@ $recent_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Handle profile updates
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
+        $_SESSION['error'] = "Invalid security token. Please try again.";
+        header("Location: member_profile.php?id=" . $member_id);
+        exit();
+    }
+
     try {
         $stmt = $pdo->prepare("
             UPDATE members 
@@ -70,6 +80,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
         $_SESSION['error'] = "Failed to update profile.";
     }
 }
+
+// Generate CSRF token for form
+$csrf_token = $security->generateCSRFToken();
 ?>
 
 <!DOCTYPE html>
@@ -86,12 +99,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
         <h1>Member Profile - <?php echo htmlspecialchars($member['member_name']); ?></h1>
     </div>
     <div class="container">
-        <?php if (isset($_SESSION['success'])): ?>
-            <div class="message message--success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
-        <?php endif; ?>
-        <?php if (isset($_SESSION['error'])): ?>
-            <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
-        <?php endif; ?>
+        <?php display_session_message('success'); ?>
+        <?php display_session_message('error'); ?>
         <div class="action-buttons">
             <a href="club_leaderboard.php?club_id=<?php echo $member['club_id']; ?>" class="btn">View Club Leaderboard</a>
         </div>
@@ -108,6 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             <div class="stats-card">
                 <h2>Edit Profile</h2>
                 <form method="POST">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                     <div class="form-group">
                         <label for="member_name">Name</label>
                         <input type="text" id="member_name" name="member_name" value="<?php echo htmlspecialchars($member['member_name']); ?>" required>

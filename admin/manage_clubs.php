@@ -1,14 +1,25 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/helpers.php';
+require_once '../includes/SecurityUtils.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
     header("Location: login.php");
     exit();
 }
 
+$security = new SecurityUtils($pdo);
+
 // Handle club creation/deletion if POST request
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
+        $_SESSION['error'] = "Invalid security token. Please try again.";
+        header("Location: manage_clubs.php");
+        exit();
+    }
+
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'create' && !empty($_POST['club_name'])) {
             $club_name = trim($_POST['club_name']);
@@ -61,6 +72,9 @@ $stmt->execute([$_SESSION['admin_id']]);
 $clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $club_count = count($clubs);
 $club_limit = 5; // Set maximum number of clubs allowed
+
+// Generate CSRF token for forms
+$csrf_token = $security->generateCSRFToken();
 ?>
 
 <!DOCTYPE html>
@@ -82,17 +96,14 @@ $club_limit = 5; // Set maximum number of clubs allowed
     </div>
     
     <div class="container">
-        <?php if (isset($_SESSION['success'])): ?>
-            <div class="message message--success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
-        <?php endif; ?>
-        <?php if (isset($_SESSION['error'])): ?>
-            <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
-        <?php endif; ?>
+        <?php display_session_message('success'); ?>
+        <?php display_session_message('error'); ?>
 
         <?php if ($club_count < $club_limit): ?>
         <div class="card">
             <h2>Create New Club</h2>
             <form method="POST" class="form">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <div class="form-group">
                     <input type="text" name="club_name" placeholder="Club Name" required class="form-control" pattern="[a-zA-Z0-9\s_-]+" title="Only letters, numbers, spaces, dashes and underscores are allowed">
                     <input type="hidden" name="action" value="create">
@@ -152,6 +163,7 @@ $club_limit = 5; // Set maximum number of clubs allowed
     <div id="editClubModal" class="modal">
         <div class="modal__dialog">
             <form id="editClubForm" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <input type="hidden" name="action" value="edit">
                 <input type="hidden" name="club_id" id="edit_club_id">
                 <div class="form-group">

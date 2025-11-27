@@ -1,6 +1,8 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/helpers.php';
+require_once '../includes/SecurityUtils.php';
 
 // Ensure user is logged in and has appropriate admin access
 if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
@@ -8,6 +10,7 @@ if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSI
     exit();
 }
 
+$security = new SecurityUtils($pdo);
 $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
 
 // Fetch club info
@@ -22,6 +25,13 @@ if (!$club) {
 
 // Handle team creation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_team'])) {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
+        $_SESSION['error'] = "Invalid security token. Please try again.";
+        header("Location: club_teams.php?club_id=" . $club_id);
+        exit();
+    }
+
     $team_name = trim($_POST['team_name']);
     $member1 = isset($_POST['member1']) ? (int)$_POST['member1'] : null;
     $member2 = isset($_POST['member2']) ? (int)$_POST['member2'] : null;
@@ -71,7 +81,7 @@ $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get existing teams
 $stmt = $pdo->prepare("
-    SELECT t.*, 
+    SELECT t.*,
            m1.member_name as member1_name,
            m2.member_name as member2_name,
            m3.member_name as member3_name,
@@ -85,6 +95,9 @@ $stmt = $pdo->prepare("
     ORDER BY t.created_at DESC");
 $stmt->execute([$club_id]);
 $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Generate CSRF token for form
+$csrf_token = $security->generateCSRFToken();
 ?>
 
 <!DOCTYPE html>
@@ -110,23 +123,8 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <div class="container container--wide">
 
-        <?php if (isset($_SESSION['success'])): ?>
-            <div class="message message--success">
-                <?php 
-                echo htmlspecialchars($_SESSION['success']); 
-                unset($_SESSION['success']);
-                ?>
-            </div>
-        <?php endif; ?>
-        
-        <?php if (isset($_SESSION['error'])): ?>
-            <div class="message message--error">
-                <?php 
-                echo htmlspecialchars($_SESSION['error']); 
-                unset($_SESSION['error']);
-                ?>
-            </div>
-        <?php endif; ?>
+        <?php display_session_message('success'); ?>
+        <?php display_session_message('error'); ?>
 
         <div class="card">
             <div class="card-header">
@@ -136,6 +134,7 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
             <form method="POST" class="stack">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <div class="grid grid--columns-2">
                     <div class="form-group">
                         <label for="team_name">Team Name</label>

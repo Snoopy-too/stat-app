@@ -1,15 +1,24 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/SecurityUtils.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
     header('Location: login.php');
     exit();
 }
 
+$security = new SecurityUtils($pdo);
 $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['trophy_image'])) {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
+        $_SESSION['error'] = "Invalid security token. Please try again.";
+        header("Location: manage_trophy.php?club_id=" . $club_id);
+        exit();
+    }
+
     $file = $_FILES['trophy_image'];
     $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
     
@@ -57,6 +66,9 @@ if (!$club) {
     header('Location: index.php');
     exit();
 }
+
+// Generate CSRF token for form
+$csrf_token = $security->generateCSRFToken();
 ?>
 
 <!DOCTYPE html>
@@ -99,6 +111,7 @@ if (!$club) {
         </div>
         
         <form action="manage_trophy.php?club_id=<?php echo $club_id; ?>" method="post" enctype="multipart/form-data" class="stack">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
             <div class="form-group">
                 <label for="trophy_image">Upload New Trophy Image:</label>
                 <input type="file" id="trophy_image" name="trophy_image" class="form-control" accept="image/jpeg,image/png,image/gif" required>

@@ -1,12 +1,15 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/helpers.php';
+require_once '../includes/SecurityUtils.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
     header("Location: login.php");
     exit();
 }
 
+$security = new SecurityUtils($pdo);
 $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
 $game_id = isset($_GET['game_id']) ? (int)$_GET['game_id'] : 0;
 
@@ -22,6 +25,13 @@ if (!$game) {
 
 // Handle game update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update') {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
+        $_SESSION['error'] = "Invalid security token. Please try again.";
+        header("Location: edit_game.php?club_id=" . $club_id . "&game_id=" . $game_id);
+        exit();
+    }
+
     try {
         $stmt = $pdo->prepare("UPDATE games SET game_name = ?, min_players = ?, max_players = ? WHERE game_id = ? AND club_id = ?");
         $stmt->execute([
@@ -38,6 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $_SESSION['error'] = "Failed to update game: " . $e->getMessage();
     }
 }
+
+// Generate CSRF token for form
+$csrf_token = $security->generateCSRFToken();
 ?>
 
 <!DOCTYPE html>
@@ -56,13 +69,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     </div>
 
     <div class="container">
-        <?php if (isset($_SESSION['error'])): ?>
-            <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
-        <?php endif; ?>
+        <?php display_session_message('error'); ?>
 
         <div class="card">
             <h2>Edit Game Details</h2>
             <form method="POST" class="form">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <div class="form-group">
                     <input type="text" name="game_name" placeholder="Game Name" value="<?php echo htmlspecialchars($game['game_name']); ?>" required class="form-control">
                 </div>

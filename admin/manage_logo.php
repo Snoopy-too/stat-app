@@ -1,12 +1,15 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/helpers.php';
+require_once '../includes/SecurityUtils.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
     header("Location: login.php");
     exit();
 }
 
+$security = new SecurityUtils($pdo);
 $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
 
 // Get club info and verify admin ownership
@@ -20,6 +23,13 @@ if (!$club) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
+        $_SESSION['error'] = "Invalid security token. Please try again.";
+        header("Location: manage_logo.php?club_id=" . $club_id);
+        exit();
+    }
+
     if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
         $file = $_FILES['logo'];
         $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
@@ -68,6 +78,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header("Location: manage_logo.php?club_id=" . $club_id);
     exit();
 }
+
+// Generate CSRF token for forms
+$csrf_token = $security->generateCSRFToken();
 ?>
 
 <!DOCTYPE html>
@@ -89,12 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     
     <div class="container container--narrow">
-        <?php if (isset($_SESSION['success'])): ?>
-            <div class="message message--success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
-        <?php endif; ?>
-        <?php if (isset($_SESSION['error'])): ?>
-            <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
-        <?php endif; ?>
+        <?php display_session_message('success'); ?>
+        <?php display_session_message('error'); ?>
 
         <div class="card">
             <h2><?php echo htmlspecialchars($club['club_name']); ?> - Logo Management</h2>
@@ -103,6 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php if ($club['logo_image']): ?>
                     <img src="../images/club_logos/<?php echo htmlspecialchars($club['logo_image']); ?>" alt="Club Logo" class="logo-preview">
                     <form method="POST" class="stack stack--sm">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                         <input type="hidden" name="remove_logo" value="1">
                         <button type="submit" class="btn btn--danger" onclick="return confirm('Are you sure you want to remove the logo?')">Remove Logo</button>
                     </form>
@@ -112,6 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <form method="POST" enctype="multipart/form-data" class="stack">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <div class="form-group">
                     <label for="logo">Upload New Logo:</label>
                     <input type="file" name="logo" id="logo" class="form-control" accept="image/jpeg,image/png,image/gif" required>

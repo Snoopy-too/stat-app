@@ -1,11 +1,15 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/helpers.php';
+require_once '../includes/SecurityUtils.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
     header("Location: login.php");
     exit();
 }
+
+$security = new SecurityUtils($pdo);
 
 // Get admin details
 $stmt = $pdo->prepare("SELECT * FROM admin_users WHERE admin_id = ?");
@@ -13,6 +17,13 @@ $stmt->execute([$_SESSION['admin_id']]);
 $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
+        $_SESSION['error'] = "Invalid security token. Please try again.";
+        header("Location: profile.php");
+        exit();
+    }
+
     $username = trim($_POST['username']);
     $email = trim($_POST['email']);
     
@@ -37,6 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+// Generate CSRF token for form
+$csrf_token = $security->generateCSRFToken();
 ?>
 
 <!DOCTYPE html>
@@ -59,15 +73,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="container container--narrow">
         <div class="card">
-            <?php if (isset($_SESSION['success'])): ?>
-                <div class="message message--success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
-            <?php endif; ?>
-            
-            <?php if (isset($_SESSION['error'])): ?>
-                <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
-            <?php endif; ?>
+            <?php display_session_message('success'); ?>
+            <?php display_session_message('error'); ?>
 
             <form method="POST" class="stack">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <div class="form-group">
                     <label for="username">Username:</label>
                     <input type="text" id="username" name="username" class="form-control" required

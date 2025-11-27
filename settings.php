@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'config/database.php';
+require_once 'includes/helpers.php';
 
 if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
     header("Location: login.php");
@@ -56,6 +57,8 @@ $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Su
     </div>
 
     <div class="container">
+        <?php display_session_message('success'); ?>
+        <?php display_session_message('error'); ?>
         <div class="settings-container">
             <form method="POST">
                 <div class="form-group">

@@ -1,11 +1,15 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/helpers.php';
+require_once '../includes/SecurityUtils.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
     header("Location: login.php");
     exit();
 }
+
+$security = new SecurityUtils($pdo);
 
 // Fetch all clubs for the current admin
 $stmt = $pdo->prepare("SELECT * FROM clubs WHERE admin_id = ? ORDER BY club_name");
@@ -64,6 +68,13 @@ $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Handle member creation/deletion and bulk actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
+        $_SESSION['error'] = "Invalid security token. Please try again.";
+        header("Location: manage_members.php?club_id=" . $club_id);
+        exit();
+    }
+
     if (isset($_POST['bulk_action']) && !empty($_POST['selected_members'])) {
         $selected_members = $_POST['selected_members'];
         $bulk_action = $_POST['bulk_action'];
@@ -132,6 +143,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+// Generate CSRF token for forms
+$csrf_token = $security->generateCSRFToken();
 ?>
 
 <!DOCTYPE html>
@@ -155,13 +169,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <div class="container container--wide">
-        <?php if (isset($_SESSION['success'])): ?>
-            <div class="message message--success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
-        <?php endif; ?>
-        
-        <?php if (isset($_SESSION['error'])): ?>
-            <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
-        <?php endif; ?>
+        <?php display_session_message('success'); ?>
+        <?php display_session_message('error'); ?>
 
         <div class="card">
             <div class="card-header">
@@ -171,6 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
             <form method="POST" class="stack">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <input type="hidden" name="action" value="create">
                 <div class="grid grid--columns-3">
                     <div class="form-group">
@@ -228,6 +238,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </form>
                 <form method="POST" class="toolbar-group" id="bulk-form">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                     <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
                     <select name="bulk_action" class="form-control form-control--sm">
                         <option value="">Bulk Actions</option>

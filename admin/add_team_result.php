@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/SecurityUtils.php';
 
 // Clear any existing success messages
 if (isset($_SESSION['success_message'])) {
@@ -13,6 +14,7 @@ if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSI
     exit();
 }
 
+$security = new SecurityUtils($pdo);
 $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
 $game_id = isset($_GET['game_id']) ? (int)$_GET['game_id'] : 0;
 
@@ -36,6 +38,13 @@ $teams = $stmt->fetchAll();
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
+        $_SESSION['error'] = "Invalid security token. Please try again.";
+        header("Location: add_team_result.php?club_id=" . $club_id . "&game_id=" . $game_id);
+        exit();
+    }
+
     if (empty($_POST['winner_id']) || empty($_POST['second_place_id'])) {
         $error = 'Both winner and second place teams must be selected.';
     } else {
@@ -102,6 +111,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Error saving team game result: ' . $e->getMessage();
     }
 }
+
+// Generate CSRF token for form
+$csrf_token = $security->generateCSRFToken();
 ?>
 
 <!DOCTYPE html>
@@ -132,6 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
             
             <form method="POST" class="stack">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <div class="form-group">
                     <label for="played_at">Date Played:</label>
                     <input type="datetime-local" id="played_at" name="played_at" required class="form-control">

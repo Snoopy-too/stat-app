@@ -1,12 +1,15 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/helpers.php';
+require_once '../includes/SecurityUtils.php';
 
 if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
     header("Location: login.php");
     exit();
 }
 
+$security = new SecurityUtils($pdo);
 $result_id = isset($_GET['result_id']) ? (int)$_GET['result_id'] : null;
 
 if (!$result_id) {
@@ -16,6 +19,13 @@ if (!$result_id) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
+        $_SESSION['error'] = "Invalid security token. Please try again.";
+        header("Location: edit_team_result.php?result_id=" . $result_id);
+        exit();
+    }
+
     try {
         // Validate and sanitize input
         $played_at = $_POST['played_at'];
@@ -75,6 +85,9 @@ if (!$result) {
 $stmt = $pdo->prepare("SELECT team_id, team_name FROM teams WHERE club_id = ? ORDER BY team_name");
 $stmt->execute([$result['club_id']]);
 $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Generate CSRF token for form
+$csrf_token = $security->generateCSRFToken();
 ?>
 
 <!DOCTYPE html>
@@ -93,11 +106,10 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
     
     <div class="container">
-        <?php if (isset($_SESSION['error'])): ?>
-            <div class="message message--error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
-        <?php endif; ?>
+        <?php display_session_message('error'); ?>
 
         <form method="POST" class="form-card">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
             <div class="form-group">
                 <label for="played_at">Date Played:</label>
                 <input type="date" id="played_at" name="played_at" class="form-control" value="<?php echo date('Y-m-d', strtotime($result['played_at'])); ?>" required>

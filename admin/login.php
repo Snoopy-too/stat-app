@@ -1,57 +1,36 @@
 <?php
 ob_start();
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 require_once '../config/security_headers.php'; // Set security headers first
 require_once '../config/session.php';        // Configure secure sessions
 require_once '../config/database.php';
 require_once '../includes/SecurityUtils.php';
 require_once '../includes/helpers.php';
 
-echo "<pre>DEBUG: Session data at page load: " . print_r($_SESSION, true) . "</pre>";
-echo "<pre>DEBUG: Request method: " . $_SERVER['REQUEST_METHOD'] . "</pre>";
-echo "<pre>DEBUG: POST data: " . print_r($_POST, true) . "</pre>";
-
 if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
-    echo "<pre>DEBUG: Already logged in, redirecting to dashboard...</pre>";
-    // Temporarily comment out redirect to see what's happening
-    // header("Location: dashboard.php");
-    // exit();
+    header("Location: dashboard.php");
+    exit();
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    echo "<pre>DEBUG: Form submitted via POST</pre>";
     error_log('Form submitted');
     $username = trim($_POST['username']);
     $password = $_POST['password'];
     $ipAddress = $_SERVER['REMOTE_ADDR'];
-    
-    echo "<pre>DEBUG: Username: $username</pre>";
-    echo "<pre>DEBUG: IP Address: $ipAddress</pre>";
 
     // Initialize security utils
     $security = new SecurityUtils($pdo);
-    
-    echo "<pre>DEBUG: SecurityUtils initialized</pre>";
 
     // Check if rate limit exceeded (use username as email for admin logins)
-    $rateLimitOk = $security->checkLoginAttempts($username, $ipAddress);
-    echo "<pre>DEBUG: Rate limit check result: " . ($rateLimitOk ? 'PASSED' : 'FAILED') . "</pre>";
-    
-    if (!$rateLimitOk) {
+    if (!$security->checkLoginAttempts($username, $ipAddress)) {
         $_SESSION['error'] = "Too many failed login attempts. Please try again in 30 minutes.";
         error_log("Rate limit exceeded for username: $username from IP: $ipAddress");
-        echo "<pre>DEBUG: Rate limit exceeded - stopping here</pre>";
     } else {
-        echo "<pre>DEBUG: Proceeding with login attempt...</pre>";
         error_log('Attempting login for username: ' . $username);
         try {
             $stmt = $pdo->prepare("SELECT admin_id, username, password_hash, is_deactivated FROM admin_users WHERE username = ?");
             $stmt->execute([$username]);
             $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            echo "<pre>DEBUG: Query executed</pre>";
             error_log('Found admin user: ' . ($admin ? 'yes' : 'no'));
             if ($admin) {
                 if (!empty($admin['is_deactivated']) && $admin['is_deactivated'] == 1) {
@@ -72,15 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['login_time'] = time();
 
                         error_log("Login successful for user: " . $username);
-                        echo "<pre>DEBUG: Login successful! Session data: " . print_r($_SESSION, true) . "</pre>";
-                        echo "<pre>DEBUG: About to redirect to dashboard.php</pre>";
-                        echo "<pre>DEBUG: Headers sent? " . (headers_sent() ? 'YES' : 'NO') . "</pre>";
                         header("Location: dashboard.php");
                         exit();
-                    } else {
-                        echo "<pre>DEBUG: Password verification FAILED</pre>";
-                        echo "<pre>DEBUG: Entered password length: " . strlen($password) . "</pre>";
-                        echo "<pre>DEBUG: Hash from DB: " . substr($admin['password_hash'], 0, 20) . "...</pre>";
                     }
                     // Log failed password verification
                     $security->logLoginAttempt($username, $ipAddress, false);
@@ -138,7 +110,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
-    <!--
     <script src="../js/mobile-menu.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>
@@ -146,6 +117,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="../js/empty-states.js"></script>
     <script src="../js/multi-step-form.js"></script>
     <script src="../js/breadcrumbs.js"></script>
-    -->
 </body>
 </html>

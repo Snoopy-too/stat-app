@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
@@ -20,40 +21,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['trophy_image'])) {
     }
 
     $file = $_FILES['trophy_image'];
-    $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
-    
-    if (!in_array($file['type'], $allowed_types)) {
-        $error = 'Invalid file type. Only JPG, PNG and GIF images are allowed.';
+    $allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
+    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+    $maxSize = 5 * 1024 * 1024; // 5MB
+
+    $uploadError = null;
+
+    // Validate file size first
+    if ($file['size'] > $maxSize) {
+        $uploadError = 'File is too large. Maximum size is 5MB.';
     } else {
+        // Validate file extension (secondary check)
+        $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($file_extension, $allowedExtensions)) {
+            $uploadError = 'Invalid file extension. Only JPG, PNG and GIF are allowed.';
+        } else {
+            // Use finfo to get actual MIME type from file content (primary check)
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $actualMime = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+
+            if (!in_array($actualMime, $allowedMimes)) {
+                $uploadError = 'Invalid file type detected. Only JPG, PNG and GIF images are allowed.';
+            } else {
+                // Additional validation: verify it's actually a valid image
+                $imageInfo = @getimagesize($file['tmp_name']);
+                if ($imageInfo === false) {
+                    $uploadError = 'File is not a valid image.';
+                }
+            }
+        }
+    }
+
+    // If no errors, process upload
+    if ($uploadError === null) {
         $upload_dir = '../images/trophies/';
-        $file_extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        if (!file_exists($upload_dir)) {
+            mkdir($upload_dir, 0777, true);
+        }
+
         $new_filename = 'trophy_' . $club_id . '_' . time() . '.' . $file_extension;
         $upload_path = $upload_dir . $new_filename;
-        
+
         if (move_uploaded_file($file['tmp_name'], $upload_path)) {
             // Get old image path
             $stmt = $pdo->prepare('SELECT champ_image FROM clubs WHERE club_id = ?');
             $stmt->execute([$club_id]);
             $old_image = $stmt->fetch(PDO::FETCH_ASSOC)['champ_image'];
-            
+
             // Update database with new image path
             $relative_path = 'images/trophies/' . $new_filename;
             $stmt = $pdo->prepare('UPDATE clubs SET champ_image = ? WHERE club_id = ?');
             $stmt->execute([$relative_path, $club_id]);
-            
-            if ($stmt->execute()) {
-                // Delete old image if exists
-                if ($old_image && file_exists('../' . $old_image)) {
-                    unlink('../' . $old_image);
-                }
-                $success = 'Trophy image updated successfully!';
-            } else {
-                $error = 'Failed to update database.';
-                unlink($upload_path); // Remove uploaded file if database update fails
+
+            // Delete old image if exists
+            if ($old_image && file_exists('../' . $old_image)) {
+                unlink('../' . $old_image);
             }
+            $_SESSION['success'] = 'Trophy image updated successfully!';
         } else {
-            $error = 'Failed to upload file.';
+            $_SESSION['error'] = 'Failed to upload file. Please try again.';
         }
+    } else {
+        $_SESSION['error'] = $uploadError;
     }
 }
 
@@ -90,13 +120,8 @@ $csrf_token = $security->generateCSRFToken();
     </div>
     
     <div class="container container--narrow">
-        <?php if (isset($error)): ?>
-            <div class="message message--error"><?php echo $error; ?></div>
-        <?php endif; ?>
-        
-        <?php if (isset($success)): ?>
-            <div class="message message--success"><?php echo $success; ?></div>
-        <?php endif; ?>
+        <?php display_session_message('error'); ?>
+        <?php display_session_message('success'); ?>
         
         <div class="card">
             <h2>Current Trophy Image</h2>

@@ -1,6 +1,7 @@
 <?php
 ob_start();
-session_start();
+require_once '../config/security_headers.php'; // Set security headers first
+require_once '../config/session.php';        // Configure secure sessions
 require_once '../config/database.php';
 require_once '../includes/SecurityUtils.php';
 require_once '../includes/helpers.php';
@@ -41,9 +42,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Log successful login
                         $security->logLoginAttempt($username, $ipAddress, true);
 
+                        // Regenerate session ID to prevent session fixation attacks
+                        session_regenerate_id(true);
+
                         $_SESSION['is_super_admin'] = true;
                         $_SESSION['admin_id'] = $admin['admin_id'];
                         $_SESSION['admin_username'] = $admin['username'];
+                        $_SESSION['login_time'] = time();
 
                         error_log("Login successful for user: " . $username);
                         header("Location: dashboard.php");

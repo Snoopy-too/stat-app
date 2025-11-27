@@ -32,14 +32,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
         $file = $_FILES['logo'];
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
         $maxSize = 5 * 1024 * 1024; // 5MB
 
-        if (!in_array($file['type'], $allowedTypes)) {
-            $_SESSION['error'] = "Invalid file type. Only JPG, PNG and GIF are allowed.";
-        } elseif ($file['size'] > $maxSize) {
-            $_SESSION['error'] = "File is too large. Maximum size is 5MB.";
+        $uploadError = null;
+
+        // Validate file size first
+        if ($file['size'] > $maxSize) {
+            $uploadError = "File is too large. Maximum size is 5MB.";
         } else {
+            // Validate file extension (secondary check)
+            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            if (!in_array($extension, $allowedExtensions)) {
+                $uploadError = "Invalid file extension. Only JPG, PNG and GIF are allowed.";
+            } else {
+                // Use finfo to get actual MIME type from file content (primary check)
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $actualMime = finfo_file($finfo, $file['tmp_name']);
+                finfo_close($finfo);
+
+                if (!in_array($actualMime, $allowedMimes)) {
+                    $uploadError = "Invalid file type detected. Only JPG, PNG and GIF images are allowed.";
+                } else {
+                    // Additional validation: verify it's actually a valid image
+                    $imageInfo = @getimagesize($file['tmp_name']);
+                    if ($imageInfo === false) {
+                        $uploadError = "File is not a valid image.";
+                    }
+                }
+            }
+        }
+
+        // If no errors, process upload
+        if ($uploadError === null) {
             $uploadDir = '../images/club_logos/';
             if (!file_exists($uploadDir)) {
                 mkdir($uploadDir, 0777, true);
@@ -51,7 +77,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // Generate unique filename
-            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
             $filename = 'club_' . $club_id . '_' . time() . '.' . $extension;
             $targetPath = $uploadDir . $filename;
 
@@ -63,6 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $_SESSION['error'] = "Failed to upload file. Please try again.";
             }
+        } else {
+            $_SESSION['error'] = $uploadError;
         }
     } elseif (isset($_POST['remove_logo']) && $club['logo_image']) {
         $uploadDir = '../images/club_logos/';

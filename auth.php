@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once 'config/security_headers.php'; // Set security headers first
+require_once 'config/session.php';        // Configure secure sessions
 require_once 'config/database.php';
 require_once 'includes/SecurityUtils.php';
 
@@ -27,10 +28,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Log successful login
             $security->logLoginAttempt($email, $ipAddress, true);
 
+            // Regenerate session ID to prevent session fixation attacks
+            session_regenerate_id(true);
+
             $_SESSION['club_id'] = $user['club_id'];
             $_SESSION['club_name'] = $user['club_name'];
             $_SESSION['admin_username'] = $user['admin_username'];
             $_SESSION['logged_in'] = true;
+            $_SESSION['login_time'] = time();
 
             header("Location: dashboard.php");
             exit();

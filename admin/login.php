@@ -15,25 +15,37 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    echo "<pre>DEBUG: Form submitted via POST</pre>";
     error_log('Form submitted');
     $username = trim($_POST['username']);
     $password = $_POST['password'];
     $ipAddress = $_SERVER['REMOTE_ADDR'];
+    
+    echo "<pre>DEBUG: Username: $username</pre>";
+    echo "<pre>DEBUG: IP Address: $ipAddress</pre>";
 
     // Initialize security utils
     $security = new SecurityUtils($pdo);
+    
+    echo "<pre>DEBUG: SecurityUtils initialized</pre>";
 
     // Check if rate limit exceeded (use username as email for admin logins)
-    if (!$security->checkLoginAttempts($username, $ipAddress)) {
+    $rateLimitOk = $security->checkLoginAttempts($username, $ipAddress);
+    echo "<pre>DEBUG: Rate limit check result: " . ($rateLimitOk ? 'PASSED' : 'FAILED') . "</pre>";
+    
+    if (!$rateLimitOk) {
         $_SESSION['error'] = "Too many failed login attempts. Please try again in 30 minutes.";
         error_log("Rate limit exceeded for username: $username from IP: $ipAddress");
+        echo "<pre>DEBUG: Rate limit exceeded - stopping here</pre>";
     } else {
+        echo "<pre>DEBUG: Proceeding with login attempt...</pre>";
         error_log('Attempting login for username: ' . $username);
         try {
             $stmt = $pdo->prepare("SELECT admin_id, username, password_hash, is_deactivated FROM admin_users WHERE username = ?");
             $stmt->execute([$username]);
             $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
+            echo "<pre>DEBUG: Query executed</pre>";
             error_log('Found admin user: ' . ($admin ? 'yes' : 'no'));
             if ($admin) {
                 if (!empty($admin['is_deactivated']) && $admin['is_deactivated'] == 1) {

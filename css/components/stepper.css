@@ -62,7 +62,7 @@
 .form-step.is-active .form-step__indicator {
     background: var(--color-primary);
     border-color: var(--color-primary);
-    color: white;
+    color: var(--color-primary-contrast);
     box-shadow: 0 0 0 4px rgba(76, 122, 217, 0.15);
 }
 
@@ -75,7 +75,7 @@
 .form-step.is-complete .form-step__indicator {
     background: var(--color-success-border);
     border-color: var(--color-success-border);
-    color: white;
+    color: var(--color-primary-contrast);
 }
 
 .form-step.is-complete .form-step__indicator::after {

@@ -204,7 +204,7 @@
 
 /* Ensure spinner matches button text color usually, but for loading we need it visible */
 .btn:not(.btn--secondary):not(.btn--ghost):not(.btn--subtle).is-loading::after {
-    color: white;
+    color: var(--color-primary-contrast);
 }
 
 .btn--secondary.is-loading::after,

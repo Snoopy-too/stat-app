@@ -28,7 +28,7 @@
 /* Add shadow on scroll (handled by JS usually, but default here) */
 .header.is-scrolled {
     box-shadow: var(--shadow-sm);
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--color-header-bg);
 }
 
 .header h1 {

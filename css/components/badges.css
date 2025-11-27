@@ -41,7 +41,7 @@
     font-size: var(--font-size-sm);
     white-space: nowrap;
     box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+    text-shadow: 0 1px 0 var(--color-primary-contrast);
 }
 
 .winner-name {
@@ -58,7 +58,7 @@
     border-radius: var(--radius-md);
     font-weight: var(--font-weight-bold);
     font-size: var(--font-size-sm);
-    color: #fff;
+    color: var(--color-primary-contrast);
     min-width: 3rem;
     text-align: center;
     line-height: 1;
@@ -67,13 +67,13 @@
 
 .position-1 {
     background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
-    color: #fff;
+    color: var(--color-primary-contrast);
     box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.3);
 }
 
 .position-2 {
     background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
-    color: #fff;
+    color: var(--color-primary-contrast);
 }
 
 .position-3 {

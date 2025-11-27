@@ -233,7 +233,7 @@
     padding: 0.65rem 1.1rem;
     border-radius: var(--radius-sm);
     background: var(--color-primary);
-    color: #fff;
+    color: var(--color-primary-contrast);
     transition: background-color var(--transition-fast);
 }
 
@@ -245,7 +245,7 @@
 .game-play-details {
     padding: clamp(1.5rem, 4vw, 2.2rem);
     border-radius: var(--radius-lg);
-    background: #fcfdff;
+    background: var(--color-surface);
     border: 1px solid rgba(17, 24, 39, 0.05);
     box-shadow: var(--shadow-md);
 }
@@ -343,11 +343,11 @@
 }
 
 .requirement.valid {
-    color: #16a765;
+    color: var(--color-success-text);
 }
 
 .requirement.invalid {
-    color: #dc3545;
+    color: var(--color-error-text);
 }
 
 /* Stats views */
@@ -433,11 +433,11 @@
 }
 
 .verification-container.success .verification-icon {
-    color: #2ecc71;
+    color: var(--color-success-text);
 }
 
 .verification-container.error .verification-icon {
-    color: #e74c3c;
+    color: var(--color-error-text);
 }
 
 .verification-message {
@@ -459,13 +459,13 @@
 
 .success-icon {
     font-size: clamp(2.5rem, 6vw, 4rem);
-    color: #2ecc71;
+    color: var(--color-success-text);
     margin-bottom: var(--spacing-2);
 }
 
 .success-title {
     font-size: 1.5rem;
-    color: #2ecc71;
+    color: var(--color-success-text);
     margin-bottom: var(--spacing-2);
 }
 
@@ -505,7 +505,7 @@
     object-fit: contain;
     border-radius: var(--radius-md);
     border: 1px solid rgba(17, 24, 39, 0.08);
-    background: #fff;
+    background: var(--color-surface);
     padding: var(--spacing-2);
     box-shadow: var(--shadow-xs);
 }

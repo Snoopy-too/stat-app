@@ -65,7 +65,7 @@
     left: 0;
     right: 0;
     background: var(--color-heading);
-    color: white;
+    color: var(--color-primary-contrast);
     padding: var(--spacing-2);
     border-radius: var(--radius-sm);
     font-size: 0.85rem;

@@ -688,7 +688,7 @@
 }
 
 .table-responsive table {
-    background: rgba(255, 255, 255, 0.9);
+    background: var(--color-surface);
 }
 
 .dropdown.header-account .dropdown__menu {

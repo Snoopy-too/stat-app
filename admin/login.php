@@ -9,9 +9,15 @@ require_once '../config/database.php';
 require_once '../includes/SecurityUtils.php';
 require_once '../includes/helpers.php';
 
+echo "<pre>DEBUG: Session data at page load: " . print_r($_SESSION, true) . "</pre>";
+echo "<pre>DEBUG: Request method: " . $_SERVER['REQUEST_METHOD'] . "</pre>";
+echo "<pre>DEBUG: POST data: " . print_r($_POST, true) . "</pre>";
+
 if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
-    header("Location: dashboard.php");
-    exit();
+    echo "<pre>DEBUG: Already logged in, redirecting to dashboard...</pre>";
+    // Temporarily comment out redirect to see what's happening
+    // header("Location: dashboard.php");
+    // exit();
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

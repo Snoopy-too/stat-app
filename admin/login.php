@@ -1,5 +1,8 @@
 <?php
 ob_start();
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 require_once '../config/security_headers.php'; // Set security headers first
 require_once '../config/session.php';        // Configure secure sessions
 require_once '../config/database.php';

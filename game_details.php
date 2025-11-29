@@ -88,6 +88,7 @@ if ($game_id > 0) {
     <?php
     // Render navigation and context bar
     if ($game) {
+        NavigationHelper::renderMobileCardNav('games', $club_id);
         NavigationHelper::renderPublicNav('games', $club_id);
         NavigationHelper::renderContextBar('Game', $game['game_name'], 'View all games', 'club_game_list.php?id=' . $club_id);
     }

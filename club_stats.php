@@ -64,6 +64,9 @@ if ($club_id > 0) {
     <?php
     // Render navigation if we have club data
     if ($club) {
+        // Mobile card navigation (shows on small screens)
+        NavigationHelper::renderMobileCardNav('club_stats', $club_id);
+        // Regular navigation (shows on larger screens)
         NavigationHelper::renderPublicNav('club_stats', $club_id);
     }
     ?>

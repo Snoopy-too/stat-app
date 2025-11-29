@@ -62,6 +62,7 @@ $average_finish = $total_games > 0 ? number_format($total_points / $total_games,
     </div>
     
     <?php
+    NavigationHelper::renderMobileCardNav('', $club_id);
     NavigationHelper::renderPublicNav('', $club_id);
     NavigationHelper::renderContextBar('Member History', $member['nickname'], 'View all members', 'club_stats.php?id=' . $club_id);
     ?>

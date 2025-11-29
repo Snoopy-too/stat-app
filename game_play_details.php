@@ -74,6 +74,7 @@ if ($result_id > 0) {
     <?php
     // Render navigation and context bar if we have data
     if ($result) {
+        NavigationHelper::renderMobileCardNav('', $club_id);
         NavigationHelper::renderPublicNav('', $club_id);
         NavigationHelper::renderContextBar('Viewing result for', $result['game_name'], 'View all results', 'club_game_results.php?id=' . $club_id);
     }

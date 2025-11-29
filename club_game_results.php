@@ -1,5 +1,6 @@
 <?php
 require_once 'config/database.php';
+require_once 'includes/NavigationHelper.php';
 
 $club_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
@@ -79,15 +80,29 @@ try {
     <script src="js/dark-mode.js"></script>
 </head>
 <body>
+    <?php
+    // Render breadcrumbs
+    NavigationHelper::renderBreadcrumbs([
+        ['label' => 'Home', 'url' => 'index.php'],
+        ['label' => $club['club_name'], 'url' => 'club_stats.php?id=' . $club_id],
+        'Game Results'
+    ]);
+    ?>
+    
     <div class="header">
-        <div class="header-title-group">
-            <h1>Club Game Results</h1>
-            <p class="header-subtitle"><?php echo htmlspecialchars($club['club_name']); ?></p>
-        </div>
+        <?php NavigationHelper::renderHeaderTitle('Board Game Club StatApp', 'Game Results', 'index.php'); ?>
         <div class="header-actions">
-            <a href="club_stats.php?id=<?php echo $club_id; ?>" class="btn btn--secondary btn--small">Back to Club Stats</a>
+            <a href="club_stats.php?id=<?php echo $club_id; ?>" class="btn btn--secondary btn--small">← Back to Club Stats</a>
+            <a href="index.php" class="btn btn--ghost btn--small">🏠 Home</a>
         </div>
     </div>
+    
+    <?php
+    // Render navigation and context bar
+    NavigationHelper::renderMobileCardNav('results', $club_id);
+    NavigationHelper::renderPublicNav('results', $club_id);
+    NavigationHelper::renderContextBar('Viewing results for', $club['club_name'], 'View club stats', 'club_stats.php?id=' . $club_id);
+    ?>
 
     <div class="container container--wide">
         <div class="card">

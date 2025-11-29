@@ -65,6 +65,7 @@ if ($club_id > 0) {
     <?php
     // Render navigation
     if ($club) {
+        NavigationHelper::renderMobileCardNav('games', $club_id);
         NavigationHelper::renderPublicNav('games', $club_id);
     }
     ?>

@@ -62,6 +62,46 @@ class NavigationHelper {
     }
     
     /**
+     * Render mobile-friendly card navigation (shows on mobile, hidden on desktop)
+     * @param string $currentPage The current page identifier
+     * @param int|null $clubId Optional club ID for context-specific links
+     */
+    public static function renderMobileCardNav($currentPage = '', $clubId = null) {
+        echo '<nav class="mobile-card-nav" aria-label="Mobile navigation">';
+        
+        // Home card - always show
+        echo '<a href="index.php" class="nav-card' . ($currentPage === 'home' ? ' nav-card--active' : '') . '">';
+        echo '<div class="nav-card__icon">🏠</div>';
+        echo '<div class="nav-card__label">Home</div>';
+        echo '</a>';
+        
+        // Club-specific cards
+        if ($clubId) {
+            echo '<a href="club_stats.php?id=' . (int)$clubId . '" class="nav-card' . ($currentPage === 'club_stats' ? ' nav-card--active' : '') . '">';
+            echo '<div class="nav-card__icon">📊</div>';
+            echo '<div class="nav-card__label">Club Stats</div>';
+            echo '</a>';
+            
+            echo '<a href="club_game_list.php?id=' . (int)$clubId . '" class="nav-card' . ($currentPage === 'games' ? ' nav-card--active' : '') . '">';
+            echo '<div class="nav-card__icon">🎲</div>';
+            echo '<div class="nav-card__label">Games</div>';
+            echo '</a>';
+            
+            echo '<a href="club_game_results.php?id=' . (int)$clubId . '" class="nav-card' . ($currentPage === 'results' ? ' nav-card--active' : '') . '">';
+            echo '<div class="nav-card__icon">🏆</div>';
+            echo '<div class="nav-card__label">Results</div>';
+            echo '</a>';
+            
+            echo '<a href="game_days.php?id=' . (int)$clubId . '" class="nav-card' . ($currentPage === 'game_days' ? ' nav-card--active' : '') . '">';
+            echo '<div class="nav-card__icon">📅</div>';
+            echo '<div class="nav-card__label">Game Days</div>';
+            echo '</a>';
+        }
+        
+        echo '</nav>';
+    }
+    
+    /**
      * Render public navigation menu
      * @param string $currentPage The current page identifier
      * @param int|null $clubId Optional club ID for context-specific links

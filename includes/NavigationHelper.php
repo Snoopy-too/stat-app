@@ -108,24 +108,19 @@ class NavigationHelper {
      */
     public static function renderPublicNav($currentPage = '', $clubId = null) {
         echo '<nav class="main-nav" aria-label="Main navigation">';
-        
-        echo '<a href="index.php" class="nav-link ' . ($currentPage === 'home' ? 'active' : '') . '">';
-        echo '<span class="nav-icon">🏠</span>Home</a>';
-        
+
+        echo '<a href="index.php" class="nav-link ' . ($currentPage === 'home' ? 'active' : '') . '">Home</a>';
+
         if ($clubId) {
-            echo '<a href="club_stats.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'club_stats' ? 'active' : '') . '">';
-            echo '<span class="nav-icon">📊</span>Club Stats</a>';
-            
-            echo '<a href="club_game_list.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'games' ? 'active' : '') . '">';
-            echo '<span class="nav-icon">🎲</span>Games</a>';
-            
-            echo '<a href="club_game_results.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'results' ? 'active' : '') . '">';
-            echo '<span class="nav-icon">🏆</span>Results</a>';
-            
-            echo '<a href="game_days.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'game_days' ? 'active' : '') . '">';
-            echo '<span class="nav-icon">📅</span>Game Days</a>';
+            echo '<a href="club_stats.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'club_stats' ? 'active' : '') . '">Club Stats</a>';
+
+            echo '<a href="club_game_list.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'games' ? 'active' : '') . '">Games</a>';
+
+            echo '<a href="club_game_results.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'results' ? 'active' : '') . '">Results</a>';
+
+            echo '<a href="game_days.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'game_days' ? 'active' : '') . '">Game Days</a>';
         }
-        
+
         echo '</nav>';
     }
     
@@ -136,30 +131,23 @@ class NavigationHelper {
      */
     public static function renderAdminNav($currentPage = '', $clubId = null) {
         echo '<nav class="admin-nav" aria-label="Admin navigation">';
-        
-        echo '<a href="dashboard.php" class="nav-link ' . ($currentPage === 'dashboard' ? 'active' : '') . '">';
-        echo '<span class="nav-icon">📊</span>Dashboard</a>';
-        
-        echo '<a href="manage_clubs.php" class="nav-link ' . ($currentPage === 'clubs' ? 'active' : '') . '">';
-        echo '<span class="nav-icon">🎯</span>Clubs</a>';
-        
+
+        echo '<a href="dashboard.php" class="nav-link ' . ($currentPage === 'dashboard' ? 'active' : '') . '">Dashboard</a>';
+
+        echo '<a href="manage_clubs.php" class="nav-link ' . ($currentPage === 'clubs' ? 'active' : '') . '">Clubs</a>';
+
         if ($clubId) {
-            echo '<a href="manage_members.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'members' ? 'active' : '') . '">';
-            echo '<span class="nav-icon">👥</span>Members</a>';
-            
-            echo '<a href="manage_games.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'games' ? 'active' : '') . '">';
-            echo '<span class="nav-icon">🎲</span>Games</a>';
-            
-            echo '<a href="manage_champions.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'champions' ? 'active' : '') . '">';
-            echo '<span class="nav-icon">🏆</span>Champions</a>';
-            
-            echo '<a href="club_teams.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'teams' ? 'active' : '') . '">';
-            echo '<span class="nav-icon">🤝</span>Teams</a>';
+            echo '<a href="manage_members.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'members' ? 'active' : '') . '">Members</a>';
+
+            echo '<a href="manage_games.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'games' ? 'active' : '') . '">Games</a>';
+
+            echo '<a href="manage_champions.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'champions' ? 'active' : '') . '">Champions</a>';
+
+            echo '<a href="club_teams.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'teams' ? 'active' : '') . '">Teams</a>';
         }
-        
-        echo '<a href="account.php" class="nav-link ' . ($currentPage === 'account' ? 'active' : '') . '">';
-        echo '<span class="nav-icon">⚙️</span>Account</a>';
-        
+
+        echo '<a href="account.php" class="nav-link ' . ($currentPage === 'account' ? 'active' : '') . '">Account</a>';
+
         echo '</nav>';
     }
     

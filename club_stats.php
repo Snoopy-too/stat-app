@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'config/database.php';
+require_once 'includes/NavigationHelper.php';
 
 // Get club ID from URL parameter
 $club_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -43,10 +44,29 @@ if ($club_id > 0) {
     <script src="js/dark-mode.js"></script>
 </head>
 <body>
+    <?php
+    // Render breadcrumbs
+    if ($club) {
+        NavigationHelper::renderBreadcrumbs([
+            ['label' => 'Home', 'url' => 'index.php'],
+            $club['club_name']
+        ]);
+    }
+    ?>
+    
     <div class="header">
-        <h1>Board Game Club StatApp</h1>
-        <a href="index.php" class="btn">Back to Home</a>
+        <?php NavigationHelper::renderHeaderTitle('Board Game Club StatApp', '', 'index.php'); ?>
+        <div class="header-actions">
+            <a href="index.php" class="btn btn--secondary btn--small">← Back to Home</a>
+        </div>
     </div>
+    
+    <?php
+    // Render navigation if we have club data
+    if ($club) {
+        NavigationHelper::renderPublicNav('club_stats', $club_id);
+    }
+    ?>
 
     <div class="container">
         <?php if ($error): ?>

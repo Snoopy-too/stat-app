@@ -1,10 +1,11 @@
 <?php
 require_once 'config/database.php';
+require_once 'includes/NavigationHelper.php';
 
 $member_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 // Get member details
-$stmt = $pdo->prepare("SELECT nickname, club_id FROM members WHERE member_id = ? AND status = 'active'");
+$stmt = $pdo->prepare("SELECT m.nickname, m.club_id, c.club_name FROM members m JOIN clubs c ON m.club_id = c.club_id WHERE m.member_id = ? AND m.status = 'active'");
 $stmt->execute([$member_id]);
 $member = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -12,6 +13,8 @@ if (!$member) {
     header("Location: index.php");
     exit();
 }
+
+$club_id = $member['club_id'];
 
 // Calculate Average Finish and get game history for the member (both individual and team games)
 $stmt = $pdo->prepare("SELECT DISTINCT gr.played_at as game_date, g.game_name, CASE WHEN gr.winner = ? THEN 1 WHEN gr.place_2 = ? THEN 2 WHEN gr.place_3 = ? THEN 3 WHEN gr.place_4 = ? THEN 4 WHEN gr.place_5 = ? THEN 5 WHEN gr.place_6 = ? THEN 6 WHEN gr.place_7 = ? THEN 7 WHEN gr.place_8 = ? THEN 8 END as position, gr.num_players, gr.game_id, 'individual' as game_type FROM game_results gr JOIN games g ON gr.game_id = g.game_id WHERE gr.winner = ? OR gr.place_2 = ? OR gr.place_3 = ? OR gr.place_4 = ? OR gr.place_5 = ? OR gr.place_6 = ? OR gr.place_7 = ? OR gr.place_8 = ? UNION ALL SELECT DISTINCT tgr.played_at as game_date, g.game_name, CASE WHEN tgr.winner = t.team_id THEN 1 WHEN tgr.place_2 = t.team_id THEN 2 WHEN tgr.place_3 = t.team_id THEN 3 WHEN tgr.place_4 = t.team_id THEN 4 END as position, tgr.num_teams as num_players, tgr.game_id, 'team' as game_type FROM teams t JOIN team_game_results tgr ON (t.team_id = tgr.winner OR t.team_id = tgr.place_2 OR t.team_id = tgr.place_3 OR t.team_id = tgr.place_4) JOIN games g ON tgr.game_id = g.game_id WHERE (t.member1_id = ? OR t.member2_id = ? OR t.member3_id = ? OR t.member4_id = ?) ORDER BY game_date DESC, position ASC");
@@ -41,10 +44,27 @@ $average_finish = $total_games > 0 ? number_format($total_points / $total_games,
     <script src="js/dark-mode.js"></script>
 </head>
 <body>
+    <?php
+    // Render breadcrumbs
+    NavigationHelper::renderBreadcrumbs([
+        ['label' => 'Home', 'url' => 'index.php'],
+        ['label' => $member['club_name'], 'url' => 'club_stats.php?id=' . $club_id],
+        $member['nickname'] . "'s History"
+    ]);
+    ?>
+    
     <div class="header">
-        <h1>Board Game Club StatApp</h1>
-        <a href="club_stats.php?id=<?php echo $member['club_id']; ?>" class="btn">&larr; Back to Club Stats</a>
+        <?php NavigationHelper::renderHeaderTitle('Board Game Club StatApp', $member['nickname'] . "'s Game History", 'index.php'); ?>
+        <div class="header-actions">
+            <a href="club_stats.php?id=<?php echo $club_id; ?>" class="btn btn--secondary btn--small">← Back to Club Stats</a>
+            <a href="index.php" class="btn btn--ghost btn--small">🏠 Home</a>
+        </div>
     </div>
+    
+    <?php
+    NavigationHelper::renderPublicNav('', $club_id);
+    NavigationHelper::renderContextBar('Member History', $member['nickname'], 'View all members', 'club_stats.php?id=' . $club_id);
+    ?>
 
     <div class="history-container">
         
@@ -69,7 +89,7 @@ $average_finish = $total_games > 0 ? number_format($total_points / $total_games,
                 <tr>
                     <td><?php echo date('F j Y', strtotime($game['game_date'])); ?></td>
                     <td>
-                        <a href="game_play.php?id=<?php echo $member_id; ?>&game_id=<?php echo urlencode($game['game_id']); ?>" class="game-link">
+                        <a href="game_details.php?id=<?php echo urlencode($game['game_id']); ?>" class="game-link">
                             <?php echo htmlspecialchars($game['game_name']); ?>
                         </a>
                     </td>

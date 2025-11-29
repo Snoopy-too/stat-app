@@ -3,6 +3,7 @@ session_start();
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
+require_once '../includes/NavigationHelper.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
     header("Location: login.php");
@@ -158,15 +159,31 @@ $csrf_token = $security->generateCSRFToken();
     <script src="../js/dark-mode.js"></script>
 </head>
 <body>
+    <?php
+    // Render breadcrumbs
+    NavigationHelper::renderBreadcrumbs([
+        ['label' => 'Dashboard', 'url' => 'dashboard.php'],
+        ['label' => 'Clubs', 'url' => 'manage_clubs.php'],
+        'Manage Members'
+    ]);
+    ?>
+    
     <div class="header">
         <div class="header-title-group">
-            <h1>Manage Members</h1>
-            <p class="header-subtitle"><?php echo htmlspecialchars($club['club_name']); ?></p>
+            <?php NavigationHelper::renderHeaderTitle('Manage Members', htmlspecialchars($club['club_name']), 'dashboard.php', false); ?>
         </div>
         <div class="header-actions">
-            <a href="dashboard.php" class="btn btn--secondary btn--small">Back to Dashboard</a>
+            <a href="../club_stats.php?id=<?php echo $club_id; ?>" class="btn btn--ghost btn--small" target="_blank" title="View on public site">👁️ Preview</a>
+            <a href="dashboard.php" class="btn btn--secondary btn--small">🏠 Dashboard</a>
+            <a href="manage_clubs.php" class="btn btn--secondary btn--small">← Back to Clubs</a>
         </div>
     </div>
+
+    <?php
+    // Render admin navigation with context
+    NavigationHelper::renderAdminNav('members', $club_id);
+    NavigationHelper::renderContextBar('Managing members for', $club['club_name'], 'View all clubs', 'manage_clubs.php');
+    ?>
 
     <div class="container container--wide">
         <?php display_session_message('success'); ?>

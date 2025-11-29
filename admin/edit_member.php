@@ -3,6 +3,7 @@ session_start();
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
+require_once '../includes/NavigationHelper.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
     header("Location: login.php");
@@ -80,10 +81,31 @@ $csrf_token = $security->generateCSRFToken();
     <script src="../js/dark-mode.js"></script>
 </head>
 <body>
+    <?php
+    // Render breadcrumbs
+    NavigationHelper::renderBreadcrumbs([
+        ['label' => 'Dashboard', 'url' => 'dashboard.php'],
+        ['label' => 'Clubs', 'url' => 'manage_clubs.php'],
+        ['label' => 'Members', 'url' => 'manage_members.php?club_id=' . $club_id],
+        'Edit Member'
+    ]);
+    ?>
+    
     <div class="header">
-        <h1>Edit Member</h1>
-        <a href="manage_members.php?club_id=<?php echo $club_id; ?>" class="btn">Back to Members</a>
+        <div class="header-title-group">
+            <?php NavigationHelper::renderHeaderTitle('Edit Member', htmlspecialchars($member['member_name']), 'dashboard.php', false); ?>
+        </div>
+        <div class="header-actions">
+            <a href="../member_stathistory.php?id=<?php echo $member_id; ?>" class="btn btn--ghost btn--small" target="_blank" title="View public profile">👁️ View Profile</a>
+            <a href="dashboard.php" class="btn btn--secondary btn--small">🏠 Dashboard</a>
+            <a href="manage_members.php?club_id=<?php echo $club_id; ?>" class="btn btn--secondary btn--small">← Back to Members</a>
+        </div>
     </div>
+    
+    <?php
+    // Render admin navigation
+    NavigationHelper::renderAdminNav('members', $club_id);
+    ?>
 
     <div class="container">
         <?php display_session_message('error'); ?>

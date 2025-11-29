@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'config/database.php';
+require_once 'includes/NavigationHelper.php';
 
 // Get result ID from URL parameter
 $result_id = isset($_GET['result_id']) ? (int)$_GET['result_id'] : 0;
@@ -8,9 +9,11 @@ $result_id = isset($_GET['result_id']) ? (int)$_GET['result_id'] : 0;
 // Fetch game result details
 $result = null;
 $error = '';
+$club_id = null;
+$game_id = null;
 
 if ($result_id > 0) {
-    $stmt = $pdo->prepare("SELECT gr.*, g.game_name, c.club_name,
+    $stmt = $pdo->prepare("SELECT gr.*, g.game_name, g.game_id, c.club_name, c.club_id,
         (SELECT nickname FROM members WHERE member_id = gr.winner) as winner_name,
         (SELECT nickname FROM members WHERE member_id = gr.place_2) as second_name,
         (SELECT nickname FROM members WHERE member_id = gr.place_3) as third_name,
@@ -26,7 +29,10 @@ if ($result_id > 0) {
     $stmt->execute([$result_id]);
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$result) {
+    if ($result) {
+        $club_id = $result['club_id'];
+        $game_id = $result['game_id'];
+    } else {
         $error = 'Game result not found';
     }
 } else {
@@ -44,13 +50,34 @@ if ($result_id > 0) {
     <script src="js/dark-mode.js"></script>
 </head>
 <body>
+    <?php
+    // Render breadcrumbs
+    if ($result) {
+        NavigationHelper::renderBreadcrumbs([
+            ['label' => 'Home', 'url' => 'index.php'],
+            ['label' => $result['club_name'], 'url' => 'club_stats.php?id=' . $club_id],
+            ['label' => $result['game_name'], 'url' => 'game_details.php?id=' . $game_id],
+            'Play Details'
+        ]);
+    }
+    ?>
+    
     <div class="header">
-        <div class="header-title-group">
-            <h1>Board Game Club StatApp</h1>
-            <p class="header-subtitle">Game Play Details</p>
+        <?php NavigationHelper::renderHeaderTitle('Board Game Club StatApp', 'Game Play Details', 'index.php'); ?>
+        <div class="header-actions">
+            <a href="game_details.php?id=<?php echo $game_id; ?>" class="btn btn--secondary btn--small">← Back to Game</a>
+            <a href="club_stats.php?id=<?php echo $club_id; ?>" class="btn btn--ghost btn--small">Club Stats</a>
+            <a href="index.php" class="btn btn--ghost btn--small">🏠 Home</a>
         </div>
-        <a href="game_details.php?id=<?php echo $result ? $result['game_id'] : ''; ?>" class="btn btn--secondary">Back to Game Details</a>
     </div>
+    
+    <?php
+    // Render navigation and context bar if we have data
+    if ($result) {
+        NavigationHelper::renderPublicNav('', $club_id);
+        NavigationHelper::renderContextBar('Viewing result for', $result['game_name'], 'View all results', 'club_game_results.php?id=' . $club_id);
+    }
+    ?>
 
     <div class="container">
         <?php if ($error): ?>

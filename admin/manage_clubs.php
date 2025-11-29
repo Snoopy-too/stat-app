@@ -3,6 +3,7 @@ session_start();
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
+require_once '../includes/NavigationHelper.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
     header("Location: login.php");
@@ -87,13 +88,24 @@ $csrf_token = $security->generateCSRFToken();
     <script src="../js/dark-mode.js"></script>
 </head>
 <body>
+    <?php
+    // Render breadcrumbs
+    NavigationHelper::renderBreadcrumbs([
+        ['label' => 'Dashboard', 'url' => 'dashboard.php'],
+        'Manage Clubs'
+    ]);
+    ?>
+    
     <div class="header">
         <div class="header-title-group">
-            <h1>Manage Clubs</h1>
-            <p class="header-subtitle">Create and edit your clubs</p>
+            <?php NavigationHelper::renderHeaderTitle('Manage Clubs', 'Create and edit your clubs', 'dashboard.php', false); ?>
         </div>
-        <a href="dashboard.php" class="btn btn--secondary">Back to Dashboard</a>
+        <div class="header-actions">
+            <a href="dashboard.php" class="btn btn--secondary btn--small">← Back to Dashboard</a>
+        </div>
     </div>
+    
+    <?php NavigationHelper::renderAdminNav('clubs'); ?>
     
     <div class="container">
         <?php display_session_message('success'); ?>

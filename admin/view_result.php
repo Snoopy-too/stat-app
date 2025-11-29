@@ -49,6 +49,11 @@ if (!$result) {
     exit();
 }
 
+// Fetch losers if any
+$loser_stmt = $pdo->prepare("SELECT m.nickname FROM game_result_losers grl JOIN members m ON grl.member_id = m.member_id WHERE grl.result_id = ? ORDER BY m.nickname");
+$loser_stmt->execute([$result_id]);
+$losers = $loser_stmt->fetchAll(PDO::FETCH_COLUMN);
+
 // Convert duration to hours and minutes
 $hours = floor($result['duration'] / 60);
 $minutes = $result['duration'] % 60;
@@ -128,6 +133,17 @@ if ($minutes > 0 || $hours == 0) {
                             </tr>
                         <?php endif; ?>
                     <?php endfor; ?>
+                    
+                    <?php if (!empty($losers)): ?>
+                        <tr>
+                            <td>Losers</td>
+                            <td>
+                                <div class="losers-list">
+                                    <?php echo htmlspecialchars(implode(', ', $losers)); ?>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>

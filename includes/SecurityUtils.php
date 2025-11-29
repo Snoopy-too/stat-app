@@ -46,11 +46,12 @@ class SecurityUtils {
         }
 
         $sessionId = session_id();
+        $currentTime = date('Y-m-d H:i:s');
         $stmt = $this->pdo->prepare(
             'SELECT COUNT(*) FROM csrf_tokens 
-            WHERE token = ? AND session_id = ? AND expires_at > NOW()'
+            WHERE token = ? AND session_id = ? AND expires_at > ?'
         );
-        $stmt->execute([$token, $sessionId]);
+        $stmt->execute([$token, $sessionId, $currentTime]);
 
         return (bool)$stmt->fetchColumn();
     }

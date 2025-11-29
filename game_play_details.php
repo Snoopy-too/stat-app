@@ -32,6 +32,11 @@ if ($result_id > 0) {
     if ($result) {
         $club_id = $result['club_id'];
         $game_id = $result['game_id'];
+        
+        // Fetch losers if any
+        $loser_stmt = $pdo->prepare("SELECT m.nickname FROM game_result_losers grl JOIN members m ON grl.member_id = m.member_id WHERE grl.result_id = ? ORDER BY m.nickname");
+        $loser_stmt->execute([$result_id]);
+        $losers = $loser_stmt->fetchAll(PDO::FETCH_COLUMN);
     } else {
         $error = 'Game result not found';
     }
@@ -98,6 +103,7 @@ if ($result_id > 0) {
                 </div>
 
                 <?php
+                // Display ranked positions if they exist
                 $positions = [
                     ['Winner', 'winner_name', 'position-1'],
                     ['Second Place', 'second_name', 'position-2'],
@@ -122,6 +128,22 @@ if ($result_id > 0) {
                         </div>
                         <?php
                     }
+                }
+                
+                // Display losers if any
+                if (!empty($losers)) {
+                    ?>
+                    <div class="detail-row">
+                        <div class="detail-label">Losers:</div>
+                        <div class="detail-value">
+                            <div class="losers-list">
+                                <?php foreach ($losers as $loser): ?>
+                                    <span class="badge badge--neutral"><?php echo htmlspecialchars($loser); ?></span>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <?php
                 }
                 ?>
 

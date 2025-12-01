@@ -42,7 +42,7 @@ if (isset($_SESSION['club_id'])) {
         <div class="card hero-card">
             <div class="card-header">
                 <div>
-                    <h2>Welcome to Board Game StatApp</h2>
+                    <h2>Welcome to The Flying Dutchmen StatApp</h2>
                     <p class="card-subtitle">Everything your club needs to track plays, celebrate champions, and grow community.</p>
                 </div>
             </div>
@@ -56,7 +56,7 @@ if (isset($_SESSION['club_id'])) {
             <div class="hero-actions">
                 <a href="register.php" class="btn">Start Your Club</a>
                 <?php if (!isset($_SESSION['is_super_admin'])): ?>
-                    <a href="admin/login.php" class="btn btn--ghost">Preview Admin Tools</a>
+                    <a href="admin/login.php" class="btn btn--ghost">Club AdminLogin</a>
                 <?php else: ?>
                     <a href="admin/dashboard.php" class="btn btn--ghost">Go to Dashboard</a>
                 <?php endif; ?>

@@ -31,30 +31,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $club_name = trim($_POST['club_name']);
+    $slug = trim($_POST['slug']);
+    $slug = $slug === '' ? null : $slug; // Convert empty string to null for unique constraint
     $description = trim($_POST['description']);
     $meeting_day = $_POST['meeting_day'];
     $meeting_time = $_POST['meeting_time'];
     $location = trim($_POST['location']);
     $status = $_POST['status'];
     
-    try {
-        $stmt = $pdo->prepare("
-            UPDATE clubs 
-            SET club_name = ?, description = ?, meeting_day = ?, 
-                meeting_time = ?, location = ?, status = ?
-            WHERE club_id = ?
-        ");
-        $stmt->execute([
-            $club_name, $description, $meeting_day, 
-            $meeting_time, $location, $status, $club_id
-        ]);
-        
-        $_SESSION['success'] = "Club updated successfully!";
-        header("Location: view_club.php?id=" . $club_id);
-        exit();
-        
-    } catch(PDOException $e) {
-        $_SESSION['error'] = "Failed to update club. Please try again.";
+    // Validate slug
+    if ($slug !== null && !preg_match('/^[a-zA-Z0-9-]+$/', $slug)) {
+        $_SESSION['error'] = "Slug can only contain letters, numbers, and hyphens.";
+    } elseif ($slug !== null && in_array(strtolower($slug), ['admin', 'api', 'index', 'login', 'logout', 'dashboard', 'config', 'includes', 'css', 'js', 'images', 'uploads'])) {
+        $_SESSION['error'] = "This slug is reserved and cannot be used.";
+    } else {
+        try {
+            $stmt = $pdo->prepare("
+                UPDATE clubs 
+                SET club_name = ?, slug = ?, description = ?, meeting_day = ?, 
+                    meeting_time = ?, location = ?, status = ?
+                WHERE club_id = ?
+            ");
+            $stmt->execute([
+                $club_name, $slug, $description, $meeting_day, 
+                $meeting_time, $location, $status, $club_id
+            ]);
+            
+            $_SESSION['success'] = "Club updated successfully!";
+            header("Location: view_club.php?id=" . $club_id);
+            exit();
+            
+        } catch(PDOException $e) {
+            if ($e->getCode() == 23000) {
+                $_SESSION['error'] = "This slug is already in use. Please choose a different one.";
+            } else {
+                $_SESSION['error'] = "Failed to update club. Please try again.";
+            }
+        }
     }
 }
 
@@ -93,6 +106,31 @@ $csrf_token = $security->generateCSRFToken();
                     <label for="club_name">Club Name:</label>
                     <input type="text" id="club_name" name="club_name" class="form-control" required
                            value="<?php echo htmlspecialchars($club['club_name']); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="slug">Club URL Slug (optional):</label>
+                    <input type="text" id="slug" name="slug" class="form-control"
+                           pattern="[a-zA-Z0-9\-]+" title="Only letters, numbers, and hyphens allowed"
+                           value="<?php echo htmlspecialchars($club['slug'] ?? ''); ?>">
+                    <small style="display:block; margin-top:0.5rem; color:var(--text-light);">
+                        Leave empty to use ID-based URL. If set, club will be accessible at domain.com/slug
+                    </small>
+                    <?php if (!empty($club['slug'])): ?>
+                        <div style="margin-top:1rem; padding:1rem; background:var(--bg-secondary); border-radius:0.5rem;">
+                            <strong style="display:block; margin-bottom:0.5rem;">Current Vanity URL:</strong>
+                            <div style="display:flex; gap:0.5rem; align-items:center;">
+                                <code id="vanity-url" style="flex:1; padding:0.5rem; background:var(--bg-primary); border-radius:0.25rem; font-size:0.9rem;">
+                                    <?php 
+                                    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+                                    $host = $_SERVER['HTTP_HOST'];
+                                    $base_path = dirname(dirname($_SERVER['PHP_SELF']));
+                                    echo htmlspecialchars($protocol . '://' . $host . $base_path . '/' . $club['slug']); 
+                                    ?>
+                                </code>
+                                <button type="button" class="btn btn--small btn--subtle" onclick="copyVanityUrl()">Copy</button>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
                 <div class="form-group">
                     <label for="description">Description:</label>
@@ -137,6 +175,26 @@ $csrf_token = $security->generateCSRFToken();
             </form>
         </div>
     </div>
+    <script>
+        function copyVanityUrl() {
+            const urlElement = document.getElementById('vanity-url');
+            const url = urlElement.textContent.trim();
+            
+            navigator.clipboard.writeText(url).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.classList.add('btn--success');
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.classList.remove('btn--success');
+                }, 2000);
+            }).catch(err => {
+                alert('Failed to copy URL: ' + err);
+            });
+        }
+    </script>
     <script src="../js/mobile-menu.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>

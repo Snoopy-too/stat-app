@@ -14,7 +14,8 @@
       "WebFetch(domain:montoyahome.com)",
       "Bash(unzip:*)",
       "Bash(dir /s /b:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebFetch(domain:localhost)"
     ],
     "deny": [],
     "ask": []

@@ -24,21 +24,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'create' && !empty($_POST['club_name'])) {
             $club_name = trim($_POST['club_name']);
+            $slug = trim($_POST['slug'] ?? '');
+            $slug = $slug === '' ? null : $slug;
+            
             if (!preg_match('/^[a-zA-Z0-9\s_-]+$/', $club_name)) {
                 $_SESSION['error'] = "Club name can only contain letters, numbers, spaces, dashes and underscores.";
+            } elseif ($slug !== null && !preg_match('/^[a-zA-Z0-9-]+$/', $slug)) {
+                $_SESSION['error'] = "Slug can only contain letters, numbers, and hyphens.";
+            } elseif ($slug !== null && in_array(strtolower($slug), ['admin', 'api', 'index', 'login', 'logout', 'dashboard', 'config', 'includes', 'css', 'js', 'images', 'uploads'])) {
+                $_SESSION['error'] = "This slug is reserved and cannot be used.";
             } else {
-                $stmt = $pdo->prepare("INSERT INTO clubs (club_name, admin_id) VALUES (?, ?)");
-                $stmt->execute([$club_name, $_SESSION['admin_id']]);
-                $_SESSION['success'] = "Club created successfully!";
+                try {
+                    $stmt = $pdo->prepare("INSERT INTO clubs (club_name, slug, admin_id) VALUES (?, ?, ?)");
+                    $stmt->execute([$club_name, $slug, $_SESSION['admin_id']]);
+                    $_SESSION['success'] = "Club created successfully!";
+                } catch (PDOException $e) {
+                    if ($e->getCode() == 23000) {
+                        $_SESSION['error'] = "This slug is already in use. Please choose a different one.";
+                    } else {
+                        $_SESSION['error'] = "Failed to create club. Please try again.";
+                    }
+                }
             }
         } elseif ($_POST['action'] === 'edit' && !empty($_POST['club_id']) && !empty($_POST['club_name'])) {
             $club_name = trim($_POST['club_name']);
+            $slug = trim($_POST['slug'] ?? '');
+            $slug = $slug === '' ? null : $slug;
+            
             if (!preg_match('/^[a-zA-Z0-9\s_-]+$/', $club_name)) {
                 $_SESSION['error'] = "Club name can only contain letters, numbers, spaces, dashes and underscores.";
+            } elseif ($slug !== null && !preg_match('/^[a-zA-Z0-9-]+$/', $slug)) {
+                $_SESSION['error'] = "Slug can only contain letters, numbers, and hyphens.";
+            } elseif ($slug !== null && in_array(strtolower($slug), ['admin', 'api', 'index', 'login', 'logout', 'dashboard', 'config', 'includes', 'css', 'js', 'images', 'uploads'])) {
+                $_SESSION['error'] = "This slug is reserved and cannot be used.";
             } else {
-                $stmt = $pdo->prepare("UPDATE clubs SET club_name = ? WHERE club_id = ? AND admin_id = ?");
-                $stmt->execute([$club_name, $_POST['club_id'], $_SESSION['admin_id']]);
-                $_SESSION['success'] = "Club updated successfully!";
+                try {
+                    $stmt = $pdo->prepare("UPDATE clubs SET club_name = ?, slug = ? WHERE club_id = ? AND admin_id = ?");
+                    $stmt->execute([$club_name, $slug, $_POST['club_id'], $_SESSION['admin_id']]);
+                    $_SESSION['success'] = "Club updated successfully!";
+                } catch (PDOException $e) {
+                    if ($e->getCode() == 23000) {
+                        $_SESSION['error'] = "This slug is already in use. Please choose a different one.";
+                    } else {
+                        $_SESSION['error'] = "Failed to update club. Please try again.";
+                    }
+                }
             }
         }
         header("Location: manage_clubs.php");
@@ -117,7 +147,17 @@ $csrf_token = $security->generateCSRFToken();
             <form method="POST" class="form">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <div class="form-group">
-                    <input type="text" name="club_name" placeholder="Club Name" required class="form-control" pattern="[a-zA-Z0-9\s_-]+" title="Only letters, numbers, spaces, dashes and underscores are allowed">
+                    <label for="club_name">Club Name:</label>
+                    <input type="text" id="club_name" name="club_name" placeholder="Club Name" required class="form-control" pattern="[a-zA-Z0-9 _\-]+" title="Only letters, numbers, spaces, dashes and underscores are allowed">
+                </div>
+                <div class="form-group">
+                    <label for="slug">Club URL Slug (optional):</label>
+                    <input type="text" id="slug" name="slug" placeholder="e.g., theflyingdutchmen" class="form-control" pattern="[a-zA-Z0-9\-]+" title="Only letters, numbers, and hyphens allowed">
+                    <small style="display:block; margin-top:0.5rem; color:var(--text-light);">
+                        Leave empty to use ID-based URL. If set, club will be accessible at domain.com/slug
+                    </small>
+                </div>
+                <div class="form-group">
                     <input type="hidden" name="action" value="create">
                     <button type="submit" class="btn">Create Club</button>
                 </div>
@@ -156,7 +196,7 @@ $csrf_token = $security->generateCSRFToken();
                             <td class="actions-cell table-col--primary" data-label="Actions">
                                 <div class="table-actions">
                                     <button type="button" class="btn btn--xsmall"
-                                            onclick="editClub(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>')">
+                                            onclick="editClub(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>', '<?php echo addslashes($club['slug'] ?? ''); ?>')">
                                         Edit
                                     </button>
                                     <a href="manage_members.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Members</a>
@@ -180,7 +220,14 @@ $csrf_token = $security->generateCSRFToken();
                 <input type="hidden" name="club_id" id="edit_club_id">
                 <div class="form-group">
                     <label>Club Name:</label>
-                    <input type="text" name="club_name" id="edit_club_name" required class="form-control" pattern="[a-zA-Z0-9\s_-]+" title="Only letters, numbers, spaces, dashes and underscores are allowed">
+                    <input type="text" name="club_name" id="edit_club_name" required class="form-control" pattern="[a-zA-Z0-9 _\-]+" title="Only letters, numbers, spaces, dashes and underscores are allowed">
+                </div>
+                <div class="form-group">
+                    <label for="edit_club_slug">Club URL Slug (optional):</label>
+                    <input type="text" name="slug" id="edit_club_slug" class="form-control" pattern="[a-zA-Z0-9\-]+" title="Only letters, numbers, and hyphens allowed">
+                    <small style="display:block; margin-top:0.5rem; color:var(--text-light);">
+                        Leave empty to use ID-based URL. If set, club will be accessible at domain.com/slug
+                    </small>
                 </div>
                 <div class="form-group">
                     <button type="submit" class="btn">Save Changes</button>
@@ -194,9 +241,10 @@ $csrf_token = $security->generateCSRFToken();
         const modal = document.getElementById('editClubModal');
         const modalDialog = modal.querySelector('.modal__dialog');
 
-        function editClub(clubId, clubName) {
+        function editClub(clubId, clubName, clubSlug = '') {
             document.getElementById('edit_club_id').value = clubId;
             document.getElementById('edit_club_name').value = clubName;
+            document.getElementById('edit_club_slug').value = clubSlug || '';
             modal.classList.add('is-open');
         }
 

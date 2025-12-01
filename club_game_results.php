@@ -3,16 +3,38 @@ require_once 'config/database.php';
 require_once 'includes/NavigationHelper.php';
 
 $club_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$slug = isset($_GET['slug']) ? $_GET['slug'] : '';
 
 // Get club details
-$stmt = $pdo->prepare("SELECT club_name FROM clubs WHERE club_id = ?");
-$stmt->execute([$club_id]);
-$club = $stmt->fetch(PDO::FETCH_ASSOC);
+if ($club_id > 0 || !empty($slug)) {
+    $sql = "SELECT club_id, club_name, slug FROM clubs WHERE ";
+    $params = [];
+    
+    if ($club_id > 0) {
+        $sql .= "club_id = ?";
+        $params[] = $club_id;
+    } else {
+        $sql .= "slug = ?";
+        $params[] = $slug;
+    }
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $club = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($club) {
+        $club_id = $club['club_id'];
+    }
+}
 
 if (!$club) {
     header("Location: index.php");
     exit();
 }
+
+// Generate base URL for sorting links
+$base_url_param = !empty($club['slug']) ? 'slug=' . urlencode($club['slug']) : 'id=' . $club_id;
+$club_url = !empty($club['slug']) ? $club['slug'] : 'club_stats.php?id=' . $club_id;
 
 $sort_column = isset($_GET['sort']) ? $_GET['sort'] : 'played_at';
 $order = (isset($_GET['order']) && strtolower($_GET['order']) === 'asc') ? 'ASC' : 'DESC';
@@ -84,7 +106,7 @@ try {
     // Render breadcrumbs
     NavigationHelper::renderBreadcrumbs([
         ['label' => 'Home', 'url' => 'index.php'],
-        ['label' => $club['club_name'], 'url' => 'club_stats.php?id=' . $club_id],
+        ['label' => $club['club_name'], 'url' => $club_url],
         'Game Results'
     ]);
     ?>
@@ -92,7 +114,7 @@ try {
     <div class="header">
         <?php NavigationHelper::renderHeaderTitle('Board Game Club StatApp', 'Game Results', 'index.php'); ?>
         <div class="header-actions">
-            <a href="club_stats.php?id=<?php echo $club_id; ?>" class="btn btn--secondary btn--small">← Back to Club Stats</a>
+            <a href="<?php echo htmlspecialchars($club_url); ?>" class="btn btn--secondary btn--small">← Back to Club Stats</a>
             <a href="index.php" class="btn btn--ghost btn--small">🏠 Home</a>
         </div>
     </div>
@@ -101,7 +123,7 @@ try {
     // Render navigation and context bar
     NavigationHelper::renderMobileCardNav('results', $club_id);
     NavigationHelper::renderPublicNav('results', $club_id);
-    NavigationHelper::renderContextBar('Viewing results for', $club['club_name'], 'View club stats', 'club_stats.php?id=' . $club_id);
+    NavigationHelper::renderContextBar('Viewing results for', $club['club_name'], 'View club stats', $club_url);
     ?>
 
     <div class="container container--wide">
@@ -118,11 +140,11 @@ try {
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th><a href="?id=<?php echo $club_id; ?>&sort=played_at&order=<?php echo ($sort_column === 'played_at' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Date Played</span><?php if ($sort_column === 'played_at'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
-                            <th><a href="?id=<?php echo $club_id; ?>&sort=game_name&order=<?php echo ($sort_column === 'game_name' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Game</span><?php if ($sort_column === 'game_name'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
-                            <th><a href="?id=<?php echo $club_id; ?>&sort=game_type&order=<?php echo ($sort_column === 'game_type' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Type</span><?php if ($sort_column === 'game_type'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
-                            <th><a href="?id=<?php echo $club_id; ?>&sort=winner_identifier&order=<?php echo ($sort_column === 'winner_identifier' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Winner / Team</span><?php if ($sort_column === 'winner_identifier'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
-                            <th><a href="?id=<?php echo $club_id; ?>&sort=participants&order=<?php echo ($sort_column === 'participants' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Participants</span><?php if ($sort_column === 'participants'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
+                            <th><a href="?<?php echo $base_url_param; ?>&sort=played_at&order=<?php echo ($sort_column === 'played_at' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Date Played</span><?php if ($sort_column === 'played_at'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
+                            <th><a href="?<?php echo $base_url_param; ?>&sort=game_name&order=<?php echo ($sort_column === 'game_name' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Game</span><?php if ($sort_column === 'game_name'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
+                            <th><a href="?<?php echo $base_url_param; ?>&sort=game_type&order=<?php echo ($sort_column === 'game_type' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Type</span><?php if ($sort_column === 'game_type'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
+                            <th><a href="?<?php echo $base_url_param; ?>&sort=winner_identifier&order=<?php echo ($sort_column === 'winner_identifier' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Winner / Team</span><?php if ($sort_column === 'winner_identifier'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
+                            <th><a href="?<?php echo $base_url_param; ?>&sort=participants&order=<?php echo ($sort_column === 'participants' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Participants</span><?php if ($sort_column === 'participants'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
                         </tr>
                     </thead>
                     <tbody>

@@ -3,23 +3,36 @@ session_start();
 require_once 'config/database.php';
 require_once 'includes/NavigationHelper.php';
 
-// Get club ID from URL parameter
+// Get club ID or Slug from URL parameter
 $club_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$slug = isset($_GET['slug']) ? $_GET['slug'] : '';
 
 // Fetch club and game details
 $club = null;
 $games = [];
 $error = '';
 
-if ($club_id > 0) {
+if ($club_id > 0 || !empty($slug)) {
     // First fetch club details to ensure it exists
-    $club_stmt = $pdo->prepare("SELECT club_name FROM clubs WHERE club_id = ?");
-    $club_stmt->execute([$club_id]);
+    $sql = "SELECT club_id, club_name, slug FROM clubs WHERE ";
+    $params = [];
+    
+    if ($club_id > 0) {
+        $sql .= "club_id = ?";
+        $params[] = $club_id;
+    } else {
+        $sql .= "slug = ?";
+        $params[] = $slug;
+    }
+    
+    $club_stmt = $pdo->prepare($sql);
+    $club_stmt->execute($params);
     $club = $club_stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($club) {
+        $club_id = $club['club_id']; // Ensure club_id is set
+        
         // Fetch all games associated with this club
-        // Modify the games query to remove the play count subquery
         $games_stmt = $pdo->prepare("SELECT g.* 
             FROM games g 
             WHERE g.club_id = ? 
@@ -46,9 +59,10 @@ if ($club_id > 0) {
     <?php
     // Render breadcrumbs
     if ($club) {
+        $club_url = !empty($club['slug']) ? $club['slug'] : 'club_stats.php?id=' . $club_id;
         NavigationHelper::renderBreadcrumbs([
             ['label' => 'Home', 'url' => 'index.php'],
-            ['label' => $club['club_name'], 'url' => 'club_stats.php?id=' . $club_id],
+            ['label' => $club['club_name'], 'url' => $club_url],
             'Games'
         ]);
     }
@@ -57,7 +71,10 @@ if ($club_id > 0) {
     <div class="header">
         <?php NavigationHelper::renderHeaderTitle('Board Game Club StatApp', 'Club Games', 'index.php'); ?>
         <div class="header-actions">
-            <a href="club_stats.php?id=<?php echo $club_id; ?>" class="btn btn--secondary btn--small">← Back to Club Stats</a>
+            <?php 
+            $back_url = !empty($club['slug']) ? $club['slug'] : 'club_stats.php?id=' . $club_id;
+            ?>
+            <a href="<?php echo htmlspecialchars($back_url); ?>" class="btn btn--secondary btn--small">← Back to Club Stats</a>
             <a href="index.php" class="btn btn--ghost btn--small">🏠 Home</a>
         </div>
     </div>

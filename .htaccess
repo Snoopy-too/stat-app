@@ -1,0 +1,8 @@
+RewriteEngine On
+
+# Check if the request is for a real file or directory
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Rewrite rules
+RewriteRule ^([a-zA-Z0-9-]+)$ club_stats.php?slug=$1 [L,QSA]

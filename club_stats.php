@@ -3,33 +3,55 @@ session_start();
 require_once 'config/database.php';
 require_once 'includes/NavigationHelper.php';
 
-// Get club ID from URL parameter
+// Get club ID or Slug from URL parameter
 $club_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$slug = isset($_GET['slug']) ? $_GET['slug'] : '';
 
 // Fetch club details
 $club = null;
 $error = '';
 
-if ($club_id > 0) {
-    $stmt = $pdo->prepare("SELECT c.*, 
-        (SELECT COUNT(*) FROM members WHERE club_id = ? AND status = 'active') as member_count,
-        (SELECT COUNT(*) FROM games WHERE club_id = ?) as game_count,
-        (SELECT COUNT(*) FROM (
-            SELECT g.game_id FROM games g 
-            INNER JOIN game_results gr ON g.game_id = gr.game_id 
-            WHERE g.club_id = ?
-            UNION ALL
-            SELECT g.game_id FROM games g
-            INNER JOIN team_game_results tgr ON g.game_id = tgr.game_id
-            WHERE g.club_id = ?
-        ) as all_plays) as play_count
-        FROM clubs c 
-        WHERE c.club_id = ?");
+if ($club_id > 0 || !empty($slug)) {
+    // First, fetch the club to get the club_id
+    $sql = "SELECT * FROM clubs WHERE ";
+    $params = [];
 
-    $stmt->execute([$club_id, $club_id, $club_id, $club_id, $club_id]);
+    if ($club_id > 0) {
+        $sql .= "club_id = ?";
+        $params[] = $club_id;
+    } else {
+        $sql .= "slug = ?";
+        $params[] = $slug;
+    }
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
     $club = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$club) {
+    if ($club) {
+        $club_id = $club['club_id'];
+
+        // Now fetch the counts using the club_id
+        $count_stmt = $pdo->prepare("
+            SELECT
+                (SELECT COUNT(*) FROM members WHERE club_id = ? AND status = 'active') as member_count,
+                (SELECT COUNT(*) FROM games WHERE club_id = ?) as game_count,
+                (SELECT COUNT(*) FROM (
+                    SELECT g.game_id FROM games g
+                    INNER JOIN game_results gr ON g.game_id = gr.game_id
+                    WHERE g.club_id = ?
+                    UNION ALL
+                    SELECT g.game_id FROM games g
+                    INNER JOIN team_game_results tgr ON g.game_id = tgr.game_id
+                    WHERE g.club_id = ?
+                ) as all_plays) as play_count
+        ");
+        $count_stmt->execute([$club_id, $club_id, $club_id, $club_id]);
+        $counts = $count_stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Merge counts into club array
+        $club = array_merge($club, $counts);
+    } else {
         $error = 'Club not found';
     }
 }

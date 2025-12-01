@@ -96,6 +96,11 @@ class NavigationHelper {
             echo '<div class="nav-card__icon">📅</div>';
             echo '<div class="nav-card__label">Game Days</div>';
             echo '</a>';
+            
+            echo '<a href="club_champions.php?id=' . (int)$clubId . '" class="nav-card' . ($currentPage === 'champions' ? ' nav-card--active' : '') . '">';
+            echo '<div class="nav-card__icon">🏆</div>';
+            echo '<div class="nav-card__label">Champions</div>';
+            echo '</a>';
         }
         
         echo '</nav>';
@@ -119,6 +124,8 @@ class NavigationHelper {
             echo '<a href="club_game_results.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'results' ? 'active' : '') . '">Results</a>';
 
             echo '<a href="game_days.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'game_days' ? 'active' : '') . '">Game Days</a>';
+
+            echo '<a href="club_champions.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'champions' ? 'active' : '') . '">Champions</a>';
         }
 
         echo '</nav>';

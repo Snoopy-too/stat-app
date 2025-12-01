@@ -118,6 +118,10 @@ if ($club_id > 0 || !empty($slug)) {
                         <h3>Game Days</h3>
                         <div class="stat-number">&#128197;</div>
                     </a>
+                    <a href="club_champions.php?id=<?php echo $club_id; ?>" class="card-link card-link--stat">
+                        <h3>Champions</h3>
+                        <div class="stat-number">&#127942;</div>
+                    </a>
                 </div>
 
                 <?php

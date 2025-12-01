@@ -12,6 +12,14 @@ $results = [];
 $error = '';
 $club_id = null;
 
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'played_at';
+$order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
+
+$allowed_sorts = ['nickname', 'game_type', 'played_at'];
+if (!in_array($sort, $allowed_sorts)) {
+    $sort = 'played_at';
+}
+
 if ($game_id > 0) {
     // First fetch game details to ensure it exists
     $game_stmt = $pdo->prepare("SELECT g.*, c.club_name, c.club_id 
@@ -22,6 +30,7 @@ if ($game_id > 0) {
     $game = $game_stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($game) {
+        $club_id = $game['club_id'];
         // Fetch both individual and team results for this game
         $results_stmt = $pdo->prepare("
             (SELECT 
@@ -43,8 +52,7 @@ if ($game_id > 0) {
             FROM team_game_results tgr
             JOIN teams t ON tgr.team_id = t.team_id
             WHERE tgr.game_id = ?)
-            ORDER BY played_at DESC, position ASC 
-            LIMIT 8");
+            ORDER BY $sort $order");
         $results_stmt->execute([$game_id, $game_id]);
         $results = $results_stmt->fetchAll(PDO::FETCH_ASSOC);
     } else {
@@ -106,9 +114,9 @@ if ($game_id > 0) {
                     <table class="results-table">
                         <thead>
                             <tr>
-                                <th>Winner</th>
-                                <th>Type</th>
-                                <th>Date Played</th>
+                                <th><a href="?id=<?php echo $game_id; ?>&sort=nickname&order=<?php echo ($sort === 'nickname' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()">Winner <?php if ($sort === 'nickname') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
+                                <th><a href="?id=<?php echo $game_id; ?>&sort=game_type&order=<?php echo ($sort === 'game_type' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()">Type <?php if ($sort === 'game_type') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
+                                <th><a href="?id=<?php echo $game_id; ?>&sort=played_at&order=<?php echo ($sort === 'played_at' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()">Date Played <?php if ($sort === 'played_at') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -142,4 +150,17 @@ if ($game_id > 0) {
     <script src="js/multi-step-form.js"></script>
     <script src="js/breadcrumbs.js"></script>
 </body>
+</body>
+<script>
+function saveScroll() {
+    sessionStorage.setItem('scrollPos', window.scrollY);
+}
+window.addEventListener('DOMContentLoaded', function() {
+    var scrollPos = sessionStorage.getItem('scrollPos');
+    if (scrollPos !== null) {
+        window.scrollTo(0, parseInt(scrollPos));
+        sessionStorage.removeItem('scrollPos');
+    }
+});
+</script>
 </html>

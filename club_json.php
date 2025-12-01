@@ -101,12 +101,56 @@ try {
         }
     }
 
+    // 5. Fetch games
+    $games_stmt = $pdo->prepare("SELECT * FROM games WHERE club_id = ? ORDER BY game_name");
+    $games_stmt->execute([$club_id]);
+    $games = $games_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // 6. Fetch game results (history)
+    $results_stmt = $pdo->prepare("
+        -- Individual Games
+        SELECT
+            gr.played_at,
+            g.game_name,
+            m.nickname as winner_identifier,
+            gr.num_players as participants,
+            gr.game_id,
+            'Individual' as game_type,
+            gr.result_id as record_id
+        FROM game_results gr
+        JOIN games g ON gr.game_id = g.game_id
+        JOIN members m ON gr.winner = m.member_id
+        WHERE m.club_id = ?
+
+        UNION ALL
+
+        -- Team Games
+        SELECT
+            tgr.played_at,
+            g.game_name,
+            t.team_name as winner_identifier,
+            tgr.num_teams as participants,
+            tgr.game_id,
+            'Team' as game_type,
+            tgr.result_id as record_id
+        FROM team_game_results tgr
+        JOIN games g ON tgr.game_id = g.game_id
+        JOIN teams t ON tgr.winner = t.team_id
+        WHERE t.club_id = ?
+
+        ORDER BY played_at DESC
+    ");
+    $results_stmt->execute([$club_id, $club_id]);
+    $results = $results_stmt->fetchAll(PDO::FETCH_ASSOC);
+
     // Construct final response
     $response = [
         'club' => $club,
         'champion' => $champion ? $champion : null,
         'members' => $members,
-        'teams' => $processed_teams
+        'teams' => $processed_teams,
+        'games' => $games,
+        'results' => $results
     ];
 
     echo json_encode($response, JSON_PRETTY_PRINT);

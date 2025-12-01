@@ -4,6 +4,14 @@ require_once 'includes/NavigationHelper.php';
 
 $member_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
+// Sorting parameters
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'game_date';
+$order = (isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC') ? 'ASC' : 'DESC';
+$allowed_sorts = ['game_date', 'game_name', 'position', 'num_players'];
+if (!in_array($sort, $allowed_sorts)) {
+    $sort = 'game_date';
+}
+
 // Get member details
 $stmt = $pdo->prepare("SELECT m.nickname, m.club_id, c.club_name FROM members m JOIN clubs c ON m.club_id = c.club_id WHERE m.member_id = ? AND m.status = 'active'");
 $stmt->execute([$member_id]);
@@ -17,7 +25,7 @@ if (!$member) {
 $club_id = $member['club_id'];
 
 // Calculate Average Finish and get game history for the member (both individual and team games)
-$stmt = $pdo->prepare("SELECT DISTINCT gr.played_at as game_date, g.game_name, CASE WHEN gr.winner = ? THEN 1 WHEN gr.place_2 = ? THEN 2 WHEN gr.place_3 = ? THEN 3 WHEN gr.place_4 = ? THEN 4 WHEN gr.place_5 = ? THEN 5 WHEN gr.place_6 = ? THEN 6 WHEN gr.place_7 = ? THEN 7 WHEN gr.place_8 = ? THEN 8 END as position, gr.num_players, gr.game_id, 'individual' as game_type FROM game_results gr JOIN games g ON gr.game_id = g.game_id WHERE gr.winner = ? OR gr.place_2 = ? OR gr.place_3 = ? OR gr.place_4 = ? OR gr.place_5 = ? OR gr.place_6 = ? OR gr.place_7 = ? OR gr.place_8 = ? UNION ALL SELECT DISTINCT tgr.played_at as game_date, g.game_name, CASE WHEN tgr.winner = t.team_id THEN 1 WHEN tgr.place_2 = t.team_id THEN 2 WHEN tgr.place_3 = t.team_id THEN 3 WHEN tgr.place_4 = t.team_id THEN 4 END as position, tgr.num_teams as num_players, tgr.game_id, 'team' as game_type FROM teams t JOIN team_game_results tgr ON (t.team_id = tgr.winner OR t.team_id = tgr.place_2 OR t.team_id = tgr.place_3 OR t.team_id = tgr.place_4) JOIN games g ON tgr.game_id = g.game_id WHERE (t.member1_id = ? OR t.member2_id = ? OR t.member3_id = ? OR t.member4_id = ?) ORDER BY game_date DESC, position ASC");
+$stmt = $pdo->prepare("SELECT DISTINCT gr.played_at as game_date, g.game_name, CASE WHEN gr.winner = ? THEN 1 WHEN gr.place_2 = ? THEN 2 WHEN gr.place_3 = ? THEN 3 WHEN gr.place_4 = ? THEN 4 WHEN gr.place_5 = ? THEN 5 WHEN gr.place_6 = ? THEN 6 WHEN gr.place_7 = ? THEN 7 WHEN gr.place_8 = ? THEN 8 END as position, gr.num_players, gr.game_id, 'individual' as game_type FROM game_results gr JOIN games g ON gr.game_id = g.game_id WHERE gr.winner = ? OR gr.place_2 = ? OR gr.place_3 = ? OR gr.place_4 = ? OR gr.place_5 = ? OR gr.place_6 = ? OR gr.place_7 = ? OR gr.place_8 = ? UNION ALL SELECT DISTINCT tgr.played_at as game_date, g.game_name, CASE WHEN tgr.winner = t.team_id THEN 1 WHEN tgr.place_2 = t.team_id THEN 2 WHEN tgr.place_3 = t.team_id THEN 3 WHEN tgr.place_4 = t.team_id THEN 4 END as position, tgr.num_teams as num_players, tgr.game_id, 'team' as game_type FROM teams t JOIN team_game_results tgr ON (t.team_id = tgr.winner OR t.team_id = tgr.place_2 OR t.team_id = tgr.place_3 OR t.team_id = tgr.place_4) JOIN games g ON tgr.game_id = g.game_id WHERE (t.member1_id = ? OR t.member2_id = ? OR t.member3_id = ? OR t.member4_id = ?) ORDER BY $sort $order");
 
 $params = array_fill(0, 16, $member_id); // For individual games
 $params = array_merge($params, array_fill(0, 4, $member_id)); // For team games
@@ -79,10 +87,10 @@ $average_finish = $total_games > 0 ? number_format($total_points / $total_games,
         <table class="game-history">
             <thead>
                 <tr>
-                    <th>Date Played</th>
-                    <th>Game</th>
-                    <th>Place</th>
-                    <th>Total Players</th>
+                    <th><a href="?id=<?php echo $member_id; ?>&sort=game_date&order=<?php echo ($sort === 'game_date' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()">Date Played <?php if ($sort === 'game_date') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
+                    <th><a href="?id=<?php echo $member_id; ?>&sort=game_name&order=<?php echo ($sort === 'game_name' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()">Game <?php if ($sort === 'game_name') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
+                    <th><a href="?id=<?php echo $member_id; ?>&sort=position&order=<?php echo ($sort === 'position' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()">Place <?php if ($sort === 'position') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
+                    <th><a href="?id=<?php echo $member_id; ?>&sort=num_players&order=<?php echo ($sort === 'num_players' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()">Total Players <?php if ($sort === 'num_players') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
                 </tr>
             </thead>
             <tbody>
@@ -125,5 +133,17 @@ $average_finish = $total_games > 0 ? number_format($total_points / $total_games,
     <script src="js/empty-states.js"></script>
     <script src="js/multi-step-form.js"></script>
     <script src="js/breadcrumbs.js"></script>
+<script>
+function saveScroll() {
+    sessionStorage.setItem('scrollPos', window.scrollY);
+}
+window.addEventListener('DOMContentLoaded', function() {
+    var scrollPos = sessionStorage.getItem('scrollPos');
+    if (scrollPos !== null) {
+        window.scrollTo(0, parseInt(scrollPos));
+        sessionStorage.removeItem('scrollPos');
+    }
+});
+</script>
 </body>
 </html>

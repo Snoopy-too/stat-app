@@ -35,6 +35,14 @@
     text-align: left;
 }
 
+/* Center align game-history table */
+.game-history th,
+.game-history td,
+.data-table th,
+.data-table td {
+    text-align: center;
+}
+
 /* Cells */
 .data-table td,
 .members-table td,

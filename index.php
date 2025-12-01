@@ -56,7 +56,7 @@ if (isset($_SESSION['club_id'])) {
             <div class="hero-actions">
                 <a href="register.php" class="btn">Start Your Club</a>
                 <?php if (!isset($_SESSION['is_super_admin'])): ?>
-                    <a href="admin/login.php" class="btn btn--ghost">Club AdminLogin</a>
+                    <a href="admin/login.php" class="btn btn--ghost">Club Admin Login</a>
                 <?php else: ?>
                     <a href="admin/dashboard.php" class="btn btn--ghost">Go to Dashboard</a>
                 <?php endif; ?>

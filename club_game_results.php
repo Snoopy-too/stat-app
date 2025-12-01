@@ -44,7 +44,41 @@ if (!in_array($sort_column, $allowed_columns)) {
     $sort_column = 'played_at';
 }
 
-// Get combined game results (individual and team) for the club
+// Pagination settings
+$results_per_page = 25; // Show 25 results at a time
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$offset = ($page - 1) * $results_per_page;
+
+// Get total count of results first
+$count_sql = "
+    SELECT COUNT(*) as total FROM (
+        SELECT gr.result_id
+        FROM game_results gr
+        JOIN games g ON gr.game_id = g.game_id
+        JOIN members m ON gr.winner = m.member_id
+        WHERE m.club_id = :club_id_individual
+        
+        UNION ALL
+        
+        SELECT tgr.result_id
+        FROM team_game_results tgr
+        JOIN games g ON tgr.game_id = g.game_id
+        JOIN teams t ON tgr.winner = t.team_id
+        WHERE t.club_id = :club_id_team
+    ) as all_results
+";
+
+try {
+    $count_stmt = $pdo->prepare($count_sql);
+    $count_stmt->execute(['club_id_individual' => $club_id, 'club_id_team' => $club_id]);
+    $total_results = $count_stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    $total_pages = ceil($total_results / $results_per_page);
+    $has_more = $page < $total_pages;
+} catch (PDOException $e) {
+    die("Database count query failed: " . $e->getMessage());
+}
+
+// Get combined game results (individual and team) for the club with LIMIT
 $sql = "
     -- Individual Games
     SELECT
@@ -77,12 +111,17 @@ $sql = "
     WHERE t.club_id = :club_id_team
 
     ORDER BY $sort_column $order
+    LIMIT :limit OFFSET :offset
 ";
 
 // Prepare and execute the statement (Line 60 where the error originally occurred)
 try {
     $stmt = $pdo->prepare($sql);
-    $stmt->execute(['club_id_individual' => $club_id, 'club_id_team' => $club_id]);
+    $stmt->bindValue(':club_id_individual', $club_id, PDO::PARAM_INT);
+    $stmt->bindValue(':club_id_team', $club_id, PDO::PARAM_INT);
+    $stmt->bindValue(':limit', $results_per_page, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
     $game_results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     // It's good practice to catch potential errors
@@ -164,6 +203,42 @@ try {
                     </tbody>
                 </table>
             </div>
+            
+            <!-- Pagination Info and Load More Button -->
+            <?php if ($total_results > 0): ?>
+                <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-secondary); border-radius: var(--border-radius); text-align: center;">
+                    <p style="color: var(--text-light); margin-bottom: 1rem;">
+                        Showing <?php echo min($offset + 1, $total_results); ?> - <?php echo min($offset + count($game_results), $total_results); ?> of <?php echo $total_results; ?> results
+                    </p>
+                    
+                    <div style="display: flex; gap: 1rem; justify-content: center; align-items: center; flex-wrap: wrap;">
+                        <?php if ($page > 1): ?>
+                            <a href="?<?php echo $base_url_param; ?>&sort=<?php echo urlencode($sort_column); ?>&order=<?php echo urlencode($order); ?>&page=<?php echo $page - 1; ?>" 
+                               class="btn btn--ghost">
+                                ← Show Previous Results
+                            </a>
+                        <?php endif; ?>
+                        
+                        <?php if ($has_more): ?>
+                            <a href="?<?php echo $base_url_param; ?>&sort=<?php echo urlencode($sort_column); ?>&order=<?php echo urlencode($order); ?>&page=<?php echo $page + 1; ?>" 
+                               class="btn btn--secondary">
+                                Load More Results →
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <?php if ($has_more): ?>
+                        <p style="color: var(--text-light); font-size: 0.875rem; margin-top: 0.75rem;">
+                            <?php echo $total_results - ($offset + count($game_results)); ?> more results available
+                        </p>
+                    <?php elseif ($page > 1): ?>
+                        <p style="color: var(--text-light); font-style: italic; margin-top: 0.75rem;">
+                            All results loaded • Page <?php echo $page; ?> of <?php echo $total_pages; ?>
+                        </p>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+            
             <?php else: ?>
                 <p>No game results available for this club.</p>
             <?php endif; ?>

@@ -42,6 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($e->getCode() == 23000) {
                         $_SESSION['error'] = "This slug is already in use. Please choose a different one.";
                     } else {
+                        // Log the actual error for debugging
+                        error_log("Failed to create club: " . $e->getMessage());
                         $_SESSION['error'] = "Failed to create club. Please try again.";
                     }
                 }
@@ -66,6 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($e->getCode() == 23000) {
                         $_SESSION['error'] = "This slug is already in use. Please choose a different one.";
                     } else {
+                        // Log the actual error for debugging
+                        error_log("Failed to update club: " . $e->getMessage());
                         $_SESSION['error'] = "Failed to update club. Please try again.";
                     }
                 }

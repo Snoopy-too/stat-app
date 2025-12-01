@@ -19,15 +19,15 @@ if (isset($_SESSION['club_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Board Game Club StatApp</title>
+    <title>The Flying Dutchmen StatApp</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/dark-mode.js"></script>
 </head>
 <body>
     <div class="header">
         <div class="header-title-group">
-            <h1>Board Game Club StatApp</h1>
-            <p class="header-subtitle">Stats for <span id="clubName"><?php echo htmlspecialchars($club_name); ?></span></p>
+            <h1>The Flying Dutchmen StatApp</h1>
+            <p class="header-subtitle">Stats for Board Game Clubs</p>
         </div>
         <div class="header-actions">
             <?php if (isset($_SESSION['is_super_admin'])): ?>

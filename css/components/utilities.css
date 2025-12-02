@@ -227,11 +227,20 @@
     border-bottom: 1px dotted currentColor;
 }
 
+.btn.tooltip-trigger,
+a.tooltip-trigger {
+    border-bottom: none;
+}
+
+.btn.tooltip-trigger {
+    overflow: visible;
+}
+
 .tooltip-trigger::after {
     content: attr(data-tooltip);
     position: absolute;
     bottom: 100%;
-    left: 0;
+    right: 0;
     background: #1f2a44;
     color: #ffffff;
     padding: 0.65rem 1rem;
@@ -253,7 +262,7 @@
     content: "";
     position: absolute;
     bottom: 100%;
-    left: 1rem;
+    right: 1rem;
     border: 6px solid transparent;
     border-top-color: #1f2a44;
     opacity: 0;

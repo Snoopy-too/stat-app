@@ -135,7 +135,7 @@ $total_games = array_sum(array_column($clubs, 'game_count'));
                                             <a href="manage_members.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--xsmall">Members</a>
                                             <a href="manage_games.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--xsmall">Games</a>
                                             <a href="manage_champions.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--xsmall">Champions</a>
-                                            <a href="club_teams.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--xsmall"><span class="tooltip-trigger" data-tooltip="Use Teams for cooperative games and team games">Teams</span></a>
+                                            <a href="club_teams.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--xsmall tooltip-trigger" data-tooltip="Use Teams for cooperative games and team games">Teams</a>
                                         </div>
                                     </td>
                                 </tr>

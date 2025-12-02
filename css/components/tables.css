@@ -12,7 +12,7 @@
     margin-bottom: var(--spacing-5);
     background: var(--color-surface);
     border-radius: var(--radius-lg);
-    overflow: hidden;
+    overflow: visible;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--color-border);
 }
@@ -56,6 +56,17 @@
     font-size: var(--font-size-sm);
     color: var(--color-text);
     transition: background-color var(--transition-fast);
+    position: relative;
+}
+
+/* Allow tooltips to show outside table cells */
+.data-table td:has(.tooltip-trigger),
+.members-table td:has(.tooltip-trigger),
+.stats-table td:has(.tooltip-trigger),
+.game-history td:has(.tooltip-trigger),
+.game-results td:has(.tooltip-trigger),
+.results-table td:has(.tooltip-trigger) {
+    overflow: visible;
 }
 
 /* Row Hover */
@@ -103,6 +114,7 @@
 .table-responsive {
     width: 100%;
     overflow-x: auto;
+    overflow-y: visible;
     -webkit-overflow-scrolling: touch;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);

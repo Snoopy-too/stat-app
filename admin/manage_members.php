@@ -420,9 +420,18 @@ $csrf_token = $security->generateCSRFToken();
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn--secondary" onclick="closeEmailModal()">Cancel</button>
-                        <button type="submit" class="btn">Send Email</button>
+                        <button type="submit" class="btn" id="send-email-btn">Send Email</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="email-loading-overlay" class="loading-overlay" style="display: none;">
+            <div class="loading-message">
+                <div class="loading-spinner"></div>
+                <h3>Sending Emails...</h3>
+                <p>Please wait. Do not refresh or leave this page.</p>
             </div>
         </div>
     </div>
@@ -497,6 +506,16 @@ $csrf_token = $security->generateCSRFToken();
             if (e.target === this) {
                 closeEmailModal();
             }
+        });
+
+        // Handle email form submission
+        document.getElementById('email-form').addEventListener('submit', function(e) {
+            // Show loading overlay
+            document.getElementById('email-loading-overlay').style.display = 'flex';
+            document.getElementById('email-modal').style.display = 'none';
+
+            // Disable the send button to prevent double submission
+            document.getElementById('send-email-btn').disabled = true;
         });
 
          // Handle sorting links with AJAX using event delegation on the body

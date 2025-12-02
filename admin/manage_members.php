@@ -132,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $memberName = $recipient['member_name'];
 
                         // Personalize message
-                        $personalizedMessage = "Hello " . $memberName . ",\n\n" . $message . "\n\n---\nThis email was sent from " . htmlspecialchars($club['club_name']) . " via Board Game Club StatApp";
+                        $personalizedMessage = "Hello " . $memberName . ",\n\n" . $message . "\n\n---\nThis email sent from your board game club's administrator via The Flying Dutchmen StatApp";
 
                         // Email headers
                         $headers = "From: " . (defined('FROM_EMAIL') ? FROM_EMAIL : 'no-reply@' . $_SERVER['HTTP_HOST']) . "\r\n";
@@ -313,7 +313,7 @@ $csrf_token = $security->generateCSRFToken();
                         <option value="">Bulk Actions</option>
                         <option value="bulk_activate">Activate Selected</option>
                         <option value="bulk_deactivate">Deactivate Selected</option>
-                        <option value="bulk_email">Email Selected</option>
+                        <option value="bulk_email">Send Email to</option>
                     </select>
                     <button type="button" id="apply-bulk-action" class="btn btn--subtle btn--small">Apply</button>
                 </form>

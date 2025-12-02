@@ -105,6 +105,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     $_SESSION['success'] = "Selected members deleted successfully!";
                     break;
+
+                case 'bulk_email':
+                    if (empty($_POST['email_subject']) || empty($_POST['email_message'])) {
+                        $_SESSION['error'] = "Email subject and message are required.";
+                        header("Location: manage_members.php?club_id=" . $club_id);
+                        exit();
+                    }
+
+                    $subject = trim($_POST['email_subject']);
+                    $message = trim($_POST['email_message']);
+
+                    // Get member emails
+                    $placeholders = str_repeat('?,', count($selected_members) - 1) . '?';
+                    $stmt = $pdo->prepare("SELECT member_name, email FROM members WHERE member_id IN ($placeholders) AND club_id = ? AND admin_id = ?");
+                    $params = array_merge($selected_members, [$club_id, $_SESSION['admin_id']]);
+                    $stmt->execute($params);
+                    $recipients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    $successCount = 0;
+                    $failCount = 0;
+
+                    foreach ($recipients as $recipient) {
+                        // Prepare email
+                        $to = $recipient['email'];
+                        $memberName = $recipient['member_name'];
+
+                        // Personalize message
+                        $personalizedMessage = "Hello " . $memberName . ",\n\n" . $message . "\n\n---\nThis email was sent from " . htmlspecialchars($club['club_name']) . " via Board Game Club StatApp";
+
+                        // Email headers
+                        $headers = "From: " . (defined('FROM_EMAIL') ? FROM_EMAIL : 'no-reply@' . $_SERVER['HTTP_HOST']) . "\r\n";
+                        $headers .= "Reply-To: " . (defined('FROM_EMAIL') ? FROM_EMAIL : 'no-reply@' . $_SERVER['HTTP_HOST']) . "\r\n";
+                        $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+                        $headers .= "X-Mailer: PHP/" . phpversion();
+
+                        // Send email
+                        if (mail($to, $subject, $personalizedMessage, $headers)) {
+                            $successCount++;
+                        } else {
+                            $failCount++;
+                            error_log("Failed to send email to: " . $to);
+                        }
+                    }
+
+                    if ($successCount > 0 && $failCount === 0) {
+                        $_SESSION['success'] = "Email sent successfully to {$successCount} member" . ($successCount !== 1 ? 's' : '') . "!";
+                    } elseif ($successCount > 0 && $failCount > 0) {
+                        $_SESSION['success'] = "Email sent to {$successCount} member" . ($successCount !== 1 ? 's' : '') . ", but failed for {$failCount}.";
+                    } else {
+                        $_SESSION['error'] = "Failed to send emails. Please check your server mail configuration.";
+                    }
+                    break;
             }
             
             header("Location: manage_members.php?club_id=" . $club_id);
@@ -257,12 +309,13 @@ $csrf_token = $security->generateCSRFToken();
                 <form method="POST" class="toolbar-group" id="bulk-form">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                     <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
-                    <select name="bulk_action" class="form-control form-control--sm">
+                    <select name="bulk_action" id="bulk-action-select" class="form-control form-control--sm">
                         <option value="">Bulk Actions</option>
                         <option value="bulk_activate">Activate Selected</option>
                         <option value="bulk_deactivate">Deactivate Selected</option>
+                        <option value="bulk_email">Email Selected</option>
                     </select>
-                    <button type="submit" class="btn btn--subtle btn--small" onclick="return confirmBulkAction()">Apply</button>
+                    <button type="button" id="apply-bulk-action" class="btn btn--subtle btn--small">Apply</button>
                 </form>
             </div>
 
@@ -340,6 +393,38 @@ $csrf_token = $security->generateCSRFToken();
                 </table>
             </div>
         </div>
+
+        <!-- Email Modal -->
+        <div id="email-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Send Email to Selected Members</h2>
+                    <button type="button" class="modal-close" onclick="closeEmailModal()">&times;</button>
+                </div>
+                <form method="POST" id="email-form">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                    <input type="hidden" name="bulk_action" value="bulk_email">
+                    <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
+                    <div id="email-recipients-container"></div>
+
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="email-subject">Subject *</label>
+                            <input type="text" id="email-subject" name="email_subject" class="form-control" required placeholder="Email subject">
+                        </div>
+                        <div class="form-group">
+                            <label for="email-message">Message *</label>
+                            <textarea id="email-message" name="email_message" class="form-control" rows="10" required placeholder="Type your message here..."></textarea>
+                            <p class="help-text">This message will be sent to all selected members.</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn--secondary" onclick="closeEmailModal()">Cancel</button>
+                        <button type="submit" class="btn">Send Email</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -349,14 +434,70 @@ $csrf_token = $security->generateCSRFToken();
             });
         });
 
-        function confirmBulkAction() {
-            const action = document.querySelector('select[name="bulk_action"]').value;
+        // Handle bulk action apply button
+        document.getElementById('apply-bulk-action').addEventListener('click', function() {
+            const action = document.getElementById('bulk-action-select').value;
+            const selectedCheckboxes = document.querySelectorAll('.member-checkbox:checked');
+
             if (!action) {
                 alert('Please select an action');
-                return false;
+                return;
             }
-            return confirm('Are you sure you want to perform this action on the selected members?');
+
+            if (selectedCheckboxes.length === 0) {
+                alert('Please select at least one member');
+                return;
+            }
+
+            if (action === 'bulk_email') {
+                openEmailModal(selectedCheckboxes);
+            } else {
+                if (confirm('Are you sure you want to perform this action on the selected members?')) {
+                    document.getElementById('bulk-form').submit();
+                }
+            }
+        });
+
+        function openEmailModal(selectedCheckboxes) {
+            const modal = document.getElementById('email-modal');
+            const recipientsContainer = document.getElementById('email-recipients-container');
+
+            // Clear previous recipients
+            recipientsContainer.innerHTML = '';
+
+            // Add hidden inputs for selected members
+            selectedCheckboxes.forEach(checkbox => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'selected_members[]';
+                input.value = checkbox.value;
+                recipientsContainer.appendChild(input);
+            });
+
+            // Show recipient count
+            const count = selectedCheckboxes.length;
+            const countText = document.createElement('p');
+            countText.className = 'help-text';
+            countText.textContent = `Sending to ${count} member${count !== 1 ? 's' : ''}`;
+            recipientsContainer.appendChild(countText);
+
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
         }
+
+        function closeEmailModal() {
+            const modal = document.getElementById('email-modal');
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+            document.getElementById('email-form').reset();
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('email-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEmailModal();
+            }
+        });
 
          // Handle sorting links with AJAX using event delegation on the body
          document.body.addEventListener('click', function(e) {

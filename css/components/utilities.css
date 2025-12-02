@@ -240,7 +240,7 @@ a.tooltip-trigger {
     content: attr(data-tooltip);
     position: absolute;
     bottom: 100%;
-    right: 0;
+    left: 0;
     background: #1f2a44;
     color: #ffffff;
     padding: 0.65rem 1rem;
@@ -262,7 +262,7 @@ a.tooltip-trigger {
     content: "";
     position: absolute;
     bottom: 100%;
-    right: 1rem;
+    left: 1rem;
     border: 6px solid transparent;
     border-top-color: #1f2a44;
     opacity: 0;
@@ -271,6 +271,17 @@ a.tooltip-trigger {
     z-index: 1000;
     pointer-events: none;
     margin-bottom: -6px;
+}
+
+/* Right-aligned tooltip modifier for elements on the right side of screen */
+.tooltip-trigger--right::after {
+    left: auto;
+    right: 0;
+}
+
+.tooltip-trigger--right::before {
+    left: auto;
+    right: 1rem;
 }
 
 .tooltip-trigger:hover::after,

@@ -360,6 +360,18 @@
     box-shadow: var(--shadow-sm);
 }
 
+.history-container {
+    padding: var(--spacing-4);
+}
+
+.member-name {
+    margin-top: 0;
+}
+
+.stats-summary {
+    margin-bottom: var(--spacing-4);
+}
+
 .stats-header {
     text-align: center;
     margin-bottom: var(--spacing-4);

@@ -80,7 +80,7 @@ $average_finish = $total_games > 0 ? number_format($total_points / $total_games,
         <h1 class="member-name"><?php echo htmlspecialchars($member['nickname']); ?>'s Game History</h1>
         
         <div class="stats-summary">
-            <p><strong>Average Finish:</strong> <?php echo $average_finish; ?></p>
+            <p><strong><span class="tooltip-trigger" data-tooltip="Lower is better! 1.00 = 1st place in every game played.">Average Finish:</span></strong> <?php echo $average_finish; ?></p>
         </div>
         
         <?php if (count($game_history) > 0): ?>

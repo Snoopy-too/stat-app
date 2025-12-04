@@ -29,8 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        // 1. Fetch club details
-        $stmt = $pdo->prepare("SELECT c.*, 
+        // 1. Fetch club details (Explicit columns for security)
+        $stmt = $pdo->prepare("SELECT c.club_id, c.club_name, c.slug, c.logo_image, c.created_at,
             (SELECT COUNT(*) FROM members WHERE club_id = ? AND status = 'active') as member_count,
             (SELECT COUNT(*) FROM games WHERE club_id = ?) as game_count,
             (SELECT COUNT(*) FROM (
@@ -47,6 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $stmt->execute([$club_id, $club_id, $club_id, $club_id, $club_id]);
         $club = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // ... (rest of the data fetching remains the same) ...
 
         // 2. Fetch current champion
         $champ_stmt = $pdo->prepare("SELECT m.nickname, c.champ_comments, c.date 
@@ -165,15 +167,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'results' => $results
         ];
 
-        // Generate filename
-        $random_string = bin2hex(random_bytes(8));
-        $filename = "club_{$club_id}_{$random_string}.json";
-        $filepath = "../api/" . $filename;
-
         // Ensure api directory exists
         if (!is_dir('../api')) {
             mkdir('../api', 0755, true);
         }
+
+        // Clean up old files for this club
+        $files = glob("../api/club_{$club_id}_*.json");
+        if ($files) {
+            foreach ($files as $file) {
+                if (is_file($file)) {
+                    unlink($file);
+                }
+            }
+        }
+
+        // Generate filename
+        $random_string = bin2hex(random_bytes(8));
+        $filename = "club_{$club_id}_{$random_string}.json";
+        $filepath = "../api/" . $filename;
 
         // Write to file
         if (file_put_contents($filepath, json_encode($response, JSON_PRETTY_PRINT))) {

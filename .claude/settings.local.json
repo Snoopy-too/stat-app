@@ -16,7 +16,8 @@
       "Bash(dir /s /b:*)",
       "Bash(find:*)",
       "WebFetch(domain:localhost)",
-      "Bash(del \"C:\\xampp\\htdocs\\stat-app\\test-tooltip.html\")"
+      "Bash(del \"C:\\xampp\\htdocs\\stat-app\\test-tooltip.html\")",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

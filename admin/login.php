@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - Board Game Club StatApp</title>
-    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/styles.css?v=2">
     <script src="../js/dark-mode.js"></script>
 </head>
 <body>
@@ -102,6 +102,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group">
                     <label for="password">Password:</label>
                     <input type="password" id="password" name="password" required class="form-control">
+                </div>
+                <div style="display: flex; justify-content: center; margin-bottom: 1rem;">
+                    <a href="forgot_password.php" style="font-size: 0.9rem; color: var(--color-primary); text-decoration: none;">Forgot Password?</a>
                 </div>
                 <button type="submit" class="btn btn--block">Login</button>
             </form>

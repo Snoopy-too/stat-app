@@ -145,6 +145,15 @@ $csrf_token = $security->generateCSRFToken();
         <?php display_session_message('success'); ?>
         <?php display_session_message('error'); ?>
 
+        <?php if (isset($_SESSION['api_file'])): ?>
+            <div class="message message--success">
+                API File Created: <strong><?php echo htmlspecialchars($_SESSION['api_file']); ?></strong>
+                <br>
+                <a href="../<?php echo htmlspecialchars($_SESSION['api_file']); ?>" target="_blank" style="color: inherit; text-decoration: underline;">Open File</a>
+            </div>
+            <?php unset($_SESSION['api_file']); ?>
+        <?php endif; ?>
+
         <?php if ($club_count < $club_limit): ?>
         <div class="card">
             <h2>Create New Club</h2>
@@ -207,6 +216,7 @@ $csrf_token = $security->generateCSRFToken();
                                     <a href="manage_games.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Games</a>
                                     <a href="club_teams.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Teams</a>
                                     <a href="manage_logo.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Logo</a>
+                                    <button type="button" class="btn btn--xsmall btn--secondary" onclick="confirmApiGeneration(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>')">Create API</button>
                                 </div>
                             </td>
                         </tr>
@@ -226,6 +236,7 @@ $csrf_token = $security->generateCSRFToken();
                     <label>Club Name:</label>
                     <input type="text" name="club_name" id="edit_club_name" required class="form-control" pattern="[a-zA-Z0-9 _\-]+" title="Only letters, numbers, spaces, dashes and underscores are allowed">
                 </div>
+
                 <div class="form-group">
                     <label for="edit_club_slug">Club URL Slug (optional):</label>
                     <input type="text" name="slug" id="edit_club_slug" class="form-control" pattern="[a-zA-Z0-9\-]+" title="Only letters, numbers, and hyphens allowed">
@@ -238,6 +249,27 @@ $csrf_token = $security->generateCSRFToken();
                     <button type="button" class="btn" onclick="closeEditModal()">Cancel</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- API Generation Confirmation Modal -->
+    <div id="apiConfirmModal" class="modal">
+        <div class="modal__dialog">
+            <div class="modal__content">
+                <h3>Generate API File</h3>
+                <p>Are you sure you want to generate a new API file for <strong id="api_club_name"></strong>?</p>
+                <p class="text-sm text-muted">This will create a new JSON file with the latest club data. Any existing API file for this club will remain accessible.</p>
+                
+                <form id="apiConfirmForm" method="POST" action="generate_api.php">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                    <input type="hidden" name="club_id" id="api_club_id">
+                    
+                    <div class="form-group" style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: flex-end;">
+                        <button type="button" class="btn btn--ghost" onclick="closeApiModal()">Cancel</button>
+                        <button type="submit" class="btn btn--primary">Generate API</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -256,15 +288,35 @@ $csrf_token = $security->generateCSRFToken();
             modal.classList.remove('is-open');
         }
 
+        // API Modal Logic
+        const apiModal = document.getElementById('apiConfirmModal');
+        const apiModalDialog = apiModal.querySelector('.modal__dialog');
+
+        function confirmApiGeneration(clubId, clubName) {
+            document.getElementById('api_club_id').value = clubId;
+            document.getElementById('api_club_name').textContent = clubName;
+            apiModal.classList.add('is-open');
+        }
+
+        function closeApiModal() {
+            apiModal.classList.remove('is-open');
+        }
+
         // Close modal when clicking outside of it
         window.onclick = function(event) {
             if (event.target === modal) {
                 closeEditModal();
             }
+            if (event.target === apiModal) {
+                closeApiModal();
+            }
         };
 
         // Prevent event propagation from modal content
         modalDialog.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+        apiModalDialog.addEventListener('click', function(event) {
             event.stopPropagation();
         });
     </script>

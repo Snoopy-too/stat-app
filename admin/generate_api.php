@@ -29,8 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        // 1. Fetch club details (Explicit columns for security)
-        $stmt = $pdo->prepare("SELECT c.club_id, c.club_name, c.slug, c.logo_image, c.created_at,
+        // 1. Fetch club details
+        $stmt = $pdo->prepare("SELECT c.*, 
             (SELECT COUNT(*) FROM members WHERE club_id = ? AND status = 'active') as member_count,
             (SELECT COUNT(*) FROM games WHERE club_id = ?) as game_count,
             (SELECT COUNT(*) FROM (
@@ -47,8 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $stmt->execute([$club_id, $club_id, $club_id, $club_id, $club_id]);
         $club = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        // ... (rest of the data fetching remains the same) ...
 
         // 2. Fetch current champion
         $champ_stmt = $pdo->prepare("SELECT m.nickname, c.champ_comments, c.date 

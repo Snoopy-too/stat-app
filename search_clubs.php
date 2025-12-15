@@ -16,14 +16,15 @@ if (strlen($search_term) >= 2) {
         // Prepare SQL query using LIKE for partial matches and SOUNDEX for fuzzy matching
         // Order results by match priority (exact matches first, then SOUNDEX matches)
         $stmt = $pdo->prepare("SELECT club_id, club_name,
-            CASE 
+            CASE
                 WHEN LOWER(club_name) LIKE LOWER(?) THEN 1
                 WHEN SOUNDEX(club_name) = SOUNDEX(?) THEN 2
                 ELSE 3
             END as match_priority
-            FROM clubs 
-            WHERE LOWER(club_name) LIKE LOWER(?)
-            OR SOUNDEX(club_name) = SOUNDEX(?)
+            FROM clubs
+            WHERE (is_private = 0 OR is_private IS NULL)
+            AND (LOWER(club_name) LIKE LOWER(?)
+            OR SOUNDEX(club_name) = SOUNDEX(?))
             ORDER BY match_priority, club_name
             LIMIT 10");
         

@@ -52,7 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $club_name = trim($_POST['club_name']);
             $slug = trim($_POST['slug'] ?? '');
             $slug = $slug === '' ? null : $slug;
-            
+            $is_private = isset($_POST['is_private']) ? 1 : 0;
+
             if (!preg_match('/^[a-zA-Z0-9\s_-]+$/', $club_name)) {
                 $_SESSION['error'] = "Club name can only contain letters, numbers, spaces, dashes and underscores.";
             } elseif ($slug !== null && !preg_match('/^[a-zA-Z0-9-]+$/', $slug)) {
@@ -61,8 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['error'] = "This slug is reserved and cannot be used.";
             } else {
                 try {
-                    $stmt = $pdo->prepare("UPDATE clubs SET club_name = ?, slug = ? WHERE club_id = ? AND admin_id = ?");
-                    $stmt->execute([$club_name, $slug, $_POST['club_id'], $_SESSION['admin_id']]);
+                    $stmt = $pdo->prepare("UPDATE clubs SET club_name = ?, slug = ?, is_private = ? WHERE club_id = ? AND admin_id = ?");
+                    $stmt->execute([$club_name, $slug, $is_private, $_POST['club_id'], $_SESSION['admin_id']]);
                     $_SESSION['success'] = "Club updated successfully!";
                 } catch (PDOException $e) {
                     if ($e->getCode() == 23000) {
@@ -209,7 +210,7 @@ $csrf_token = $security->generateCSRFToken();
                             <td class="actions-cell table-col--primary" data-label="Actions">
                                 <div class="table-actions">
                                     <button type="button" class="btn btn--xsmall"
-                                            onclick="editClub(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>', '<?php echo addslashes($club['slug'] ?? ''); ?>')">
+                                            onclick="editClub(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>', '<?php echo addslashes($club['slug'] ?? ''); ?>', <?php echo $club['is_private'] ?? 0; ?>)">
                                         Edit
                                     </button>
                                     <a href="manage_members.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Members</a>
@@ -245,6 +246,15 @@ $csrf_token = $security->generateCSRFToken();
                     </small>
                 </div>
                 <div class="form-group">
+                    <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" name="is_private" id="edit_is_private" value="1">
+                        <span>Private Club</span>
+                    </label>
+                    <small style="display:block; margin-top:0.5rem; color:var(--text-light);">
+                        Private clubs won't appear in the public club search on the homepage.
+                    </small>
+                </div>
+                <div class="form-group">
                     <button type="submit" class="btn">Save Changes</button>
                     <button type="button" class="btn" onclick="closeEditModal()">Cancel</button>
                 </div>
@@ -277,10 +287,11 @@ $csrf_token = $security->generateCSRFToken();
         const modal = document.getElementById('editClubModal');
         const modalDialog = modal.querySelector('.modal__dialog');
 
-        function editClub(clubId, clubName, clubSlug = '') {
+        function editClub(clubId, clubName, clubSlug = '', isPrivate = 0) {
             document.getElementById('edit_club_id').value = clubId;
             document.getElementById('edit_club_name').value = clubName;
             document.getElementById('edit_club_slug').value = clubSlug || '';
+            document.getElementById('edit_is_private').checked = isPrivate == 1;
             modal.classList.add('is-open');
         }
 

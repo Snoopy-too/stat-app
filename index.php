@@ -557,7 +557,7 @@ if (isset($_SESSION['club_id'])) {
                 <div class="stat-item-label">Free to Use</div>
             </div>
             <div class="stat-item">
-                <div class="stat-item-value">&infin;</div>
+                <div class="stat-item-value">Unlimited</div>
                 <div class="stat-item-label">Games & Members</div>
             </div>
             <div class="stat-item">

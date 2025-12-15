@@ -82,10 +82,10 @@ $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // Get existing teams
 $stmt = $pdo->prepare("
     SELECT t.*,
-           m1.member_name as member1_name,
-           m2.member_name as member2_name,
-           m3.member_name as member3_name,
-           m4.member_name as member4_name
+           m1.nickname as member1_nickname,
+           m2.nickname as member2_nickname,
+           m3.nickname as member3_nickname,
+           m4.nickname as member4_nickname
     FROM teams t
     LEFT JOIN members m1 ON t.member1_id = m1.member_id
     LEFT JOIN members m2 ON t.member2_id = m2.member_id
@@ -252,17 +252,17 @@ $csrf_token = $security->generateCSRFToken();
                                 <td data-label="Team Name"><?php echo htmlspecialchars($team['team_name']); ?></td>
                                 <td data-label="Members">
                                     <ul class="member-list">
-                                        <?php if ($team['member1_name']): ?>
-                                            <li><?php echo htmlspecialchars($team['member1_name']); ?></li>
+                                        <?php if ($team['member1_nickname']): ?>
+                                            <li><?php echo htmlspecialchars($team['member1_nickname']); ?></li>
                                         <?php endif; ?>
-                                        <?php if ($team['member2_name']): ?>
-                                            <li><?php echo htmlspecialchars($team['member2_name']); ?></li>
+                                        <?php if ($team['member2_nickname']): ?>
+                                            <li><?php echo htmlspecialchars($team['member2_nickname']); ?></li>
                                         <?php endif; ?>
-                                        <?php if ($team['member3_name']): ?>
-                                            <li><?php echo htmlspecialchars($team['member3_name']); ?></li>
+                                        <?php if ($team['member3_nickname']): ?>
+                                            <li><?php echo htmlspecialchars($team['member3_nickname']); ?></li>
                                         <?php endif; ?>
-                                        <?php if ($team['member4_name']): ?>
-                                            <li><?php echo htmlspecialchars($team['member4_name']); ?></li>
+                                        <?php if ($team['member4_nickname']): ?>
+                                            <li><?php echo htmlspecialchars($team['member4_nickname']); ?></li>
                                         <?php endif; ?>
                                     </ul>
                                 </td>

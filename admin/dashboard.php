@@ -62,24 +62,19 @@ $total_games = array_sum(array_column($clubs, 'game_count'));
                 <span class="theme-toggle__icon" data-theme-icon>🌙</span>
             </button>
             <a href="account.php" class="btn btn--secondary btn--small">⚙️ Account</a>
-            <?php if (!empty($clubs)): ?>
-                <a href="../club_stats.php?id=<?php echo $clubs[0]['club_id']; ?>" class="btn btn--secondary btn--small">View Site</a>
-            <?php else: ?>
-                <a href="../index.php" class="btn btn--secondary btn--small">View Site</a>
-            <?php endif; ?>
             <a href="logout.php" class="btn btn--secondary btn--small">Logout</a>
         </div>
     </div>
 
     <div class="container">
         <div class="dashboard-stats">
-            <div class="card stat-card stat-card--navy">
+            <a href="manage_clubs.php" class="card stat-card stat-card--navy">
                 <span class="stat-card__label">Total Clubs</span>
                 <div class="stat-card__body">
                     <span class="stat-card__value"><?php echo count($clubs); ?></span>
                     <span class="stat-card__meta">Active clubs under your account</span>
                 </div>
-            </div>
+            </a>
             <div class="card stat-card stat-card--sky">
                 <span class="stat-card__label">Total Members</span>
                 <div class="stat-card__body">

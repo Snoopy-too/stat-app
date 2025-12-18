@@ -45,32 +45,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         }
 
         // Handle image upload
-        if (isset($_FILES['game_image']) && $_FILES['game_image']['error'] === UPLOAD_ERR_OK) {
-            $file = $_FILES['game_image'];
-            $allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
-            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-            $maxSize = 1 * 1024 * 1024; // 1MB
+        $uploadError = null;
+        if (isset($_FILES['game_image']) && $_FILES['game_image']['error'] !== UPLOAD_ERR_NO_FILE) {
+            if ($_FILES['game_image']['error'] === UPLOAD_ERR_OK) {
+                $file = $_FILES['game_image'];
+                $allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
+                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+                $maxSize = 1 * 1024 * 1024; // 1MB
 
-            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $actualMime = finfo_file($finfo, $file['tmp_name']);
-            finfo_close($finfo);
+                $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $actualMime = finfo_file($finfo, $file['tmp_name']);
+                finfo_close($finfo);
 
-            if (in_array($extension, $allowedExtensions) && in_array($actualMime, $allowedMimes) && $file['size'] <= $maxSize) {
-                if (!file_exists($uploadDir)) {
-                    mkdir($uploadDir, 0777, true);
+                if (!in_array($extension, $allowedExtensions) || !in_array($actualMime, $allowedMimes)) {
+                    $uploadError = "Invalid file type. Only JPG, PNG, and GIF allowed.";
+                } elseif ($file['size'] > $maxSize) {
+                    $uploadError = "File is too large. Max size is 1MB.";
+                } else {
+                    if (!file_exists($uploadDir)) {
+                        mkdir($uploadDir, 0777, true);
+                    }
+
+                    // Delete old image if exists
+                    if ($game_image && file_exists($uploadDir . $game_image)) {
+                        unlink($uploadDir . $game_image);
+                    }
+
+                    $filename = 'game_' . $game_id . '_' . time() . '.' . $extension;
+                    if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+                        $game_image = $filename;
+                    } else {
+                        $uploadError = "Failed to move uploaded file. Check folder permissions.";
+                    }
                 }
-
-                // Delete old image if exists
-                if ($game_image && file_exists($uploadDir . $game_image)) {
-                    unlink($uploadDir . $game_image);
-                }
-
-                $filename = 'game_' . $game_id . '_' . time() . '.' . $extension;
-                if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
-                    $game_image = $filename;
-                }
+            } else {
+                $uploadError = "Upload error: " . $_FILES['game_image']['error'];
             }
+        }
+
+        if ($uploadError) {
+            $_SESSION['error'] = $uploadError;
+            header("Location: edit_game.php?club_id=$club_id&game_id=$game_id");
+            exit();
         }
 
         $stmt = $pdo->prepare("UPDATE games SET game_name = ?, min_players = ?, max_players = ?, game_image = ? WHERE game_id = ? AND club_id = ?");

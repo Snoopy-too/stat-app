@@ -44,39 +44,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $game_image = null;
             
             // Handle image upload
-            if (isset($_FILES['game_image']) && $_FILES['game_image']['error'] === UPLOAD_ERR_OK) {
-                $file = $_FILES['game_image'];
-                $allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
-                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-                $maxSize = 1 * 1024 * 1024; // 1MB for game images
-                
-                $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-                $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                $actualMime = finfo_file($finfo, $file['tmp_name']);
-                finfo_close($finfo);
-                
-                if (in_array($extension, $allowedExtensions) && in_array($actualMime, $allowedMimes) && $file['size'] <= $maxSize) {
-                    $uploadDir = '../images/game_images/';
-                    if (!file_exists($uploadDir)) {
-                        mkdir($uploadDir, 0777, true);
-                    }
+            $uploadError = null;
+            if (isset($_FILES['game_image']) && $_FILES['game_image']['error'] !== UPLOAD_ERR_NO_FILE) {
+                if ($_FILES['game_image']['error'] === UPLOAD_ERR_OK) {
+                    $file = $_FILES['game_image'];
+                    $allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
+                    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+                    $maxSize = 1 * 1024 * 1024; // 1MB
                     
-                    $filename = 'game_' . uniqid() . '_' . time() . '.' . $extension;
-                    if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
-                        $game_image = $filename;
+                    $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    $actualMime = finfo_file($finfo, $file['tmp_name']);
+                    finfo_close($finfo);
+                    
+                    if (!in_array($extension, $allowedExtensions) || !in_array($actualMime, $allowedMimes)) {
+                        $uploadError = "Invalid file type. Only JPG, PNG, and GIF allowed.";
+                    } elseif ($file['size'] > $maxSize) {
+                        $uploadError = "File is too large. Max size is 1MB.";
+                    } else {
+                        $uploadDir = '../images/game_images/';
+                        if (!file_exists($uploadDir)) {
+                            mkdir($uploadDir, 0777, true);
+                        }
+                        
+                        $filename = 'game_' . uniqid() . '_' . time() . '.' . $extension;
+                        if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+                            $game_image = $filename;
+                        } else {
+                            $uploadError = "Failed to move uploaded file. Check folder permissions.";
+                        }
                     }
+                } else {
+                    $uploadError = "Upload error: " . $_FILES['game_image']['error'];
                 }
             }
 
-            $stmt = $pdo->prepare("INSERT INTO games (club_id, game_name, min_players, max_players, game_image) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([
-                $club_id,
-                trim($_POST['game_name']),
-                $_POST['min_players'],
-                $_POST['max_players'],
-                $game_image
-            ]);
-            $_SESSION['success'] = "Game added successfully!";
+            if ($uploadError) {
+                $_SESSION['error'] = $uploadError;
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO games (club_id, game_name, min_players, max_players, game_image) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([
+                    $club_id,
+                    trim($_POST['game_name']),
+                    $_POST['min_players'],
+                    $_POST['max_players'],
+                    $game_image
+                ]);
+                $_SESSION['success'] = "Game added successfully!";
+            }
         }
         header("Location: manage_games.php" . ($club_id ? "?club_id=$club_id" : ""));
         exit();

@@ -12,8 +12,13 @@ if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
 $security = new SecurityUtils($pdo);
 $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
 
-// Get club info and verify admin ownership
-$stmt = $pdo->prepare("SELECT * FROM clubs WHERE club_id = ? AND admin_id = ?");
+// Get club info and verify admin access
+$stmt = $pdo->prepare("
+    SELECT c.* 
+    FROM clubs c 
+    JOIN club_admins ca ON c.club_id = ca.club_id 
+    WHERE c.club_id = ? AND ca.admin_id = ?
+");
 $stmt->execute([$club_id, $_SESSION['admin_id']]);
 $club = $stmt->fetch(PDO::FETCH_ASSOC);
 

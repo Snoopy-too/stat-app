@@ -12,15 +12,20 @@ if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
 
 $security = new SecurityUtils($pdo);
 
-// Fetch all clubs for the current admin
-$stmt = $pdo->prepare("SELECT * FROM clubs WHERE admin_id = ? ORDER BY club_name");
+// Fetch all clubs for the current admin (where they are either owner or admin)
+$stmt = $pdo->prepare("SELECT c.* FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ? ORDER BY c.club_name");
 $stmt->execute([$_SESSION['admin_id']]);
 $admin_clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
 
-// Get club info and verify admin ownership
-$stmt = $pdo->prepare("SELECT * FROM clubs WHERE club_id = ? AND admin_id = ?");
+// Get club info and verify admin access
+$stmt = $pdo->prepare("
+    SELECT c.* 
+    FROM clubs c 
+    JOIN club_admins ca ON c.club_id = ca.club_id 
+    WHERE c.club_id = ? AND ca.admin_id = ?
+");
 $stmt->execute([$club_id, $_SESSION['admin_id']]);
 $club = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -35,15 +40,14 @@ $status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'member_name';
 $order = isset($_GET['order']) ? $_GET['order'] : 'asc';
 
-// Build the query - simplified version without game statistics
 $query = "
     SELECT m.*, c.club_name
     FROM members m
-    JOIN clubs c ON m.club_id = c.club_id AND c.admin_id = ?
+    JOIN clubs c ON m.club_id = c.club_id
     WHERE m.club_id = ?
 ";
 
-$params = [$_SESSION['admin_id'], $club_id];
+$params = [$club_id];
 
 // Update search condition to include nickname
 if ($search) {
@@ -83,25 +87,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             switch ($bulk_action) {
                 case 'bulk_activate':
-                    $stmt = $pdo->prepare("UPDATE members SET status = 'active' WHERE member_id = ? AND club_id = ? AND admin_id = ?");
+                    $stmt = $pdo->prepare("UPDATE members SET status = 'active' WHERE member_id = ? AND club_id = ? AND EXISTS (SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?)");
                     foreach ($selected_members as $member_id) {
-                        $stmt->execute([$member_id, $club_id, $_SESSION['admin_id']]);
+                        $stmt->execute([$member_id, $club_id, $club_id, $_SESSION['admin_id']]);
                     }
                     $_SESSION['success'] = "Selected members activated successfully!";
                     break;
                     
                 case 'bulk_deactivate':
-                    $stmt = $pdo->prepare("UPDATE members SET status = 'inactive' WHERE member_id = ? AND club_id = ? AND admin_id = ?");
+                    $stmt = $pdo->prepare("UPDATE members SET status = 'inactive' WHERE member_id = ? AND club_id = ? AND EXISTS (SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?)");
                     foreach ($selected_members as $member_id) {
-                        $stmt->execute([$member_id, $club_id, $_SESSION['admin_id']]);
+                        $stmt->execute([$member_id, $club_id, $club_id, $_SESSION['admin_id']]);
                     }
                     $_SESSION['success'] = "Selected members deactivated successfully!";
                     break;
                     
                 case 'bulk_delete':
-                    $stmt = $pdo->prepare("DELETE FROM members WHERE member_id = ? AND club_id = ? AND admin_id = ?");
+                    $stmt = $pdo->prepare("DELETE FROM members WHERE member_id = ? AND club_id = ? AND EXISTS (SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?)");
                     foreach ($selected_members as $member_id) {
-                        $stmt->execute([$member_id, $club_id, $_SESSION['admin_id']]);
+                        $stmt->execute([$member_id, $club_id, $club_id, $_SESSION['admin_id']]);
                     }
                     $_SESSION['success'] = "Selected members deleted successfully!";
                     break;
@@ -118,8 +122,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     // Get member emails
                     $placeholders = str_repeat('?,', count($selected_members) - 1) . '?';
-                    $stmt = $pdo->prepare("SELECT member_name, email FROM members WHERE member_id IN ($placeholders) AND club_id = ? AND admin_id = ?");
-                    $params = array_merge($selected_members, [$club_id, $_SESSION['admin_id']]);
+                    $stmt = $pdo->prepare("SELECT member_name, email FROM members WHERE member_id IN ($placeholders) AND club_id = ? AND EXISTS (SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?)");
+                    $params = array_merge($selected_members, [$club_id, $club_id, $_SESSION['admin_id']]);
                     $stmt->execute($params);
                     $recipients = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -170,20 +174,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Update the INSERT query in the POST handling section
         if ($_POST['action'] === 'create' && !empty($_POST['member_name']) && !empty($_POST['email']) && !empty($_POST['club_id'])) {
             try {
-                // Verify the club belongs to the admin
-                $stmt = $pdo->prepare("SELECT club_id FROM clubs WHERE club_id = ? AND admin_id = ?");
+                $stmt = $pdo->prepare("SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?");
                 $stmt->execute([$_POST['club_id'], $_SESSION['admin_id']]);
                 if (!$stmt->fetch()) {
                     throw new Exception("Unauthorized club access");
                 }
                 
-                $stmt = $pdo->prepare("INSERT INTO members (club_id, member_name, nickname, email, status, admin_id) VALUES (?, ?, ?, ?, 'active', ?)");
+                $stmt = $pdo->prepare("INSERT INTO members (club_id, admin_id, member_name, nickname, email, status) VALUES (?, ?, ?, ?, ?, 'active')");
                 $stmt->execute([
                     $_POST['club_id'],
+                    $_SESSION['admin_id'],
                     trim($_POST['member_name']),
                     trim($_POST['nickname']),
-                    trim($_POST['email']),
-                    $_SESSION['admin_id']
+                    trim($_POST['email'])
                 ]);
                 $club_id = $_POST['club_id'];
                 $_SESSION['success'] = "Member added successfully!";

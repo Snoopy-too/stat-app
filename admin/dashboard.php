@@ -11,25 +11,14 @@ if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSI
 // Fetch clubs with statistics for the current admin
 $query = "
     SELECT c.*,
-           COUNT(DISTINCT m.member_id) as member_count,
-           COUNT(DISTINCT g.game_id) as game_count,
-           SUM(COALESCE(gr.total, 0) + COALESCE(tgr.total, 0)) as games_played
+           (SELECT COUNT(*) FROM members WHERE club_id = c.club_id) as member_count,
+           (SELECT COUNT(*) FROM games WHERE club_id = c.club_id) as game_count,
+           (COALESCE((SELECT COUNT(DISTINCT session_id) FROM game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0) +
+            COALESCE((SELECT COUNT(DISTINCT session_id) FROM team_game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0)) as games_played,
+           ca.role as admin_role
     FROM clubs c
-    LEFT JOIN members m ON c.club_id = m.club_id
-    LEFT JOIN games g ON c.club_id = g.club_id
-    LEFT JOIN (
-        SELECT game_id, COUNT(result_id) as total
-        FROM game_results
-        WHERE game_id IN (3001, 3005)  /* Ensure game_id type matches if it's INT */
-        GROUP BY game_id
-    ) gr ON g.game_id = gr.game_id
-    LEFT JOIN (
-        SELECT game_id, COUNT(result_id) as total
-        FROM team_game_results
-        WHERE game_id IN (3001, 3005)  /* Ensure game_id type matches if it's INT */
-        GROUP BY game_id
-    ) tgr ON g.game_id = tgr.game_id
-    WHERE c.admin_id = ?
+    JOIN club_admins ca ON c.club_id = ca.club_id
+    WHERE ca.admin_id = ?
     GROUP BY c.club_id
     ORDER BY c.created_at DESC
 ";
@@ -127,6 +116,7 @@ $total_games = array_sum(array_column($clubs, 'game_count'));
                                     <td data-label="Created"><?php echo date('M j, Y', strtotime($club['created_at'])); ?></td>
                                     <td data-label="Actions" class="table-col--primary">
                                         <div class="club-actions">
+                                            <a href="edit_club.php?id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--xsmall">Edit</a>
                                             <a href="manage_members.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--xsmall">Members</a>
                                             <a href="manage_games.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--xsmall">Games</a>
                                             <a href="manage_champions.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--subtle btn--xsmall">Champions</a>

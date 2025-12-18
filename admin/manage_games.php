@@ -15,12 +15,16 @@ $security = new SecurityUtils($pdo);
 // Get club_id from URL
 $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : null;
 
-// Validate club_id exists if provided
+// Validate club_id exists if provided and verify admin access
 if ($club_id) {
-    $stmt = $pdo->prepare("SELECT club_id FROM clubs WHERE club_id = ?");
-    $stmt->execute([$club_id]);
+    $stmt = $pdo->prepare("
+        SELECT 1 
+        FROM club_admins 
+        WHERE club_id = ? AND admin_id = ?
+    ");
+    $stmt->execute([$club_id, $_SESSION['admin_id']]);
     if (!$stmt->fetch()) {
-        $_SESSION['error'] = "Invalid club ID provided.";
+        $_SESSION['error'] = "Unauthorized club access.";
         header("Location: dashboard.php");
         exit();
     }

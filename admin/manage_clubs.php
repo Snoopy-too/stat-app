@@ -35,8 +35,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['error'] = "This slug is reserved and cannot be used.";
             } else {
                 try {
-                    $stmt = $pdo->prepare("INSERT INTO clubs (club_name, slug, admin_id) VALUES (?, ?, ?)");
-                    $stmt->execute([$club_name, $slug, $_SESSION['admin_id']]);
+                    $stmt = $pdo->prepare("INSERT INTO clubs (club_name, slug) VALUES (?, ?)");
+                    $stmt->execute([$club_name, $slug]);
+                    $new_club_id = $pdo->lastInsertId();
+                    
+                    // Assign the creator as the owner
+                    $stmt = $pdo->prepare("INSERT INTO club_admins (club_id, admin_id, role) VALUES (?, ?, 'owner')");
+                    $stmt->execute([$new_club_id, $_SESSION['admin_id']]);
+                    
                     $_SESSION['success'] = "Club created successfully!";
                 } catch (PDOException $e) {
                     if ($e->getCode() == 23000) {
@@ -62,8 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['error'] = "This slug is reserved and cannot be used.";
             } else {
                 try {
-                    $stmt = $pdo->prepare("UPDATE clubs SET club_name = ?, slug = ?, is_private = ? WHERE club_id = ? AND admin_id = ?");
-                    $stmt->execute([$club_name, $slug, $is_private, $_POST['club_id'], $_SESSION['admin_id']]);
+                    $stmt = $pdo->prepare("UPDATE clubs SET club_name = ?, slug = ?, is_private = ? WHERE club_id = ? AND EXISTS (SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?)");
+                    $stmt->execute([$club_name, $slug, $is_private, $_POST['club_id'], $_POST['club_id'], $_SESSION['admin_id']]);
                     $_SESSION['success'] = "Club updated successfully!";
                 } catch (PDOException $e) {
                     if ($e->getCode() == 23000) {
@@ -83,25 +89,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Fetch clubs for the current admin and count them
 $query = "SELECT c.*, 
-          SUM(COALESCE(gr.total_plays, 0)) as total_plays 
+          (COALESCE((SELECT COUNT(DISTINCT session_id) FROM game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0) +
+           COALESCE((SELECT COUNT(DISTINCT session_id) FROM team_game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0)) as total_plays,
+          ca.role as admin_role
           FROM clubs c
-          LEFT JOIN (
-              SELECT g.club_id, (COALESCE(gr.total, 0) + COALESCE(tgr.total, 0)) as total_plays
-              FROM games g
-              LEFT JOIN (
-                  SELECT game_id, COUNT(result_id) as total 
-                  FROM game_results 
-                  GROUP BY game_id
-              ) gr ON g.game_id = gr.game_id
-              LEFT JOIN (
-                  SELECT game_id, COUNT(result_id) as total 
-                  FROM team_game_results 
-                  GROUP BY game_id
-              ) tgr ON g.game_id = tgr.game_id
-          ) gr ON c.club_id = gr.club_id
-          WHERE c.admin_id = ?
+          JOIN club_admins ca ON c.club_id = ca.club_id
+          WHERE ca.admin_id = ?
           GROUP BY c.club_id
-          ORDER BY c.club_name ASC"; // Adjusted query to sum total plays from games
+          ORDER BY c.club_name ASC";
 
 $stmt = $pdo->prepare($query);
 $stmt->execute([$_SESSION['admin_id']]);
@@ -209,10 +204,7 @@ $csrf_token = $security->generateCSRFToken();
                             <td class="hide-on-mobile" data-label="Total Plays"><?php echo $club['total_plays'] ?: 0; ?></td>
                             <td class="actions-cell table-col--primary" data-label="Actions">
                                 <div class="table-actions">
-                                    <button type="button" class="btn btn--xsmall"
-                                            onclick="editClub(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>', '<?php echo addslashes($club['slug'] ?? ''); ?>', <?php echo $club['is_private'] ?? 0; ?>)">
-                                        Edit
-                                    </button>
+                                    <a href="edit_club.php?id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Edit</a>
                                     <a href="manage_members.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Members</a>
                                     <a href="manage_games.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Games</a>
                                     <a href="club_teams.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Teams</a>
@@ -224,41 +216,6 @@ $csrf_token = $security->generateCSRFToken();
                     <?php endforeach; ?>
                 </tbody>
             </table>
-        </div>
-    </div>
-    <!-- Edit Club Modal -->
-    <div id="editClubModal" class="modal">
-        <div class="modal__dialog">
-            <form id="editClubForm" method="POST">
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                <input type="hidden" name="action" value="edit">
-                <input type="hidden" name="club_id" id="edit_club_id">
-                <div class="form-group">
-                    <label>Club Name:</label>
-                    <input type="text" name="club_name" id="edit_club_name" required class="form-control" pattern="[a-zA-Z0-9 _\-]+" title="Only letters, numbers, spaces, dashes and underscores are allowed">
-                </div>
-
-                <div class="form-group">
-                    <label for="edit_club_slug">Club URL Slug (optional):</label>
-                    <input type="text" name="slug" id="edit_club_slug" class="form-control" pattern="[a-zA-Z0-9\-]+" title="Only letters, numbers, and hyphens allowed">
-                    <small style="display:block; margin-top:0.5rem; color:var(--text-light);">
-                        Leave empty to use ID-based URL. If set, club will be accessible at domain.com/slug
-                    </small>
-                </div>
-                <div class="form-group">
-                    <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" name="is_private" id="edit_is_private" value="1">
-                        <span>Private Club</span>
-                    </label>
-                    <small style="display:block; margin-top:0.5rem; color:var(--text-light);">
-                        Private clubs won't appear in the public club search on the homepage.
-                    </small>
-                </div>
-                <div class="form-group">
-                    <button type="submit" class="btn">Save Changes</button>
-                    <button type="button" class="btn" onclick="closeEditModal()">Cancel</button>
-                </div>
-            </form>
         </div>
     </div>
 
@@ -284,21 +241,6 @@ $csrf_token = $security->generateCSRFToken();
     </div>
 
     <script>
-        const modal = document.getElementById('editClubModal');
-        const modalDialog = modal.querySelector('.modal__dialog');
-
-        function editClub(clubId, clubName, clubSlug = '', isPrivate = 0) {
-            document.getElementById('edit_club_id').value = clubId;
-            document.getElementById('edit_club_name').value = clubName;
-            document.getElementById('edit_club_slug').value = clubSlug || '';
-            document.getElementById('edit_is_private').checked = isPrivate == 1;
-            modal.classList.add('is-open');
-        }
-
-        function closeEditModal() {
-            modal.classList.remove('is-open');
-        }
-
         // API Modal Logic
         const apiModal = document.getElementById('apiConfirmModal');
         const apiModalDialog = apiModal.querySelector('.modal__dialog');
@@ -315,18 +257,12 @@ $csrf_token = $security->generateCSRFToken();
 
         // Close modal when clicking outside of it
         window.onclick = function(event) {
-            if (event.target === modal) {
-                closeEditModal();
-            }
             if (event.target === apiModal) {
                 closeApiModal();
             }
         };
 
         // Prevent event propagation from modal content
-        modalDialog.addEventListener('click', function(event) {
-            event.stopPropagation();
-        });
         apiModalDialog.addEventListener('click', function(event) {
             event.stopPropagation();
         });

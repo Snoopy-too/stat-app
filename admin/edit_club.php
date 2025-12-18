@@ -12,9 +12,14 @@ if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
 $security = new SecurityUtils($pdo);
 $club_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
-// Get club details
-$stmt = $pdo->prepare("SELECT * FROM clubs WHERE club_id = ?");
-$stmt->execute([$club_id]);
+// Get club details and check permissions
+$stmt = $pdo->prepare("
+    SELECT c.*, ca.role as admin_role
+    FROM clubs c
+    JOIN club_admins ca ON c.club_id = ca.club_id
+    WHERE c.club_id = ? AND ca.admin_id = ?
+");
+$stmt->execute([$club_id, $_SESSION['admin_id']]);
 $club = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$club) {
@@ -33,10 +38,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $club_name = trim($_POST['club_name']);
     $slug = trim($_POST['slug']);
     $slug = $slug === '' ? null : $slug; // Convert empty string to null for unique constraint
-    $description = trim($_POST['description']);
-    $meeting_day = $_POST['meeting_day'];
-    $meeting_time = $_POST['meeting_time'];
-    $location = trim($_POST['location']);
     $status = $_POST['status'];
     
     // Validate slug
@@ -48,13 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmt = $pdo->prepare("
                 UPDATE clubs 
-                SET club_name = ?, slug = ?, description = ?, meeting_day = ?, 
-                    meeting_time = ?, location = ?, status = ?
-                WHERE club_id = ?
+                SET club_name = ?, slug = ?, status = ?
+                WHERE club_id = ? AND EXISTS (SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?)
             ");
             $stmt->execute([
-                $club_name, $slug, $description, $meeting_day, 
-                $meeting_time, $location, $status, $club_id
+                $club_name, $slug, $status, $club_id, $club_id, $_SESSION['admin_id']
             ]);
             
             $_SESSION['success'] = "Club updated successfully!";
@@ -71,7 +70,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 $statuses = ['active', 'suspended', 'inactive'];
 
 // Generate CSRF token for form
@@ -133,31 +131,6 @@ $csrf_token = $security->generateCSRFToken();
                     <?php endif; ?>
                 </div>
                 <div class="form-group">
-                    <label for="description">Description:</label>
-                    <textarea id="description" name="description" class="form-control"><?php echo htmlspecialchars($club['description']); ?></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="meeting_day">Meeting Day:</label>
-                    <select id="meeting_day" name="meeting_day" class="form-control">
-                        <?php foreach ($days as $day): ?>
-                            <option value="<?php echo $day; ?>"
-                                <?php echo ($day == $club['meeting_day']) ? 'selected' : ''; ?>>
-                                <?php echo $day; ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="meeting_time">Meeting Time:</label>
-                    <input type="time" id="meeting_time" name="meeting_time" class="form-control"
-                           value="<?php echo htmlspecialchars($club['meeting_time']); ?>">
-                </div>
-                <div class="form-group">
-                    <label for="location">Meeting Location:</label>
-                    <input type="text" id="location" name="location" class="form-control"
-                           value="<?php echo htmlspecialchars($club['location']); ?>">
-                </div>
-                <div class="form-group">
                     <label for="status">Club Status:</label>
                     <select id="status" name="status" class="form-control">
                         <?php foreach ($statuses as $status): ?>
@@ -170,14 +143,119 @@ $csrf_token = $security->generateCSRFToken();
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn">Save Changes</button>
+                    <?php if ($club['admin_role'] === 'owner'): ?>
+                        <button type="button" class="btn btn--secondary" onclick="openShareModal()">Share Club</button>
+                    <?php endif; ?>
                     <a href="view_club.php?id=<?php echo $club_id; ?>" class="btn btn--subtle">Cancel</a>
                 </div>
             </form>
         </div>
     </div>
+
+    <!-- Share Club Modal (Step 1: Email) -->
+    <div id="shareClubModal" class="modal">
+        <div class="modal__dialog">
+            <div class="modal__content">
+                <h2>Share Club</h2>
+                <p>Enter the email address of the administrator you want to share <strong><?php echo htmlspecialchars($club['club_name']); ?></strong> with.</p>
+                <div class="stack" style="margin-top: 1.5rem;">
+                    <div class="form-group">
+                        <label for="share_email">Admin Email Address:</label>
+                        <input type="email" id="share_email" class="form-control" placeholder="admin@example.com">
+                        <div id="share_error" class="error-message" style="display: none; margin-top: 0.5rem;"></div>
+                    </div>
+                    <div class="form-actions" style="justify-content: flex-end;">
+                        <button type="button" class="btn btn--subtle" onclick="closeShareModal()">Cancel</button>
+                        <button type="button" class="btn" id="btn_continue_share" onclick="checkShareEmail()">Continue</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <script>
+        function openShareModal() {
+            document.getElementById('shareClubModal').classList.add('is-open');
+            document.getElementById('share_email').focus();
+        }
+
+        function closeShareModal() {
+            document.getElementById('shareClubModal').classList.remove('is-open');
+            document.getElementById('share_email').value = '';
+            document.getElementById('share_error').style.display = 'none';
+        }
+
+        async function checkShareEmail() {
+            const email = document.getElementById('share_email').value.trim();
+            const errorDiv = document.getElementById('share_error');
+            const btn = document.getElementById('btn_continue_share');
+
+            if (!email) {
+                errorDiv.textContent = 'Please enter an email address.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            errorDiv.style.display = 'none';
+            btn.disabled = true;
+            btn.textContent = 'Checking...';
+
+            try {
+                const response = await fetch(`check_admin_email.php?email=${encodeURIComponent(email)}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    closeShareModal();
+                    
+                    // Step 2: Confirmation using the custom modal
+                    showConfirmDialog(null, {
+                        title: 'Share Privileges?',
+                        message: `You are about to share <strong><?php echo addslashes($club['club_name']); ?></strong> and all privileges with <strong>${data.username}</strong>. Do you wish to continue?`,
+                        confirmText: 'Yes, Share Club',
+                        cancelText: 'Cancel',
+                        type: 'primary',
+                        onConfirm: () => processShare(data.admin_id)
+                    });
+                } else {
+                    errorDiv.textContent = data.message;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'An error occurred. Please try again.';
+                errorDiv.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Continue';
+            }
+        }
+
+        async function processShare(targetAdminId) {
+            const formData = new FormData();
+            formData.append('club_id', '<?php echo $club_id; ?>');
+            formData.append('admin_id', targetAdminId);
+            formData.append('csrf_token', '<?php echo $csrf_token; ?>');
+
+            try {
+                const response = await fetch('process_share_club.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    // Refresh to show any success messages or just notify
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                alert('An error occurred while sharing the club.');
+            }
+        }
+
         function copyVanityUrl() {
             const urlElement = document.getElementById('vanity-url');
+            if (!urlElement) return;
             const url = urlElement.textContent.trim();
             
             navigator.clipboard.writeText(url).then(() => {

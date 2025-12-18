@@ -15,7 +15,7 @@ $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
 $member_id = isset($_GET['member_id']) ? (int)$_GET['member_id'] : 0;
 
 // Fetch all clubs for the current admin
-$stmt = $pdo->prepare("SELECT * FROM clubs WHERE admin_id = ? ORDER BY club_name");
+$stmt = $pdo->prepare("SELECT c.* FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ? ORDER BY c.club_name");
 $stmt->execute([$_SESSION['admin_id']]);
 $admin_clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -41,14 +41,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         // Verify the new club belongs to the admin
         if (isset($_POST['club_id'])) {
-            $stmt = $pdo->prepare("SELECT club_id FROM clubs WHERE club_id = ? AND admin_id = ?");
+            $stmt = $pdo->prepare("SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?");
             $stmt->execute([$_POST['club_id'], $_SESSION['admin_id']]);
             if (!$stmt->fetch()) {
                 throw new Exception("Unauthorized club access");
             }
         }
 
-        $stmt = $pdo->prepare("UPDATE members SET member_name = ?, nickname = ?, email = ?, status = ?, club_id = ? WHERE member_id = ? AND club_id = ? AND admin_id = ?");
+        $stmt = $pdo->prepare("UPDATE members SET member_name = ?, nickname = ?, email = ?, status = ?, club_id = ? WHERE member_id = ? AND club_id = ? AND EXISTS (SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?)");
         $stmt->execute([
             trim($_POST['member_name']),
             trim($_POST['nickname']),
@@ -56,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_POST['status'],
             $_POST['club_id'],
             $member_id,
+            $club_id,
             $club_id,
             $_SESSION['admin_id']
         ]);

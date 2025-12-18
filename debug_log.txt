@@ -1,1 +1,2 @@
 Validating inputs... Game Type: winner_losers
+Validating inputs... Game Type: winner_losers

@@ -9,20 +9,18 @@ if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
 
 $club_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
-// Get club details with statistics
+// Get club details with statistics and check permissions
 $stmt = $pdo->prepare("
-    SELECT c.*, 
-           COUNT(DISTINCT m.member_id) as member_count,
-           COUNT(DISTINCT g.game_id) as game_count,
-           COUNT(DISTINCT gh.history_id) as games_played
+    SELECT c.*, ca.role as admin_role,
+           (SELECT COUNT(*) FROM members WHERE club_id = c.club_id) as member_count,
+           (SELECT COUNT(*) FROM games WHERE club_id = c.club_id) as game_count,
+           (COALESCE((SELECT COUNT(DISTINCT session_id) FROM game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0) +
+            COALESCE((SELECT COUNT(DISTINCT session_id) FROM team_game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0)) as games_played
     FROM clubs c
-    LEFT JOIN members m ON c.club_id = m.club_id
-    LEFT JOIN games g ON c.club_id = g.club_id
-    LEFT JOIN game_history gh ON c.club_id = gh.club_id
-    WHERE c.club_id = ?
-    GROUP BY c.club_id
+    JOIN club_admins ca ON c.club_id = ca.club_id
+    WHERE c.club_id = ? AND ca.admin_id = ?
 ");
-$stmt->execute([$club_id]);
+$stmt->execute([$club_id, $_SESSION['admin_id']]);
 $club = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$club) {
@@ -32,23 +30,38 @@ if (!$club) {
 
 // Get recent activity
 $stmt = $pdo->prepare("
-    SELECT gh.*, g.game_name, COUNT(gr.result_id) as player_count
-    FROM game_history gh
-    JOIN games g ON gh.game_id = g.game_id
-    LEFT JOIN game_results gr ON gh.history_id = gr.history_id
-    WHERE gh.club_id = ?
-    GROUP BY gh.history_id
-    ORDER BY gh.played_at DESC
+    SELECT s.session_id, s.game_id, s.played_at, g.game_name, s.type,
+           (CASE 
+               WHEN s.type = 'individual' THEN (SELECT COUNT(*) FROM game_results WHERE session_id = s.session_id)
+               WHEN s.type = 'team' THEN (SELECT COUNT(*) FROM team_game_results WHERE session_id = s.session_id)
+            END) as participant_count
+    FROM (
+        SELECT session_id, game_id, played_at, 'individual' as type
+        FROM game_results
+        WHERE game_id IN (SELECT game_id FROM games WHERE club_id = ?)
+        GROUP BY session_id
+        UNION ALL
+        SELECT session_id, game_id, played_at, 'team' as type
+        FROM team_game_results
+        WHERE game_id IN (SELECT game_id FROM games WHERE club_id = ?)
+        GROUP BY session_id
+    ) s
+    JOIN games g ON s.game_id = g.game_id
+    ORDER BY s.played_at DESC
     LIMIT 10
 ");
-$stmt->execute([$club_id]);
+$stmt->execute([$club_id, $club_id]);
 $recent_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get top games
 $stmt = $pdo->prepare("
-    SELECT g.game_name, COUNT(gh.history_id) as play_count
+    SELECT g.game_name, COUNT(DISTINCT s.session_id) as play_count
     FROM games g
-    LEFT JOIN game_history gh ON g.game_id = gh.game_id
+    LEFT JOIN (
+        SELECT session_id, game_id FROM game_results
+        UNION ALL
+        SELECT session_id, game_id FROM team_game_results
+    ) s ON g.game_id = s.game_id
     WHERE g.club_id = ?
     GROUP BY g.game_id
     ORDER BY play_count DESC
@@ -63,10 +76,28 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Club - Super Admin</title>
+    <title>View Club - Board Game Club StatApp</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .club-info {
+            background-color: var(--color-surface);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            background-color: var(--bg-secondary);
             padding: 15px;
             border-radius: 4px;
             text-align: center;
+        }
         }
         .stat-number {
             font-size: 24px;
@@ -105,10 +136,6 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="container">
         <div class="club-info">
             <h2>Club Information</h2>
-            <p><strong>Description:</strong> <?php echo htmlspecialchars($club['description']); ?></p>
-            <p><strong>Meeting Day:</strong> <?php echo htmlspecialchars($club['meeting_day']); ?></p>
-            <p><strong>Meeting Time:</strong> <?php echo htmlspecialchars($club['meeting_time']); ?></p>
-            <p><strong>Location:</strong> <?php echo htmlspecialchars($club['location']); ?></p>
             <p><strong>Created:</strong> <?php echo date('F j, Y', strtotime($club['created_at'])); ?></p>
 
             <div class="stats-grid">
@@ -134,7 +161,7 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php foreach ($recent_games as $game): ?>
                         <li>
                             <?php echo htmlspecialchars($game['game_name']); ?> - 
-                            <?php echo $game['player_count']; ?> players - 
+                            <?php echo $game['participant_count']; ?> <?php echo $game['type'] === 'individual' ? 'players' : 'teams'; ?> - 
                             <?php echo date('M j, Y', strtotime($game['played_at'])); ?>
                         </li>
                     <?php endforeach; ?>
@@ -162,11 +189,6 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         <div>
             <a href="edit_club.php?id=<?php echo $club_id; ?>" class="btn">Edit Club</a>
-            <a href="../delete_club.php?id=<?php echo $club_id; ?>" 
-               class="btn btn--danger"
-               onclick="return confirm('Are you sure you want to delete this club?')">
-                Delete Club
-            </a>
             <a href="dashboard.php" class="btn">Back to Dashboard</a>
         </div>
     </div>

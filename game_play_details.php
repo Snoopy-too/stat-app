@@ -13,7 +13,7 @@ $club_id = null;
 $game_id = null;
 
 if ($result_id > 0) {
-    $stmt = $pdo->prepare("SELECT gr.*, g.game_name, g.game_id, c.club_name, c.club_id,
+    $stmt = $pdo->prepare("SELECT gr.*, g.game_name, g.game_id, g.game_image, c.club_name, c.club_id,
         (SELECT nickname FROM members WHERE member_id = gr.winner) as winner_name,
         (SELECT nickname FROM members WHERE member_id = gr.place_2) as second_name,
         (SELECT nickname FROM members WHERE member_id = gr.place_3) as third_name,
@@ -53,6 +53,80 @@ if ($result_id > 0) {
     <link rel="stylesheet" href="css/styles.css">
 
     <script src="js/dark-mode.js"></script>
+    <style>
+        .game-hero {
+            display: flex;
+            gap: var(--spacing-6);
+            background: var(--color-surface);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-6);
+            margin-bottom: var(--spacing-8);
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-md);
+            align-items: center;
+        }
+        .game-hero__image-container {
+            flex-shrink: 0;
+            width: 150px;
+            height: 150px;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            border: 3px solid var(--color-background);
+            background: var(--color-surface-muted);
+        }
+        .game-hero__image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .game-hero__image-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-xs);
+            color: var(--color-text-soft);
+            background: linear-gradient(135deg, var(--color-surface-muted), var(--color-border));
+            text-align: center;
+            padding: var(--spacing-2);
+        }
+        .game-hero__content {
+            flex-grow: 1;
+        }
+        .game-hero__label {
+            font-size: var(--font-size-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--color-text-muted);
+            font-weight: var(--font-weight-bold);
+            margin-bottom: var(--spacing-1);
+            display: block;
+        }
+        .game-hero__title {
+            font-size: var(--font-size-2xl);
+            margin-bottom: var(--spacing-2);
+            color: var(--color-heading);
+        }
+        .game-hero__subtitle {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-soft);
+        }
+        
+        @media (max-width: 36rem) {
+            .game-hero {
+                flex-direction: column;
+                text-align: center;
+                gap: var(--spacing-4);
+            }
+            .game-hero__image-container {
+                width: 120px;
+                height: 120px;
+            }
+        }
+    </style>
 </head>
 <body>
     <?php
@@ -89,17 +163,24 @@ if ($result_id > 0) {
         <?php if ($error): ?>
             <div class="message message--error"><?php echo htmlspecialchars($error); ?></div>
         <?php elseif ($result): ?>
-            <div class="game-play-details">
-                <h2>Game Play Details</h2>
-                
-                <div class="detail-row">
-                    <div class="detail-label">Game:</div>
-                    <div class="detail-value"><?php echo htmlspecialchars($result['game_name']); ?></div>
+            <div class="game-hero">
+                <div class="game-hero__image-container">
+                    <?php if ($result['game_image']): ?>
+                        <img src="images/game_images/<?php echo htmlspecialchars($result['game_image']); ?>" alt="<?php echo htmlspecialchars($result['game_name']); ?>" class="game-hero__image">
+                    <?php else: ?>
+                        <div class="game-hero__image-placeholder">No Image</div>
+                    <?php endif; ?>
                 </div>
+                <div class="game-hero__content">
+                    <span class="game-hero__label">Match Result for</span>
+                    <h1 class="game-hero__title"><?php echo htmlspecialchars($result['game_name']); ?></h1>
+                    <div class="game-hero__subtitle">Played at <?php echo htmlspecialchars($result['club_name']); ?></div>
+                </div>
+            </div>
 
-                <div class="detail-row">
-                    <div class="detail-label">Club:</div>
-                    <div class="detail-value"><?php echo htmlspecialchars($result['club_name']); ?></div>
+            <div class="card game-play-details">
+                <div class="section-header" style="margin-bottom: var(--spacing-6); border-bottom: 2px solid var(--color-border); padding-bottom: var(--spacing-2);">
+                    <h2 style="margin: 0;">Play Details</h2>
                 </div>
 
                 <?php

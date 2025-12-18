@@ -258,16 +258,44 @@
     transform: scale(1.05);
 }
 
+@keyframes skeleton-loading {
+    0% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.skeleton {
+    background: linear-gradient(90deg,
+            rgba(17, 24, 39, 0.05) 25%,
+            rgba(17, 24, 39, 0.08) 37%,
+            rgba(17, 24, 39, 0.05) 63%);
+    background-size: 400% 100%;
+    animation: skeleton-loading 1.4s ease infinite;
+}
+
 .game-card__image-placeholder {
     width: 100%;
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--color-primary-soft), var(--color-primary));
-    color: white;
-    font-size: 3rem;
-    font-weight: 700;
+    background: var(--color-surface-muted);
+}
+
+.game-card__image-placeholder::after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            rgba(17, 24, 39, 0.03) 25%,
+            rgba(17, 24, 39, 0.06) 37%,
+            rgba(17, 24, 39, 0.03) 63%);
+    background-size: 400% 100%;
+    animation: skeleton-loading 2s ease infinite;
 }
 
 .game-card__content {

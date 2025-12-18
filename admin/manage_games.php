@@ -214,9 +214,23 @@ $csrf_token = $security->generateCSRFToken();
             border: 1px solid var(--color-border);
             display: block;
             background: var(--color-surface-muted);
-            line-height: 48px;
-            text-align: center;
-            font-size: 1.25rem;
+            overflow: hidden;
+            position: relative;
+        }
+        .game-thumbnail--skeleton::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, 
+                rgba(17, 24, 39, 0.03) 25%, 
+                rgba(17, 24, 39, 0.06) 37%, 
+                rgba(17, 24, 39, 0.03) 63%);
+            background-size: 400% 100%;
+            animation: skeleton-loading 2s ease infinite;
+        }
+        @keyframes skeleton-loading {
+            0% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
         @media (max-width: 48rem) {
             .form-grid-2 {
@@ -380,7 +394,7 @@ $csrf_token = $security->generateCSRFToken();
                                 <?php if ($game['game_image']): ?>
                                     <img src="../images/game_images/<?php echo htmlspecialchars($game['game_image']); ?>" alt="" class="game-thumbnail">
                                 <?php else: ?>
-                                    <div class="game-thumbnail" title="No image uploaded">🖼️</div>
+                                    <div class="game-thumbnail game-thumbnail--skeleton" title="No image uploaded"></div>
                                 <?php endif; ?>
                             </td>
                             <td data-label="Game Name" style="text-align: left;"><?php echo htmlspecialchars($game['game_name']); ?></td>

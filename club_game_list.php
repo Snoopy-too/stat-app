@@ -102,9 +102,7 @@ if ($club_id > 0 || !empty($slug)) {
                                              alt="<?php echo htmlspecialchars($game['game_name']); ?>" 
                                              class="game-card__image">
                                     <?php else: ?>
-                                        <div class="game-card__image-placeholder">
-                                            <span><?php echo mb_substr($game['game_name'], 0, 1); ?></span>
-                                        </div>
+                                        <div class="game-card__image-placeholder"></div>
                                     <?php endif; ?>
                                 </div>
                                 <div class="game-card__content">

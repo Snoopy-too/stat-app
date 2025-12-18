@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $file = $_FILES['game_image'];
             $allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
             $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-            $maxSize = 2 * 1024 * 1024; // 2MB
+            $maxSize = 1 * 1024 * 1024; // 1MB
 
             $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -200,7 +200,7 @@ $csrf_token = $security->generateCSRFToken();
                         <div class="form-group">
                             <label class="form-label">Current Image</label>
                             <div style="display: flex; flex-direction: column; align-items: flex-start; gap: var(--spacing-2);">
-                                <img src="../images/game_images/<?php echo htmlspecialchars($game['game_image']); ?>" alt="Game Image" class="current-image-preview">
+                                <img src="../images/game_images/<?php echo htmlspecialchars($game['game_image']); ?>" alt="Game Image" class="current-image-preview" loading="lazy">
                                 <label class="form-check">
                                     <input type="checkbox" name="remove_image" value="1" class="form-check-input">
                                     <span class="form-check-label">Remove current image</span>
@@ -235,7 +235,7 @@ $csrf_token = $security->generateCSRFToken();
                         <div class="upload-zone" id="upload-zone">
                             <span class="upload-zone__icon">🔄</span>
                             <span class="upload-zone__text">Click to replace or drag & drop</span>
-                            <span class="upload-zone__hint">JPG, PNG, GIF (Max 2MB)</span>
+                            <span class="upload-zone__hint">JPG, PNG, GIF (Max 1MB, 600px recommended)</span>
                             <input type="file" name="game_image" id="game_image" accept="image/jpeg,image/png,image/gif">
                         </div>
                         <div id="file-name-display" style="margin-top: 10px; font-size: 0.9rem; color: var(--color-primary); font-weight: 500;"></div>

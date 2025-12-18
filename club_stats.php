@@ -100,7 +100,7 @@ if ($club_id > 0 || !empty($slug)) {
             <div class="club-profile card">
                 <div class="club-header">
                     <?php if ($club['logo_image']): ?>
-                        <img src="images/club_logos/<?php echo htmlspecialchars($club['logo_image']); ?>" alt="<?php echo htmlspecialchars($club['club_name']); ?> logo" class="club-logo">
+                        <img src="images/club_logos/<?php echo htmlspecialchars($club['logo_image']); ?>" alt="<?php echo htmlspecialchars($club['club_name']); ?> logo" class="club-logo" loading="lazy">
                     <?php endif; ?>
                     <h2><?php echo htmlspecialchars($club['club_name']); ?></h2>
                 </div>
@@ -140,7 +140,7 @@ if ($club_id > 0 || !empty($slug)) {
                         <div class="champion-header">
                             <h3>Current Champion</h3>
                             <?php if ($club['champ_image']): ?>
-                                <img src="<?php echo htmlspecialchars($club['champ_image']); ?>" alt="Championship Trophy" class="trophy-thumbnail">
+                                <img src="<?php echo htmlspecialchars($club['champ_image']); ?>" alt="Championship Trophy" class="trophy-thumbnail" loading="lazy">
                             <?php endif; ?>
                         </div>
                         <p class="champion-name"><?php echo htmlspecialchars($champion['nickname']); ?></p>

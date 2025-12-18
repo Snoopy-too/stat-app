@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $file = $_FILES['game_image'];
                 $allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
                 $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-                $maxSize = 2 * 1024 * 1024; // 2MB for game images
+                $maxSize = 1 * 1024 * 1024; // 1MB for game images
                 
                 $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -320,7 +320,7 @@ $csrf_token = $security->generateCSRFToken();
                         <div class="upload-zone" id="upload-zone">
                             <span class="upload-zone__icon">🖼️</span>
                             <span class="upload-zone__text">Click to upload or drag & drop</span>
-                            <span class="upload-zone__hint">JPG, PNG, GIF (Max 2MB)</span>
+                            <span class="upload-zone__hint">JPG, PNG, GIF (Max 1MB, 600px recommended)</span>
                             <input type="file" name="game_image" id="game_image" accept="image/jpeg,image/png,image/gif">
                         </div>
                         <div id="file-name-display" style="margin-top: 10px; font-size: 0.9rem; color: var(--color-primary); font-weight: 500;"></div>
@@ -396,7 +396,7 @@ $csrf_token = $security->generateCSRFToken();
                             <?php if (!$club_id): ?><td data-label="Club"><?php echo htmlspecialchars($game['club_name']); ?></td><?php endif; ?>
                             <td data-label="Image">
                                 <?php if ($game['game_image']): ?>
-                                    <img src="../images/game_images/<?php echo htmlspecialchars($game['game_image']); ?>" alt="" class="game-thumbnail">
+                                    <img src="../images/game_images/<?php echo htmlspecialchars($game['game_image']); ?>" alt="" class="game-thumbnail" loading="lazy">
                                 <?php else: ?>
                                     <div class="game-thumbnail game-thumbnail--skeleton" title="No image uploaded"></div>
                                 <?php endif; ?>

@@ -100,7 +100,7 @@ if ($club_id > 0 || !empty($slug)) {
                                     <?php if ($game['game_image']): ?>
                                         <img src="images/game_images/<?php echo htmlspecialchars($game['game_image']); ?>" 
                                              alt="<?php echo htmlspecialchars($game['game_name']); ?>" 
-                                             class="game-card__image">
+                                             class="game-card__image" loading="lazy">
                                     <?php else: ?>
                                         <div class="game-card__image-placeholder"></div>
                                     <?php endif; ?>

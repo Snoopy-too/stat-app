@@ -39,13 +39,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $file = $_FILES['logo'];
         $allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
         $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-        $maxSize = 5 * 1024 * 1024; // 5MB
+        $maxSize = 1 * 1024 * 1024; // 1MB
 
         $uploadError = null;
 
         // Validate file size first
         if ($file['size'] > $maxSize) {
-            $uploadError = "File is too large. Maximum size is 5MB.";
+            $uploadError = "File is too large. Maximum size is 1MB.";
         } else {
             // Validate file extension (secondary check)
             $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
@@ -158,7 +158,7 @@ $csrf_token = $security->generateCSRFToken();
                 <div class="form-group">
                     <label for="logo">Upload New Logo:</label>
                     <input type="file" name="logo" id="logo" class="form-control" accept="image/jpeg,image/png,image/gif" required>
-                    <span class="field-hint">Maximum file size: 5MB. Allowed formats: JPG, PNG, GIF.</span>
+                    <span class="field-hint">Maximum file size: 1MB. Allowed formats: JPG, PNG, GIF.</span>
                 </div>
                 <button type="submit" class="btn">Upload Logo</button>
             </form>

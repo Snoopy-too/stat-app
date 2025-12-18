@@ -196,7 +196,7 @@ $csrf_token = $security->generateCSRFToken();
                         <tr>
                             <td class="club-name-cell" data-label="Club Name">
                                 <?php if ($club['logo_image']): ?>
-                                    <img src="../images/club_logos/<?php echo htmlspecialchars($club['logo_image']); ?>" alt="Club Logo" class="club-logo-thumbnail">
+                                    <img src="../images/club_logos/<?php echo htmlspecialchars($club['logo_image']); ?>" alt="Club Logo" class="club-logo-thumbnail" loading="lazy">
                                 <?php endif; ?>
                                 <span><?php echo htmlspecialchars($club['club_name']); ?></span>
                             </td>

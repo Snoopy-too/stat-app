@@ -69,7 +69,95 @@ if ($game_id > 0) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $game ? htmlspecialchars($game['game_name']) : 'Game'; ?> Details - Board Game StatApp</title>
     <link rel="stylesheet" href="css/styles.css">
-    <script src="js/dark-mode.js"></script>
+    <style>
+        .game-hero {
+            display: flex;
+            gap: var(--spacing-8);
+            background: var(--color-surface);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-8);
+            margin-bottom: var(--spacing-8);
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-md);
+            align-items: center;
+        }
+        .game-hero__image-container {
+            flex-shrink: 0;
+            width: 300px;
+            height: 300px;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            border: 4px solid var(--color-background);
+            background: var(--color-surface-muted);
+        }
+        .game-hero__image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .game-hero__image-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-sm);
+            color: var(--color-text-soft);
+            background: linear-gradient(135deg, var(--color-surface-muted), var(--color-border));
+        }
+        .game-hero__content {
+            flex-grow: 1;
+        }
+        .game-hero__title {
+            font-size: var(--font-size-4xl);
+            margin-bottom: var(--spacing-4);
+            color: var(--color-heading);
+        }
+        .game-hero__stats {
+            display: flex;
+            gap: var(--spacing-8);
+            flex-wrap: wrap;
+        }
+        .game-stat {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-1);
+        }
+        .game-stat__label {
+            font-size: var(--font-size-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--color-text-muted);
+            font-weight: var(--font-weight-bold);
+        }
+        .game-stat__value {
+            font-size: var(--font-size-2xl);
+            color: var(--color-heading);
+            font-weight: var(--font-weight-bold);
+        }
+        
+        @media (max-width: 48rem) {
+            .game-hero {
+                flex-direction: column;
+                padding: var(--spacing-6);
+                text-align: center;
+                gap: var(--spacing-6);
+            }
+            .game-hero__image-container {
+                width: 200px;
+                height: 200px;
+            }
+            .game-hero__stats {
+                justify-content: center;
+                gap: var(--spacing-4);
+            }
+            .game-hero__title {
+                font-size: var(--font-size-2xl);
+            }
+        }
+    </style>
 </head>
 <body>
     <?php
@@ -106,9 +194,37 @@ if ($game_id > 0) {
         <?php if ($error): ?>
             <div class="message message--error"><?php echo htmlspecialchars($error); ?></div>
         <?php elseif ($game): ?>
+            <div class="game-hero">
+                <div class="game-hero__image-container">
+                    <?php if ($game['game_image']): ?>
+                        <img src="images/game_images/<?php echo htmlspecialchars($game['game_image']); ?>" alt="<?php echo htmlspecialchars($game['game_name']); ?>" class="game-hero__image">
+                    <?php else: ?>
+                        <div class="game-hero__image-placeholder">No Image Uploaded</div>
+                    <?php endif; ?>
+                </div>
+                <div class="game-hero__content">
+                    <h1 class="game-hero__title"><?php echo htmlspecialchars($game['game_name']); ?></h1>
+                    <div class="game-hero__stats">
+                        <div class="game-stat">
+                            <span class="game-stat__label">Recommended Players</span>
+                            <span class="game-stat__value"><?php echo $game['min_players'] . '-' . $game['max_players']; ?></span>
+                        </div>
+                        <div class="game-stat">
+                            <span class="game-stat__label">Total Recorded Matches</span>
+                            <span class="game-stat__value"><?php echo count($results); ?></span>
+                        </div>
+                        <div class="game-stat">
+                            <span class="game-stat__label">Club</span>
+                            <span class="game-stat__value"><?php echo htmlspecialchars($game['club_name']); ?></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
-                <h2><?php echo htmlspecialchars($game['game_name']); ?></h2>
-                <p><strong>Club:</strong> <?php echo htmlspecialchars($game['club_name']); ?></p>
+                <div class="section-header" style="margin-bottom: var(--spacing-6); border-bottom: 2px solid var(--color-border); padding-bottom: var(--spacing-2);">
+                    <h2 style="margin: 0;">Match History</h2>
+                </div>
 
                 <?php if (count($results) > 0): ?>
                     <table class="results-table">
@@ -135,8 +251,8 @@ if ($game_id > 0) {
                         </tbody>
                     </table>
                 <?php else: ?>
-                    <div class="no-results">
-                        <p>No results have been recorded for this game yet.</p>
+                    <div class="no-results" style="text-align: center; padding: var(--spacing-12); background: var(--color-surface-muted); border-radius: var(--radius-lg); border: 2px dashed var(--color-border);">
+                        <p style="color: var(--color-text-soft);">No results have been recorded for this game yet.</p>
                     </div>
                 <?php endif; ?>
             </div>

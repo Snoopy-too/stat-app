@@ -92,6 +92,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
                 $_SESSION['success'] = "Game added successfully!";
             }
+        } elseif ($_POST['action'] === 'delete' && isset($_POST['game_id'])) {
+            $del_game_id = (int)$_POST['game_id'];
+            
+            // Verify game belongs to club if club_id is set
+            if ($club_id) {
+                $stmt = $pdo->prepare("SELECT 1 FROM games WHERE game_id = ? AND club_id = ?");
+                $stmt->execute([$del_game_id, $club_id]);
+                if (!$stmt->fetch()) {
+                    $_SESSION['error'] = "Unauthorized game access.";
+                    header("Location: manage_games.php" . ($club_id ? "?club_id=$club_id" : ""));
+                    exit();
+                }
+            }
+            
+            // Double check results count for safety
+            $stmt = $pdo->prepare("
+                SELECT 
+                (SELECT COUNT(*) FROM game_results WHERE game_id = ?) + 
+                (SELECT COUNT(*) FROM team_game_results WHERE game_id = ?) as total_plays
+            ");
+            $stmt->execute([$del_game_id, $del_game_id]);
+            $count = $stmt->fetchColumn();
+            
+            if ($count > 0) {
+                $_SESSION['error'] = "Deletion Restricted: This game has associated match results. Please ensure all related records have been removed prior to deleting the game entry.";
+            } else {
+                // Get image name to delete file
+                $stmt = $pdo->prepare("SELECT game_image FROM games WHERE game_id = ?");
+                $stmt->execute([$del_game_id]);
+                $old_image = $stmt->fetchColumn();
+                
+                $stmt = $pdo->prepare("DELETE FROM games WHERE game_id = ?");
+                if ($stmt->execute([$del_game_id])) {
+                    if ($old_image) {
+                        $image_path = '../images/game_images/' . $old_image;
+                        if (file_exists($image_path)) {
+                            unlink($image_path);
+                        }
+                    }
+                    $_SESSION['success'] = "Game deleted successfully!";
+                } else {
+                    $_SESSION['error'] = "An error occurred while attempting to delete the game.";
+                }
+            }
         }
         header("Location: manage_games.php" . ($club_id ? "?club_id=$club_id" : ""));
         exit();
@@ -421,10 +465,41 @@ $csrf_token = $security->generateCSRFToken();
                             <td data-label="Added"><?php echo date('M j, Y', strtotime($game['created_at'])); ?></td>
                             <td data-label="Total Plays"><?php echo $game['total_plays']; ?></td>
                             <td>
-                                <a href="edit_game.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game['game_id']; ?>" 
-                                   class="btn">Edit</a>
-                                <a href="results.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game['game_id']; ?>" 
-                                   class="btn">Results</a>
+                                <div class="btn-group">
+                                    <a href="edit_game.php?club_id=<?php echo $game['club_id']; ?>&game_id=<?php echo $game['game_id']; ?>" 
+                                       class="btn btn--small">Edit</a>
+                                    <a href="results.php?club_id=<?php echo $game['club_id']; ?>&game_id=<?php echo $game['game_id']; ?>" 
+                                       class="btn btn--small btn--subtle">Results</a>
+                                    
+                                    <?php if ($game['total_plays'] == 0): ?>
+                                        <form method="POST" style="display:inline;" id="delete-form-<?php echo $game['game_id']; ?>">
+                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="game_id" value="<?php echo $game['game_id']; ?>">
+                                            <button type="button" class="btn btn--small btn--danger" 
+                                                    onclick="showConfirmDialog(event, {
+                                                        title: 'Delete Game?',
+                                                        message: 'Are you sure you want to permanently delete \'<?php echo addslashes($game['game_name']); ?>\'? This action cannot be undone.',
+                                                        confirmText: 'Delete Game',
+                                                        onConfirm: () => document.getElementById('delete-form-<?php echo $game['game_id']; ?>').submit()
+                                                    })">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    <?php else: ?>
+                                        <button class="btn btn--small btn--ghost" 
+                                                style="color: var(--color-text-soft);"
+                                                onclick="showConfirmDialog(event, {
+                                                    title: 'Deletion Restricted',
+                                                    message: 'This game has associated match results. Please ensure all related records have been removed prior to deleting the game entry.',
+                                                    confirmText: 'Understood',
+                                                    type: 'primary'
+                                                })"
+                                                title="Game cannot be deleted while it has match results">
+                                            Delete
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>

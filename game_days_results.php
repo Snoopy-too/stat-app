@@ -58,8 +58,10 @@ try {
     <script src="js/dark-mode.js"></script>
     <style>
         .game-thumbnail {
-            width: 48px;
-            height: 48px;
+            width: 48px !important;
+            height: 48px !important;
+            min-width: 48px !important;
+            flex-shrink: 0;
             object-fit: cover;
             border-radius: var(--radius-sm);
             border: 1px solid var(--color-border);
@@ -67,6 +69,11 @@ try {
             background: var(--color-surface-muted);
             overflow: hidden;
             position: relative;
+            max-width: none !important;
+        }
+        .col-image {
+            width: 48px;
+            padding-right: 0 !important;
         }
         .game-thumbnail--skeleton::after {
             content: "";
@@ -116,7 +123,7 @@ try {
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th style="width: 50px;"></th>
+                            <th class="col-image"></th>
                             <th>Game</th>
                             <th>Winner</th>
                             <th>Players</th>
@@ -126,7 +133,7 @@ try {
                     <tbody>
                         <?php foreach ($individual_results as $result): ?>
                         <tr>
-                            <td>
+                            <td class="col-image">
                                 <?php if ($result['game_image']): ?>
                                     <img src="images/game_images/<?php echo htmlspecialchars($result['game_image']); ?>" alt="" class="game-thumbnail" loading="lazy">
                                 <?php else: ?>
@@ -154,7 +161,7 @@ try {
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th style="width: 50px;"></th>
+                            <th class="col-image"></th>
                             <th>Game</th>
                             <th>Winning Team</th>
                             <th>Notes</th>
@@ -163,7 +170,7 @@ try {
                     <tbody>
                         <?php foreach ($team_results as $result): ?>
                         <tr>
-                            <td>
+                            <td class="col-image">
                                 <?php if ($result['game_image']): ?>
                                     <img src="images/game_images/<?php echo htmlspecialchars($result['game_image']); ?>" alt="" class="game-thumbnail" loading="lazy">
                                 <?php else: ?>

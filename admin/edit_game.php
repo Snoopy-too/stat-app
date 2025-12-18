@@ -33,11 +33,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 
     try {
-        $stmt = $pdo->prepare("UPDATE games SET game_name = ?, min_players = ?, max_players = ? WHERE game_id = ? AND club_id = ?");
+        $game_image = $game['game_image'];
+        $uploadDir = '../images/game_images/';
+
+        // Handle image removal
+        if (isset($_POST['remove_image']) && $_POST['remove_image'] === '1') {
+            if ($game_image && file_exists($uploadDir . $game_image)) {
+                unlink($uploadDir . $game_image);
+            }
+            $game_image = null;
+        }
+
+        // Handle image upload
+        if (isset($_FILES['game_image']) && $_FILES['game_image']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['game_image'];
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+            $maxSize = 2 * 1024 * 1024; // 2MB
+
+            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $actualMime = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+
+            if (in_array($extension, $allowedExtensions) && in_array($actualMime, $allowedMimes) && $file['size'] <= $maxSize) {
+                if (!file_exists($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+
+                // Delete old image if exists
+                if ($game_image && file_exists($uploadDir . $game_image)) {
+                    unlink($uploadDir . $game_image);
+                }
+
+                $filename = 'game_' . $game_id . '_' . time() . '.' . $extension;
+                if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+                    $game_image = $filename;
+                }
+            }
+        }
+
+        $stmt = $pdo->prepare("UPDATE games SET game_name = ?, min_players = ?, max_players = ?, game_image = ? WHERE game_id = ? AND club_id = ?");
         $stmt->execute([
             trim($_POST['game_name']),
             $_POST['min_players'],
             $_POST['max_players'],
+            $game_image,
             $game_id,
             $club_id
         ]);
@@ -61,6 +102,82 @@ $csrf_token = $security->generateCSRFToken();
     <title>Edit Game - <?php echo htmlspecialchars($game['game_name']); ?></title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
+    <style>
+        .admin-form-shell {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-4);
+        }
+        .upload-zone {
+            border: 2px dashed var(--color-border-strong);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-6);
+            text-align: center;
+            transition: all var(--transition-fast);
+            background: var(--color-surface-muted);
+            cursor: pointer;
+            position: relative;
+        }
+        .upload-zone:hover {
+            border-color: var(--color-primary);
+            background: rgba(var(--color-primary-rgb), 0.05);
+        }
+        .upload-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .upload-zone__icon {
+            font-size: 2.5rem;
+            margin-bottom: var(--spacing-2);
+            display: block;
+        }
+        .upload-zone__text {
+            display: block;
+            font-weight: var(--font-weight-medium);
+            color: var(--color-heading);
+        }
+        .upload-zone__hint {
+            font-size: var(--font-size-xs);
+            color: var(--color-text-soft);
+        }
+        .modern-card {
+            border: none;
+            box-shadow: var(--shadow-md);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-6);
+            background: var(--color-surface);
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-6);
+            border-bottom: 2px solid var(--color-border);
+            padding-bottom: var(--spacing-3);
+        }
+        .section-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--color-heading);
+        }
+        .current-image-preview {
+            max-width: 200px;
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-3);
+            border: 1px solid var(--color-border);
+        }
+        @media (max-width: 48rem) {
+            .form-grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="header">
@@ -71,31 +188,81 @@ $csrf_token = $security->generateCSRFToken();
     <div class="container">
         <?php display_session_message('error'); ?>
 
-        <div class="card">
-            <h2>Edit Game Details</h2>
-            <form method="POST" class="form">
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                <div class="form-group">
-                    <input type="text" name="game_name" placeholder="Game Name" value="<?php echo htmlspecialchars($game['game_name']); ?>" required class="form-control">
+        <div class="admin-form-shell">
+            <div class="modern-card">
+                <div class="section-header">
+                    <h2>Edit Game Details</h2>
                 </div>
-                <div class="form-group">
-                    <select name="min_players" class="form-control" required>
-                        <option value="">Min Players</option>
-                        <?php for ($i = 1; $i <= 20; $i++): ?>
-                            <option value="<?php echo $i; ?>" <?php echo ($game['min_players'] == $i) ? 'selected' : ''; ?>><?php echo $i; ?></option>
-                        <?php endfor; ?>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <input type="number" name="max_players" placeholder="Max Players" value="<?php echo $game['max_players']; ?>" required min="1" class="form-control">
-                </div>
-                <input type="hidden" name="action" value="update">
-                <div class="form-group">
-                    <button type="submit" class="btn">Update Game</button>
-                </div>
-            </form>
+                <form method="POST" class="form" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                    
+                    <?php if ($game['game_image']): ?>
+                        <div class="form-group">
+                            <label class="form-label">Current Image</label>
+                            <div style="display: flex; flex-direction: column; align-items: flex-start; gap: var(--spacing-2);">
+                                <img src="../images/game_images/<?php echo htmlspecialchars($game['game_image']); ?>" alt="Game Image" class="current-image-preview">
+                                <label class="form-check">
+                                    <input type="checkbox" name="remove_image" value="1" class="form-check-input">
+                                    <span class="form-check-label">Remove current image</span>
+                                </label>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="form-group">
+                        <label for="game_name" class="form-label">Game Name</label>
+                        <input type="text" name="game_name" id="game_name" placeholder="Game Name" value="<?php echo htmlspecialchars($game['game_name']); ?>" required class="form-control">
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label for="min_players" class="form-label">Min Players</label>
+                            <select name="min_players" id="min_players" class="form-control" required>
+                                <option value="">Select...</option>
+                                <?php for ($i = 1; $i <= 20; $i++): ?>
+                                    <option value="<?php echo $i; ?>" <?php echo ($game['min_players'] == $i) ? 'selected' : ''; ?>><?php echo $i; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="max_players" class="form-label">Max Players</label>
+                            <input type="number" name="max_players" id="max_players" placeholder="Max Players" value="<?php echo $game['max_players']; ?>" required min="1" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Update Image (Optional)</label>
+                        <div class="upload-zone" id="upload-zone">
+                            <span class="upload-zone__icon">🔄</span>
+                            <span class="upload-zone__text">Click to replace or drag & drop</span>
+                            <span class="upload-zone__hint">JPG, PNG, GIF (Max 2MB)</span>
+                            <input type="file" name="game_image" id="game_image" accept="image/jpeg,image/png,image/gif">
+                        </div>
+                        <div id="file-name-display" style="margin-top: 10px; font-size: 0.9rem; color: var(--color-primary); font-weight: 500;"></div>
+                    </div>
+
+                    <div style="margin-top: var(--spacing-6); display: flex; justify-content: flex-end; gap: var(--spacing-2);">
+                        <input type="hidden" name="action" value="update">
+                        <button type="submit" class="btn btn--primary btn--large">Update Game</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
+
+    <script>
+        document.getElementById('game_image')?.addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name;
+            const display = document.getElementById('file-name-display');
+            if (fileName) {
+                display.textContent = 'Selected: ' + fileName;
+                document.getElementById('upload-zone').style.borderColor = 'var(--color-primary)';
+            } else {
+                display.textContent = '';
+                document.getElementById('upload-zone').style.borderColor = '';
+            }
+        });
+    </script>
     <script src="../js/mobile-menu.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>

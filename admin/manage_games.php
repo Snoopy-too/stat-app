@@ -37,12 +37,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'create' && !empty($_POST['game_name'])) {
-            $stmt = $pdo->prepare("INSERT INTO games (club_id, game_name, min_players, max_players) VALUES (?, ?, ?, ?)");
+            $game_image = null;
+            
+            // Handle image upload
+            if (isset($_FILES['game_image']) && $_FILES['game_image']['error'] === UPLOAD_ERR_OK) {
+                $file = $_FILES['game_image'];
+                $allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
+                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+                $maxSize = 2 * 1024 * 1024; // 2MB for game images
+                
+                $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $actualMime = finfo_file($finfo, $file['tmp_name']);
+                finfo_close($finfo);
+                
+                if (in_array($extension, $allowedExtensions) && in_array($actualMime, $allowedMimes) && $file['size'] <= $maxSize) {
+                    $uploadDir = '../images/game_images/';
+                    if (!file_exists($uploadDir)) {
+                        mkdir($uploadDir, 0777, true);
+                    }
+                    
+                    $filename = 'game_' . uniqid() . '_' . time() . '.' . $extension;
+                    if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+                        $game_image = $filename;
+                    }
+                }
+            }
+
+            $stmt = $pdo->prepare("INSERT INTO games (club_id, game_name, min_players, max_players, game_image) VALUES (?, ?, ?, ?, ?)");
             $stmt->execute([
                 $club_id,
                 trim($_POST['game_name']),
                 $_POST['min_players'],
-                $_POST['max_players']
+                $_POST['max_players'],
+                $game_image
             ]);
             $_SESSION['success'] = "Game added successfully!";
         }
@@ -114,6 +142,76 @@ $csrf_token = $security->generateCSRFToken();
     <title>Manage Games - Board Game Club StatApp</title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
+    <style>
+        .admin-form-shell {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-4);
+        }
+        .upload-zone {
+            border: 2px dashed var(--color-border-strong);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-6);
+            text-align: center;
+            transition: all var(--transition-fast);
+            background: var(--color-surface-muted);
+            cursor: pointer;
+            position: relative;
+        }
+        .upload-zone:hover {
+            border-color: var(--color-primary);
+            background: rgba(var(--color-primary-rgb), 0.05);
+        }
+        .upload-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .upload-zone__icon {
+            font-size: 2.5rem;
+            margin-bottom: var(--spacing-2);
+            display: block;
+        }
+        .upload-zone__text {
+            display: block;
+            font-weight: var(--font-weight-medium);
+            color: var(--color-heading);
+        }
+        .upload-zone__hint {
+            font-size: var(--font-size-xs);
+            color: var(--color-text-soft);
+        }
+        .modern-card {
+            border: none;
+            box-shadow: var(--shadow-md);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-6);
+            background: var(--color-surface);
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-6);
+            border-bottom: 2px solid var(--color-border);
+            padding-bottom: var(--spacing-3);
+        }
+        .section-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--color-heading);
+        }
+        @media (max-width: 48rem) {
+            .form-grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
     <?php
@@ -163,24 +261,64 @@ $csrf_token = $security->generateCSRFToken();
         <?php display_session_message('error'); ?>
 
         <?php if ($club_id): ?>
-        <div class="card">
-            <h2>Add New Game</h2>
-            <form method="POST" class="form">
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                <div class="form-group">
-                    <input type="text" name="game_name" placeholder="Game Name" required class="form-control">
+        <div class="admin-form-shell">
+            <div class="modern-card">
+                <div class="section-header">
+                    <h2>Add New Game</h2>
                 </div>
-                <div class="form-group">
-                    <input type="number" name="min_players" placeholder="Min Players" required min="1" class="form-control">
-                </div>
-                <div class="form-group">
-                    <input type="number" name="max_players" placeholder="Max Players" required min="1" class="form-control">
-                </div>
-                <input type="hidden" name="action" value="create">
-                <button type="submit" class="btn">Add Game</button>
-            </form>
+                <form method="POST" class="form" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                    
+                    <div class="form-group">
+                        <label for="game_name" class="form-label">Game Name</label>
+                        <input type="text" name="game_name" id="game_name" placeholder="Enter game title..." required class="form-control">
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label for="min_players" class="form-label">Min Players</label>
+                            <input type="number" name="min_players" id="min_players" placeholder="e.g. 1" required min="1" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="max_players" class="form-label">Max Players</label>
+                            <input type="number" name="max_players" id="max_players" placeholder="e.g. 4" required min="1" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Game Image</label>
+                        <div class="upload-zone" id="upload-zone">
+                            <span class="upload-zone__icon">🖼️</span>
+                            <span class="upload-zone__text">Click to upload or drag & drop</span>
+                            <span class="upload-zone__hint">JPG, PNG, GIF (Max 2MB)</span>
+                            <input type="file" name="game_image" id="game_image" accept="image/jpeg,image/png,image/gif">
+                        </div>
+                        <div id="file-name-display" style="margin-top: 10px; font-size: 0.9rem; color: var(--color-primary); font-weight: 500;"></div>
+                    </div>
+
+                    <div style="margin-top: var(--spacing-6); display: flex; justify-content: flex-end;">
+                        <input type="hidden" name="action" value="create">
+                        <button type="submit" class="btn btn--primary btn--large">Create Game</button>
+                    </div>
+                </form>
+            </div>
         </div>
+        <div style="margin-bottom: var(--spacing-8);"></div>
         <?php endif; ?>
+
+        <script>
+            document.getElementById('game_image')?.addEventListener('change', function(e) {
+                const fileName = e.target.files[0]?.name;
+                const display = document.getElementById('file-name-display');
+                if (fileName) {
+                    display.textContent = 'Selected: ' + fileName;
+                    document.getElementById('upload-zone').style.borderColor = 'var(--color-primary)';
+                } else {
+                    display.textContent = '';
+                    document.getElementById('upload-zone').style.borderColor = '';
+                }
+            });
+        </script>
 
         <div class="card">
             <div class="filters">

@@ -95,8 +95,24 @@ if ($club_id > 0 || !empty($slug)) {
                 <div class="games-grid">
                     <?php foreach ($games as $game): ?>
                         <div class="game-card">
-                            <a href="game_details.php?id=<?php echo $game['game_id']; ?>" class="game-link">
-                                <div class="game-name"><?php echo htmlspecialchars($game['game_name']); ?></div>
+                            <a href="game_details.php?id=<?php echo $game['game_id']; ?>" class="game-link-wrapper">
+                                <div class="game-card__image-container">
+                                    <?php if ($game['game_image']): ?>
+                                        <img src="images/game_images/<?php echo htmlspecialchars($game['game_image']); ?>" 
+                                             alt="<?php echo htmlspecialchars($game['game_name']); ?>" 
+                                             class="game-card__image">
+                                    <?php else: ?>
+                                        <div class="game-card__image-placeholder">
+                                            <span><?php echo mb_substr($game['game_name'], 0, 1); ?></span>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="game-card__content">
+                                    <div class="game-name"><?php echo htmlspecialchars($game['game_name']); ?></div>
+                                    <div class="game-meta">
+                                        <span class="game-players"><?php echo $game['min_players'] . '-' . $game['max_players']; ?> Players</span>
+                                    </div>
+                                </div>
                             </a>
                         </div>
                     <?php endforeach; ?>

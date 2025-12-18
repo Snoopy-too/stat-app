@@ -229,6 +229,22 @@ $csrf_token = $security->generateCSRFToken();
             border-color: var(--color-primary);
             background: rgba(var(--color-primary-rgb), 0.05);
         }
+        .upload-zone.has-preview {
+            border-style: solid;
+            padding: var(--spacing-2);
+        }
+        .upload-zone.has-preview .upload-zone__icon,
+        .upload-zone.has-preview .upload-zone__text,
+        .upload-zone.has-preview .upload-zone__hint {
+            display: none;
+        }
+        .upload-zone__preview-img {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: var(--radius-md);
+            display: block;
+            margin: 0 auto;
+        }
         .upload-zone input[type="file"] {
             position: absolute;
             inset: 0;
@@ -382,7 +398,6 @@ $csrf_token = $security->generateCSRFToken();
                             <span class="upload-zone__hint">JPG, PNG, GIF (Max 1MB, 600px recommended)</span>
                             <input type="file" name="game_image" id="game_image" accept="image/jpeg,image/png,image/gif">
                         </div>
-                        <div id="file-name-display" style="margin-top: 10px; font-size: 0.9rem; color: var(--color-primary); font-weight: 500;"></div>
                     </div>
 
                     <div style="margin-top: var(--spacing-6); display: flex; justify-content: flex-end;">
@@ -397,14 +412,28 @@ $csrf_token = $security->generateCSRFToken();
 
         <script>
             document.getElementById('game_image')?.addEventListener('change', function(e) {
-                const fileName = e.target.files[0]?.name;
-                const display = document.getElementById('file-name-display');
-                if (fileName) {
-                    display.textContent = 'Selected: ' + fileName;
-                    document.getElementById('upload-zone').style.borderColor = 'var(--color-primary)';
+                const file = e.target.files[0];
+                const uploadZone = document.getElementById('upload-zone');
+                
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        let preview = uploadZone.querySelector('.upload-zone__preview-img');
+                        if (!preview) {
+                            preview = document.createElement('img');
+                            preview.className = 'upload-zone__preview-img';
+                            uploadZone.prepend(preview);
+                        }
+                        preview.src = event.target.result;
+                        uploadZone.classList.add('has-preview');
+                    };
+                    reader.readAsDataURL(file);
+                    uploadZone.style.borderColor = 'var(--color-primary)';
                 } else {
-                    display.textContent = '';
-                    document.getElementById('upload-zone').style.borderColor = '';
+                    const preview = uploadZone.querySelector('.upload-zone__preview-img');
+                    if (preview) preview.remove();
+                    uploadZone.classList.remove('has-preview');
+                    uploadZone.style.borderColor = '';
                 }
             });
         </script>

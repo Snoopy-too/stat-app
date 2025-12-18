@@ -84,6 +84,7 @@ $sql = "
     SELECT
         gr.played_at,
         g.game_name,
+        g.game_image,
         m.nickname as winner_identifier,
         gr.num_players as participants,
         gr.game_id,
@@ -100,6 +101,7 @@ $sql = "
     SELECT
         tgr.played_at,
         g.game_name,
+        g.game_image,
         t.team_name as winner_identifier,
         tgr.num_teams as participants, -- Representing number of teams
         tgr.game_id,
@@ -139,6 +141,41 @@ try {
     <title>Game Results - <?php echo htmlspecialchars($club['club_name']); ?></title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/dark-mode.js"></script>
+    <style>
+        .game-thumbnail {
+            width: 48px !important;
+            height: 48px !important;
+            min-width: 48px !important;
+            flex-shrink: 0;
+            object-fit: cover;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--color-border);
+            display: block;
+            background: var(--color-surface-muted);
+            overflow: hidden;
+            position: relative;
+            max-width: none !important;
+        }
+        .col-image {
+            width: 48px;
+            padding-right: 0 !important;
+        }
+        .game-thumbnail--skeleton::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, 
+                rgba(17, 24, 39, 0.03) 25%, 
+                rgba(17, 24, 39, 0.06) 37%, 
+                rgba(17, 24, 39, 0.03) 63%);
+            background-size: 400% 100%;
+            animation: skeleton-loading 2s ease infinite;
+        }
+        @keyframes skeleton-loading {
+            0% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
 </head>
 <body>
     <?php
@@ -180,6 +217,7 @@ try {
                     <thead>
                         <tr>
                             <th><a href="?<?php echo $base_url_param; ?>&sort=played_at&order=<?php echo ($sort_column === 'played_at' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Date Played</span><?php if ($sort_column === 'played_at'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
+                            <th class="col-image"></th>
                             <th><a href="?<?php echo $base_url_param; ?>&sort=game_name&order=<?php echo ($sort_column === 'game_name' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Game</span><?php if ($sort_column === 'game_name'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
                             <th><a href="?<?php echo $base_url_param; ?>&sort=game_type&order=<?php echo ($sort_column === 'game_type' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Type</span><?php if ($sort_column === 'game_type'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
                             <th><a href="?<?php echo $base_url_param; ?>&sort=winner_identifier&order=<?php echo ($sort_column === 'winner_identifier' && $order === 'DESC') ? 'asc' : 'desc'; ?>" class="table-sort-link sort-link" onclick="saveScroll()"><span>Winner / Team</span><?php if ($sort_column === 'winner_identifier'): ?><span class="table-sort-link__icon"><?php echo $order === 'ASC' ? '▲' : '▼'; ?></span><?php endif; ?></a></th>
@@ -190,6 +228,13 @@ try {
                         <?php foreach ($game_results as $result): ?>
                         <tr>
                             <td data-label="Date Played"><?php echo date('F j, Y', strtotime($result['played_at'])); ?></td>
+                            <td class="col-image">
+                                <?php if ($result['game_image']): ?>
+                                    <img src="images/game_images/<?php echo htmlspecialchars($result['game_image']); ?>" alt="" class="game-thumbnail" loading="lazy">
+                                <?php else: ?>
+                                    <div class="game-thumbnail game-thumbnail--skeleton" title="No image uploaded"></div>
+                                <?php endif; ?>
+                            </td>
                             <td data-label="Game">
                                 <a href="<?php echo $result['game_type'] === 'Team' ? 'team_game_play_details.php' : 'game_play_details.php'; ?>?result_id=<?php echo urlencode($result['record_id']); ?>" class="game-link">
                                     <?php echo htmlspecialchars($result['game_name']); ?>

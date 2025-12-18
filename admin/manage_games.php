@@ -206,6 +206,18 @@ $csrf_token = $security->generateCSRFToken();
             font-size: 1.5rem;
             color: var(--color-heading);
         }
+        .game-thumbnail {
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--color-border);
+            display: block;
+            background: var(--color-surface-muted);
+            line-height: 48px;
+            text-align: center;
+            font-size: 1.25rem;
+        }
         @media (max-width: 48rem) {
             .form-grid-2 {
                 grid-template-columns: 1fr;
@@ -340,7 +352,8 @@ $csrf_token = $security->generateCSRFToken();
                 <thead>
                     <tr>
                         <?php if (!$club_id): ?><th>Club</th><?php endif; ?>
-                        <th>
+                        <th style="width: 50px; text-align: left;">Image</th>
+                        <th style="text-align: left;">
                             <a href="?<?php echo http_build_query(array_merge($_GET, ['sort'=>'game_name','order'=>$sort==='game_name'&&$order==='asc'?'desc':'asc'])); ?>" class="sort-link">
                                 Game Name <?php echo $sort==='game_name'?($order==='asc'?'^':'v'):''; ?>
                             </a>
@@ -363,7 +376,14 @@ $csrf_token = $security->generateCSRFToken();
                     <?php foreach ($games as $game): ?>
                         <tr>
                             <?php if (!$club_id): ?><td data-label="Club"><?php echo htmlspecialchars($game['club_name']); ?></td><?php endif; ?>
-                            <td data-label="Game Name"><?php echo htmlspecialchars($game['game_name']); ?></td>
+                            <td data-label="Image">
+                                <?php if ($game['game_image']): ?>
+                                    <img src="../images/game_images/<?php echo htmlspecialchars($game['game_image']); ?>" alt="" class="game-thumbnail">
+                                <?php else: ?>
+                                    <div class="game-thumbnail" title="No image uploaded">🖼️</div>
+                                <?php endif; ?>
+                            </td>
+                            <td data-label="Game Name" style="text-align: left;"><?php echo htmlspecialchars($game['game_name']); ?></td>
                             <td data-label="Players"><?php echo $game['min_players'] . '-' . $game['max_players']; ?></td>
                             <td data-label="Added"><?php echo date('M j, Y', strtotime($game['created_at'])); ?></td>
                             <td data-label="Total Plays"><?php echo $game['total_plays']; ?></td>

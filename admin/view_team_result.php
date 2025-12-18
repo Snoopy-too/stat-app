@@ -67,7 +67,7 @@ if ($minutes > 0 || $hours == 0) {
         <h1>Team Game Result Details - <?php echo htmlspecialchars($result['game_name']); ?></h1>
         <div class="btn-group">
             <a href="edit_team_result.php?result_id=<?php echo $result_id; ?>" class="btn">Edit Result</a>
-            <button type="button" class="btn btn--danger" onclick="confirmTeamResultDeletion(<?php echo $result_id; ?>)">Delete Result</button>
+            <button type="button" class="btn btn--danger" onclick="confirmTeamResultDeletion(event, <?php echo $result_id; ?>)">Delete Result</button>
             <a href="results.php?club_id=<?php echo $result['club_id']; ?>&game_id=<?php echo $result['game_id']; ?>" class="btn">Back to Results</a>
         </div>
     </div>
@@ -121,16 +121,22 @@ if ($minutes > 0 || $hours == 0) {
             </table>
         </div>
     </div>
-    <script>
-        function confirmTeamResultDeletion(resultId) {
-            if (confirm('Are you sure you want to delete this team game result? This action cannot be undone.')) {
-                window.location.href = 'delete_team_result.php?result_id=' + resultId;
-            }
-        }
-    </script>
     <script src="../js/mobile-menu.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>
+    <script>
+        function confirmTeamResultDeletion(event, resultId) {
+            showConfirmDialog(event, {
+                title: 'Delete Team Result?',
+                message: 'Are you sure you want to delete this team game result? This action cannot be undone and will affect team standings.',
+                confirmText: 'Delete Result',
+                type: 'danger',
+                onConfirm: () => {
+                    window.location.href = 'delete_team_result.php?result_id=' + resultId;
+                }
+            });
+        }
+    </script>
     <script src="../js/form-validation.js"></script>
     <script src="../js/empty-states.js"></script>
     <script src="../js/multi-step-form.js"></script>

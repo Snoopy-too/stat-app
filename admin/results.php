@@ -2,6 +2,7 @@
 session_start();
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
+require_once '../includes/NavigationHelper.php';
 
 if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
     header("Location: login.php");
@@ -68,13 +69,12 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
 </head>
-<body>
-    <div class="header">
-        <div class="header-title-group">
-            <h1>Game Results</h1>
-            <p class="header-subtitle"><?php echo htmlspecialchars($game['game_name']); ?></p>
-        </div>
-        <a href="manage_games.php?club_id=<?php echo $club_id; ?>" class="btn btn--secondary">Back to Games</a>
+<body class="has-sidebar">
+    <?php NavigationHelper::renderAdminSidebar('games', $club_id, $game['club_name']); ?>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader('Game Results', htmlspecialchars($game['game_name'])); ?>
     </div>
     
     <div class="container">
@@ -124,12 +124,10 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
     </div>
-    <script src="../js/mobile-menu.js"></script>
+    <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>
     <script src="../js/form-validation.js"></script>
     <script src="../js/empty-states.js"></script>
-    <script src="../js/multi-step-form.js"></script>
-    <script src="../js/breadcrumbs.js"></script>
 </body>
 </html>

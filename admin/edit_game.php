@@ -3,6 +3,7 @@ session_start();
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
+require_once '../includes/NavigationHelper.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
     header("Location: login.php");
@@ -212,10 +213,12 @@ $csrf_token = $security->generateCSRFToken();
         }
     </style>
 </head>
-<body>
-    <div class="header">
-        <h1>Edit Game - <?php echo htmlspecialchars($game['game_name']); ?></h1>
-        <a href="manage_games.php?club_id=<?php echo $club_id; ?>" class="btn">Back to Games</a>
+<body class="has-sidebar">
+    <?php NavigationHelper::renderAdminSidebar('games', $club_id, $game['club_name']); ?>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader('Edit Game', htmlspecialchars($game['game_name'])); ?>
     </div>
 
     <div class="container">
@@ -310,12 +313,10 @@ $csrf_token = $security->generateCSRFToken();
             }
         });
     </script>
-    <script src="../js/mobile-menu.js"></script>
+    <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>
     <script src="../js/form-validation.js"></script>
     <script src="../js/empty-states.js"></script>
-    <script src="../js/multi-step-form.js"></script>
-    <script src="../js/breadcrumbs.js"></script>
 </body>
 </html>

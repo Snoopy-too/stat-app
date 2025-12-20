@@ -81,32 +81,16 @@ $csrf_token = $security->generateCSRFToken();
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
 </head>
-<body>
-    <?php
-    // Render breadcrumbs
-    NavigationHelper::renderBreadcrumbs([
-        ['label' => 'Dashboard', 'url' => 'dashboard.php'],
-        ['label' => 'Clubs', 'url' => 'manage_clubs.php'],
-        ['label' => 'Members', 'url' => 'manage_members.php?club_id=' . $club_id],
-        'Edit Member'
-    ]);
-    ?>
-    
-    <div class="header">
-        <div class="header-title-group">
-            <?php NavigationHelper::renderHeaderTitle('Edit Member', htmlspecialchars($member['member_name']), 'dashboard.php', false); ?>
-        </div>
+<body class="has-sidebar">
+    <?php NavigationHelper::renderAdminSidebar('members', $club_id); ?>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader('Edit Member', htmlspecialchars($member['member_name'])); ?>
         <div class="header-actions">
             <a href="../member_stathistory.php?id=<?php echo $member_id; ?>" class="btn btn--ghost btn--small" target="_blank" title="View public profile">👁️ View Profile</a>
-            <a href="dashboard.php" class="btn btn--secondary btn--small">🏠 Dashboard</a>
-            <a href="manage_members.php?club_id=<?php echo $club_id; ?>" class="btn btn--secondary btn--small">← Back to Members</a>
         </div>
     </div>
-    
-    <?php
-    // Render admin navigation
-    NavigationHelper::renderAdminNav('members', $club_id);
-    ?>
 
     <div class="container">
         <?php display_session_message('error'); ?>
@@ -145,12 +129,10 @@ $csrf_token = $security->generateCSRFToken();
             </form>
         </div>
     </div>
-    <script src="../js/mobile-menu.js"></script>
+    <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>
     <script src="../js/form-validation.js"></script>
     <script src="../js/empty-states.js"></script>
-    <script src="../js/multi-step-form.js"></script>
-    <script src="../js/breadcrumbs.js"></script>
 </body>
 </html>

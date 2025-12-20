@@ -3,6 +3,7 @@ session_start();
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
+require_once '../includes/NavigationHelper.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
     header("Location: login.php");
@@ -134,15 +135,14 @@ $csrf_token = $security->generateCSRFToken();
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
 </head>
-<body>
-    <div class="header">
-        <div class="header-title-group">
-            <h1>Manage Champions</h1>
-            <p class="header-subtitle"><?php echo htmlspecialchars($club['club_name']); ?></p>
-        </div>
+<body class="has-sidebar">
+    <?php NavigationHelper::renderAdminSidebar('champions', $club_id, $club['club_name']); ?>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader('Manage Champions', htmlspecialchars($club['club_name'])); ?>
         <div class="header-actions">
             <a href="manage_trophy.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle btn--small">Manage Trophy</a>
-            <a href="dashboard.php" class="btn btn--secondary btn--small">Back to Dashboard</a>
         </div>
     </div>
 
@@ -330,13 +330,11 @@ $csrf_token = $security->generateCSRFToken();
             event.stopPropagation();
         });
     </script>
-    <script src="../js/mobile-menu.js"></script>
+    <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>
     <script src="../js/form-validation.js"></script>
     <script src="../js/empty-states.js"></script>
-    <script src="../js/multi-step-form.js"></script>
-    <script src="../js/breadcrumbs.js"></script>
 </body>
 <script>
 (function() {

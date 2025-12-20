@@ -92,13 +92,26 @@ try {
         }
     </style>
 </head>
-<body>
-    <div class="header">
-        <div class="header-title-group">
-            <h1>Board Game Club StatApp</h1>
-            <p class="header-subtitle">Game Results for <?php echo htmlspecialchars($display_date); ?></p>
-        </div>
-        <a href="game_days.php?id=<?php echo htmlspecialchars($club_id); ?>" class="btn btn--secondary">Back to Game Days</a>
+<body class="has-sidebar">
+    <?php
+    require_once 'includes/NavigationHelper.php';
+
+    // Fetch club name for sidebar
+    $club_name = '';
+    $club_stmt = $pdo->prepare("SELECT club_name FROM clubs WHERE club_id = ?");
+    $club_stmt->execute([$club_id]);
+    $club_row = $club_stmt->fetch(PDO::FETCH_ASSOC);
+    if ($club_row) {
+        $club_name = $club_row['club_name'];
+    }
+
+    // Render sidebar navigation
+    NavigationHelper::renderSidebar('game_days', $club_id, $club_name);
+    ?>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader('Game Results - ' . $display_date); ?>
     </div>
     <div class="container">
         <h2>Game Results for <?php echo htmlspecialchars($display_date); ?></h2>
@@ -192,12 +205,7 @@ try {
         <?php endif; ?>
 
     </div>
-    <script src="js/mobile-menu.js"></script>
-    <script src="js/form-loading.js"></script>
-    <script src="js/confirmations.js"></script>
-    <script src="js/form-validation.js"></script>
+    <script src="js/sidebar.js"></script>
     <script src="js/empty-states.js"></script>
-    <script src="js/multi-step-form.js"></script>
-    <script src="js/breadcrumbs.js"></script>
 </body>
 </html>

@@ -117,25 +117,13 @@ $csrf_token = $security->generateCSRFToken();
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
 </head>
-<body>
-    <?php
-    // Render breadcrumbs
-    NavigationHelper::renderBreadcrumbs([
-        ['label' => 'Dashboard', 'url' => 'dashboard.php'],
-        'Manage Clubs'
-    ]);
-    ?>
-    
-    <div class="header">
-        <div class="header-title-group">
-            <?php NavigationHelper::renderHeaderTitle('Manage Clubs', 'Create and edit your clubs', 'dashboard.php', false); ?>
-        </div>
-        <div class="header-actions">
-            <a href="dashboard.php" class="btn btn--secondary btn--small">← Back to Dashboard</a>
-        </div>
+<body class="has-sidebar">
+    <?php NavigationHelper::renderAdminSidebar('clubs'); ?>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader('Manage Clubs', 'Create and edit your clubs'); ?>
     </div>
-    
-    <?php NavigationHelper::renderAdminNav('clubs'); ?>
     
     <div class="container">
         <?php display_session_message('success'); ?>
@@ -267,12 +255,10 @@ $csrf_token = $security->generateCSRFToken();
             event.stopPropagation();
         });
     </script>
-    <script src="../js/mobile-menu.js"></script>
+    <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>
     <script src="../js/form-validation.js"></script>
     <script src="../js/empty-states.js"></script>
-    <script src="../js/multi-step-form.js"></script>
-    <script src="../js/breadcrumbs.js"></script>
 </body>
 </html>

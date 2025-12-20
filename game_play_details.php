@@ -128,36 +128,20 @@ if ($result_id > 0) {
         }
     </style>
 </head>
-<body>
+<body class="has-sidebar">
     <?php
-    // Render breadcrumbs
+    // Render sidebar navigation
     if ($result) {
-        NavigationHelper::renderBreadcrumbs([
-            ['label' => 'Home', 'url' => 'index.php'],
-            ['label' => $result['club_name'], 'url' => 'club_stats.php?id=' . $club_id],
-            ['label' => $result['game_name'], 'url' => 'game_details.php?id=' . $game_id],
-            'Play Details'
-        ]);
+        NavigationHelper::renderSidebar('results', $club_id, $result['club_name']);
+    } else {
+        NavigationHelper::renderSidebar('results');
     }
     ?>
-    
-    <div class="header">
-        <?php NavigationHelper::renderHeaderTitle('Board Game Club StatApp', 'Game Play Details', 'index.php'); ?>
-        <div class="header-actions">
-            <a href="game_details.php?id=<?php echo $game_id; ?>" class="btn btn--secondary btn--small">← Back to Game</a>
-            <a href="club_stats.php?id=<?php echo $club_id; ?>" class="btn btn--ghost btn--small">Club Stats</a>
-            <a href="index.php" class="btn btn--ghost btn--small">🏠 Home</a>
-        </div>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader($result ? $result['game_name'] . ' - Play Details' : 'Play Details'); ?>
     </div>
-    
-    <?php
-    // Render navigation and context bar if we have data
-    if ($result) {
-        NavigationHelper::renderMobileCardNav('', $club_id);
-        NavigationHelper::renderPublicNav('', $club_id);
-        NavigationHelper::renderContextBar('Viewing result for', $result['game_name'], 'View all results', 'club_game_results.php?id=' . $club_id);
-    }
-    ?>
 
     <div class="container">
         <?php if ($error): ?>
@@ -268,12 +252,7 @@ if ($result_id > 0) {
             </div>
         <?php endif; ?>
     </div>
-    <script src="js/mobile-menu.js"></script>
-    <script src="js/form-loading.js"></script>
-    <script src="js/confirmations.js"></script>
-    <script src="js/form-validation.js"></script>
+    <script src="js/sidebar.js"></script>
     <script src="js/empty-states.js"></script>
-    <script src="js/multi-step-form.js"></script>
-    <script src="js/breadcrumbs.js"></script>
 </body>
 </html>

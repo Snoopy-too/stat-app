@@ -2,6 +2,7 @@
 session_start();
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
+require_once '../includes/NavigationHelper.php';
 
 if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
     header("Location: login.php");
@@ -75,13 +76,15 @@ if ($minutes > 0 || $hours == 0) {
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
 </head>
-<body>
-    <div class="header">
-        <h1>Game Result Details - <?php echo htmlspecialchars($result['game_name']); ?></h1>
-        <div class="header-buttons">
-            <a href="edit_result.php?result_id=<?php echo $result_id; ?>" class="btn">Edit Result</a>
-            <button type="button" class="btn btn--danger" onclick="confirmDeletion(event, <?php echo $result_id; ?>)">Delete Result</button>
-            <a href="results.php?club_id=<?php echo $result['club_id']; ?>&game_id=<?php echo $result['game_id']; ?>" class="btn">Back to Results</a>
+<body class="has-sidebar">
+    <?php NavigationHelper::renderAdminSidebar('games', $result['club_id'], $result['club_name']); ?>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader('Game Result Details', htmlspecialchars($result['game_name'])); ?>
+        <div class="header-actions">
+            <a href="edit_result.php?result_id=<?php echo $result_id; ?>" class="btn btn--small">Edit</a>
+            <button type="button" class="btn btn--danger btn--small" onclick="confirmDeletion(event, <?php echo $result_id; ?>)">Delete</button>
         </div>
     </div>
     
@@ -149,7 +152,7 @@ if ($minutes > 0 || $hours == 0) {
             </table>
         </div>
     </div>
-    <script src="../js/mobile-menu.js"></script>
+    <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>
     <script>
@@ -167,7 +170,5 @@ if ($minutes > 0 || $hours == 0) {
     </script>
     <script src="../js/form-validation.js"></script>
     <script src="../js/empty-states.js"></script>
-    <script src="../js/multi-step-form.js"></script>
-    <script src="../js/breadcrumbs.js"></script>
 </body>
 </html>

@@ -116,10 +116,30 @@ if ($result_id > 0) {
         }
     </style>
 </head>
-<body>
-    <div class="header">
-        <h1>Board Game Club StatApp</h1>
-        <a href="game_details.php?id=<?php echo $result ? $result['game_id'] : ''; ?>" class="btn">Back to Game Details</a>
+<body class="has-sidebar">
+    <?php
+    require_once 'includes/NavigationHelper.php';
+
+    // Get club info for sidebar
+    $club_id = null;
+    $club_name = '';
+    if ($result) {
+        $club_stmt = $pdo->prepare("SELECT c.club_id, c.club_name FROM clubs c JOIN games g ON c.club_id = g.club_id WHERE g.game_id = ?");
+        $club_stmt->execute([$result['game_id']]);
+        $club_row = $club_stmt->fetch(PDO::FETCH_ASSOC);
+        if ($club_row) {
+            $club_id = $club_row['club_id'];
+            $club_name = $club_row['club_name'];
+        }
+    }
+
+    // Render sidebar navigation
+    NavigationHelper::renderSidebar('results', $club_id, $club_name);
+    ?>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader($result ? $result['game_name'] . ' - Team Play Details' : 'Team Play Details'); ?>
     </div>
 
     <div class="container">
@@ -200,5 +220,7 @@ if ($result_id > 0) {
             </div>
         <?php endif; ?>
     </div>
+    <script src="js/sidebar.js"></script>
+    <script src="js/empty-states.js"></script>
 </body>
 </html>

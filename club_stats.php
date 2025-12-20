@@ -65,33 +65,20 @@ if ($club_id > 0 || !empty($slug)) {
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/dark-mode.js"></script>
 </head>
-<body>
+<body class="has-sidebar">
     <?php
-    // Render breadcrumbs
+    // Render sidebar navigation
     if ($club) {
-        NavigationHelper::renderBreadcrumbs([
-            ['label' => 'Home', 'url' => 'index.php'],
-            $club['club_name']
-        ]);
+        NavigationHelper::renderSidebar('club_stats', $club_id, $club['club_name'], $club['logo_image'] ?? null);
+    } else {
+        NavigationHelper::renderSidebar('club_stats');
     }
     ?>
-    
-    <div class="header">
-        <?php NavigationHelper::renderHeaderTitle('Board Game Club StatApp', '', 'index.php'); ?>
-        <div class="header-actions">
-            <a href="index.php" class="btn btn--secondary btn--small">← Back to Home</a>
-        </div>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader($club ? $club['club_name'] : 'Club Stats'); ?>
     </div>
-    
-    <?php
-    // Render navigation if we have club data
-    if ($club) {
-        // Mobile card navigation (shows on small screens)
-        NavigationHelper::renderMobileCardNav('club_stats', $club_id);
-        // Regular navigation (shows on larger screens)
-        NavigationHelper::renderPublicNav('club_stats', $club_id);
-    }
-    ?>
 
     <div class="container">
         <?php if ($error): ?>
@@ -224,12 +211,10 @@ if ($club_id > 0 || !empty($slug)) {
             </div>
         <?php endif; ?>
     </div>
-    <script src="js/mobile-menu.js"></script>
+    <script src="js/sidebar.js"></script>
     <script src="js/form-loading.js"></script>
     <script src="js/confirmations.js"></script>
     <script src="js/form-validation.js"></script>
     <script src="js/empty-states.js"></script>
-    <script src="js/multi-step-form.js"></script>
-    <script src="js/breadcrumbs.js"></script>
 </body>
 </html>

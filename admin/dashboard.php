@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/NavigationHelper.php';
 
 // Ensure user is logged in and has appropriate admin access
 if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
@@ -40,19 +41,12 @@ $total_games = array_sum(array_column($clubs, 'game_count'));
     <title>Admin Dashboard - Board Game Club StatApp</title>
     <link rel="stylesheet" href="../css/styles.css"> <!-- Link to external CSS -->
 </head>
-<body>
-    <div class="header">
-        <div class="header-title-group">
-            <h1>Admin Dashboard</h1>
-            <p class="header-subtitle">Monitor membership and game activity</p>
-        </div>
-        <div class="header-actions">
-            <button type="button" class="btn btn--icon theme-toggle" data-theme-toggle aria-label="Toggle dark mode">
-                <span class="theme-toggle__icon" data-theme-icon>🌙</span>
-            </button>
-            <a href="account.php" class="btn btn--secondary btn--small">⚙️ Account</a>
-            <a href="logout.php" class="btn btn--secondary btn--small">Logout</a>
-        </div>
+<body class="has-sidebar">
+    <?php NavigationHelper::renderAdminSidebar('dashboard'); ?>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader('Admin Dashboard', 'Monitor membership and game activity'); ?>
     </div>
 
     <div class="container">
@@ -133,12 +127,10 @@ $total_games = array_sum(array_column($clubs, 'game_count'));
         </div>
     </div>
     <script src="../js/dark-mode.js"></script>
-    <script src="../js/mobile-menu.js"></script>
+    <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>
     <script src="../js/form-validation.js"></script>
     <script src="../js/empty-states.js"></script>
-    <script src="../js/multi-step-form.js"></script>
-    <script src="../js/breadcrumbs.js"></script>
 </body>
 </html>

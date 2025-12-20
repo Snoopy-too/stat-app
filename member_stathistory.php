@@ -51,29 +51,16 @@ $average_finish = $total_games > 0 ? number_format($total_points / $total_games,
         
     <script src="js/dark-mode.js"></script>
 </head>
-<body>
+<body class="has-sidebar">
     <?php
-    // Render breadcrumbs
-    NavigationHelper::renderBreadcrumbs([
-        ['label' => 'Home', 'url' => 'index.php'],
-        ['label' => $member['club_name'], 'url' => 'club_stats.php?id=' . $club_id],
-        $member['nickname'] . "'s History"
-    ]);
+    // Render sidebar navigation
+    NavigationHelper::renderSidebar('club_stats', $club_id, $member['club_name']);
     ?>
-    
-    <div class="header">
-        <?php NavigationHelper::renderHeaderTitle('Board Game Club StatApp', $member['nickname'] . "'s Game History", 'index.php'); ?>
-        <div class="header-actions">
-            <a href="club_stats.php?id=<?php echo $club_id; ?>" class="btn btn--secondary btn--small">← Back to Club Stats</a>
-            <a href="index.php" class="btn btn--ghost btn--small">🏠 Home</a>
-        </div>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader($member['nickname'] . "'s Game History"); ?>
     </div>
-    
-    <?php
-    NavigationHelper::renderMobileCardNav('', $club_id);
-    NavigationHelper::renderPublicNav('', $club_id);
-    NavigationHelper::renderContextBar('Member History', $member['nickname'], 'View all members', 'club_stats.php?id=' . $club_id);
-    ?>
 
     <div class="history-container">
         
@@ -126,13 +113,8 @@ $average_finish = $total_games > 0 ? number_format($total_points / $total_games,
         <p>No game history available for this member.</p>
         <?php endif; ?>
     </div>
-    <script src="js/mobile-menu.js"></script>
-    <script src="js/form-loading.js"></script>
-    <script src="js/confirmations.js"></script>
-    <script src="js/form-validation.js"></script>
+    <script src="js/sidebar.js"></script>
     <script src="js/empty-states.js"></script>
-    <script src="js/multi-step-form.js"></script>
-    <script src="js/breadcrumbs.js"></script>
 <script>
 function saveScroll() {
     sessionStorage.setItem('scrollPos', window.scrollY);

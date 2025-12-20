@@ -177,30 +177,16 @@ try {
         }
     </style>
 </head>
-<body>
+<body class="has-sidebar">
     <?php
-    // Render breadcrumbs
-    NavigationHelper::renderBreadcrumbs([
-        ['label' => 'Home', 'url' => 'index.php'],
-        ['label' => $club['club_name'], 'url' => $club_url],
-        'Game Results'
-    ]);
+    // Render sidebar navigation
+    NavigationHelper::renderSidebar('results', $club_id, $club['club_name']);
     ?>
-    
-    <div class="header">
-        <?php NavigationHelper::renderHeaderTitle('Board Game Club StatApp', 'Game Results', 'index.php'); ?>
-        <div class="header-actions">
-            <a href="<?php echo htmlspecialchars($club_url); ?>" class="btn btn--secondary btn--small">← Back to Club Stats</a>
-            <a href="index.php" class="btn btn--ghost btn--small">🏠 Home</a>
-        </div>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader('Game Results', $club['club_name']); ?>
     </div>
-    
-    <?php
-    // Render navigation and context bar
-    NavigationHelper::renderMobileCardNav('results', $club_id);
-    NavigationHelper::renderPublicNav('results', $club_id);
-    NavigationHelper::renderContextBar('Viewing results for', $club['club_name'], 'View club stats', $club_url);
-    ?>
 
     <div class="container container--wide">
         <div class="card">
@@ -289,13 +275,9 @@ try {
             <?php endif; ?>
         </div>
     </div>
-    <script src="js/mobile-menu.js"></script>
+    <script src="js/sidebar.js"></script>
     <script src="js/form-loading.js"></script>
-    <script src="js/confirmations.js"></script>
-    <script src="js/form-validation.js"></script>
     <script src="js/empty-states.js"></script>
-    <script src="js/multi-step-form.js"></script>
-    <script src="js/breadcrumbs.js"></script>
 </body>
 </html>
 <script>

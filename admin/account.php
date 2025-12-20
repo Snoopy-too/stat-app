@@ -3,6 +3,7 @@ session_start();
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
+require_once '../includes/NavigationHelper.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
     header("Location: login.php");
@@ -94,16 +95,12 @@ $csrf_token = $security->generateCSRFToken();
     <title>Account Settings - Board Game Club StatApp</title>
     <link rel="stylesheet" href="../css/styles.css">
 </head>
-<body>
-    <div class="header">
-        <div class="header-title-group">
-            <h1>Account Settings</h1>
-            <p class="header-subtitle">Manage your profile and security settings</p>
-        </div>
-        <div class="header-actions">
-            <a href="dashboard.php" class="btn btn--secondary btn--small">← Back to Dashboard</a>
-            <a href="logout.php" class="btn btn--secondary btn--small">Logout</a>
-        </div>
+<body class="has-sidebar">
+    <?php NavigationHelper::renderAdminSidebar('account'); ?>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader('Account Settings', 'Manage your profile and security settings'); ?>
     </div>
 
     <div class="container container--narrow">
@@ -227,12 +224,10 @@ $csrf_token = $security->generateCSRFToken();
     </div>
 
     <script src="../js/dark-mode.js"></script>
-    <script src="../js/mobile-menu.js"></script>
+    <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>
     <script src="../js/form-validation.js"></script>
     <script src="../js/empty-states.js"></script>
-    <script src="../js/multi-step-form.js"></script>
-    <script src="../js/breadcrumbs.js"></script>
 </body>
 </html>

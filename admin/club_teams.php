@@ -3,6 +3,7 @@ session_start();
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
+require_once '../includes/NavigationHelper.php';
 
 // Ensure user is logged in and has appropriate admin access
 if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
@@ -110,15 +111,12 @@ $csrf_token = $security->generateCSRFToken();
     <script src="../js/team-validation.js"></script>
     <script src="../js/dark-mode.js"></script>
 </head>
-<body>
-    <div class="header">
-        <div class="header-title-group">
-            <h1>Teams</h1>
-            <p class="header-subtitle"><?php echo htmlspecialchars($club['club_name']); ?></p>
-        </div>
-        <div class="header-actions">
-            <a href="dashboard.php" class="btn btn--secondary btn--small">Back to Dashboard</a>
-        </div>
+<body class="has-sidebar">
+    <?php NavigationHelper::renderAdminSidebar('teams', $club_id, $club['club_name']); ?>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader('Teams', htmlspecialchars($club['club_name'])); ?>
     </div>
 
     <div class="container container--wide">
@@ -281,12 +279,10 @@ $csrf_token = $security->generateCSRFToken();
             <?php endif; ?>
         </div>
     </div>
-    <script src="../js/mobile-menu.js"></script>
+    <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>
     <script src="../js/form-validation.js"></script>
     <script src="../js/empty-states.js"></script>
-    <script src="../js/multi-step-form.js"></script>
-    <script src="../js/breadcrumbs.js"></script>
 </body>
 </html>

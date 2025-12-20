@@ -55,37 +55,20 @@ if ($club_id > 0 || !empty($slug)) {
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/dark-mode.js"></script>
 </head>
-<body>
+<body class="has-sidebar">
     <?php
-    // Render breadcrumbs
+    // Render sidebar navigation
     if ($club) {
-        $club_url = !empty($club['slug']) ? $club['slug'] : 'club_stats.php?id=' . $club_id;
-        NavigationHelper::renderBreadcrumbs([
-            ['label' => 'Home', 'url' => 'index.php'],
-            ['label' => $club['club_name'], 'url' => $club_url],
-            'Games'
-        ]);
+        NavigationHelper::renderSidebar('games', $club_id, $club['club_name']);
+    } else {
+        NavigationHelper::renderSidebar('games');
     }
     ?>
-    
-    <div class="header">
-        <?php NavigationHelper::renderHeaderTitle('Board Game Club StatApp', 'Club Games', 'index.php'); ?>
-        <div class="header-actions">
-            <?php 
-            $back_url = !empty($club['slug']) ? $club['slug'] : 'club_stats.php?id=' . $club_id;
-            ?>
-            <a href="<?php echo htmlspecialchars($back_url); ?>" class="btn btn--secondary btn--small">← Back to Club Stats</a>
-            <a href="index.php" class="btn btn--ghost btn--small">🏠 Home</a>
-        </div>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader('Games', $club ? $club['club_name'] : ''); ?>
     </div>
-    
-    <?php
-    // Render navigation
-    if ($club) {
-        NavigationHelper::renderMobileCardNav('games', $club_id);
-        NavigationHelper::renderPublicNav('games', $club_id);
-    }
-    ?>
     <div class="container">
         <?php if ($error): ?>
             <div class="message message--error"><?php echo htmlspecialchars($error); ?></div>
@@ -122,12 +105,8 @@ if ($club_id > 0 || !empty($slug)) {
             <?php endif; ?>
         <?php endif; ?>
     </div>
-    <script src="js/mobile-menu.js"></script>
+    <script src="js/sidebar.js"></script>
     <script src="js/form-loading.js"></script>
-    <script src="js/confirmations.js"></script>
-    <script src="js/form-validation.js"></script>
     <script src="js/empty-states.js"></script>
-    <script src="js/multi-step-form.js"></script>
-    <script src="js/breadcrumbs.js"></script>
 </body>
 </html>

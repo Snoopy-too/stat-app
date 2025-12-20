@@ -3,6 +3,7 @@ session_start();
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
+require_once '../includes/NavigationHelper.php';
 
 if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
     header("Location: login.php");
@@ -99,10 +100,12 @@ $csrf_token = $security->generateCSRFToken();
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
 </head>
-<body>
-    <div class="header">
-        <h1>Edit Team Game Result - <?php echo htmlspecialchars($result['game_name']); ?></h1>
-        <a href="view_team_result.php?result_id=<?php echo $result_id; ?>" class="btn">Back to Result</a>
+<body class="has-sidebar">
+    <?php NavigationHelper::renderAdminSidebar('games', $result['club_id'], $result['club_name']); ?>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader('Edit Team Game Result', htmlspecialchars($result['game_name'])); ?>
     </div>
     
     <div class="container">
@@ -163,12 +166,10 @@ $csrf_token = $security->generateCSRFToken();
             </div>
         </form>
     </div>
-    <script src="../js/mobile-menu.js"></script>
+    <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>
     <script src="../js/form-validation.js"></script>
     <script src="../js/empty-states.js"></script>
-    <script src="../js/multi-step-form.js"></script>
-    <script src="../js/breadcrumbs.js"></script>
 </body>
 </html>

@@ -231,3 +231,55 @@
         flex-wrap: wrap;
     }
 }
+
+/* ==================== */
+/* SIDEBAR LAYOUT       */
+/* ==================== */
+
+/* Body with sidebar - desktop layout offset */
+.has-sidebar {
+    --sidebar-width: 260px;
+}
+
+.has-sidebar .header {
+    margin-left: 260px !important;
+    margin-left: var(--sidebar-width, 260px) !important;
+    width: calc(100% - 260px) !important;
+    width: calc(100% - var(--sidebar-width, 260px)) !important;
+    transition: margin-left 300ms ease, width 300ms ease;
+}
+
+.has-sidebar .container {
+    margin-left: 260px !important;
+    margin-left: var(--sidebar-width, 260px) !important;
+    max-width: calc(100% - 260px - 2rem);
+    transition: margin-left 300ms ease;
+}
+
+/* Compact header style for sidebar pages */
+.header--compact {
+    justify-content: flex-start !important;
+    gap: 1rem;
+    gap: var(--spacing-4, 1rem);
+}
+
+/* Main content wrapper for sidebar layout */
+.main-content {
+    transition: margin-left 300ms ease;
+}
+
+.has-sidebar .main-content {
+    margin-left: 260px;
+    margin-left: var(--sidebar-width, 260px);
+}
+
+/* Mobile - reset sidebar offset */
+@media (max-width: 768px) {
+    .has-sidebar .header,
+    .has-sidebar .container,
+    .has-sidebar .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}

@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/NavigationHelper.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
     header("Location: login.php");
@@ -128,9 +129,12 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </style>
     <script src="../js/dark-mode.js"></script>
 </head>
-<body>
-    <div class="header">
-        <h1><?php echo htmlspecialchars($club['club_name']); ?></h1>
+<body class="has-sidebar">
+    <?php NavigationHelper::renderAdminSidebar('clubs', $club_id, $club['club_name']); ?>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader('View Club', htmlspecialchars($club['club_name'])); ?>
     </div>
 
     <div class="container">
@@ -192,12 +196,10 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <a href="dashboard.php" class="btn">Back to Dashboard</a>
         </div>
     </div>
-    <script src="../js/mobile-menu.js"></script>
+    <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>
     <script src="../js/form-validation.js"></script>
     <script src="../js/empty-states.js"></script>
-    <script src="../js/multi-step-form.js"></script>
-    <script src="../js/breadcrumbs.js"></script>
 </body>
 </html>

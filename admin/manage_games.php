@@ -318,48 +318,18 @@ $csrf_token = $security->generateCSRFToken();
         }
     </style>
 </head>
-<body>
-    <?php
-    // Render breadcrumbs
-    if ($club_id) {
-        NavigationHelper::renderBreadcrumbs([
-            ['label' => 'Dashboard', 'url' => 'dashboard.php'],
-            ['label' => 'Clubs', 'url' => 'manage_clubs.php'],
-            'Manage Games'
-        ]);
-    } else {
-        NavigationHelper::renderBreadcrumbs([
-            ['label' => 'Dashboard', 'url' => 'dashboard.php'],
-            'Manage Games'
-        ]);
-    }
-    ?>
-    
-    <div class="header">
-        <div class="header-title-group">
-            <?php 
-            $subtitle = $club_name ? $club_name : 'All clubs';
-            NavigationHelper::renderHeaderTitle('Manage Games', $subtitle, 'dashboard.php', false); 
-            ?>
-        </div>
+<body class="has-sidebar">
+    <?php NavigationHelper::renderAdminSidebar('games', $club_id, $club_name); ?>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader('Manage Games', $club_name ? htmlspecialchars($club_name) : 'All clubs'); ?>
+        <?php if ($club_id): ?>
         <div class="header-actions">
-            <?php if ($club_id): ?>
-                <a href="../club_game_list.php?id=<?php echo $club_id; ?>" class="btn btn--ghost btn--small" target="_blank" title="View on public site">👁️ Preview</a>
-                <a href="dashboard.php" class="btn btn--secondary btn--small">🏠 Dashboard</a>
-                <a href="manage_clubs.php" class="btn btn--secondary btn--small">← Back to Clubs</a>
-            <?php else: ?>
-                <a href="dashboard.php" class="btn btn--secondary btn--small">← Back to Dashboard</a>
-            <?php endif; ?>
+            <a href="../club_game_list.php?id=<?php echo $club_id; ?>" class="btn btn--ghost btn--small" target="_blank" title="View on public site">👁️ Preview</a>
         </div>
+        <?php endif; ?>
     </div>
-    
-    <?php
-    // Render admin navigation
-    NavigationHelper::renderAdminNav('games', $club_id);
-    if ($club_id && $club_name) {
-        NavigationHelper::renderContextBar('Managing games for', $club_name, 'View all clubs', 'manage_clubs.php');
-    }
-    ?>
     
     <div class="container">
         <?php display_session_message('success'); ?>
@@ -536,13 +506,11 @@ $csrf_token = $security->generateCSRFToken();
             </table>
         </div>
     </div>
-    <script src="../js/mobile-menu.js"></script>
+    <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>
     <script src="../js/form-validation.js"></script>
     <script src="../js/empty-states.js"></script>
-    <script src="../js/multi-step-form.js"></script>
-    <script src="../js/breadcrumbs.js"></script>
 </body>
 <script>
 (function() {

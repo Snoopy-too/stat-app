@@ -10,6 +10,13 @@ if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
     exit();
 }
 
+// Ensure admin_type is in session (fallback for existing logged-in users after migration)
+if (!isset($_SESSION['admin_type']) && isset($_SESSION['admin_id'])) {
+    $typeStmt = $pdo->prepare("SELECT admin_type FROM admin_users WHERE admin_id = ?");
+    $typeStmt->execute([$_SESSION['admin_id']]);
+    $_SESSION['admin_type'] = $typeStmt->fetchColumn() ?: 'multi_club';
+}
+
 $security = new SecurityUtils($pdo);
 
 // Handle club creation/deletion if POST request
@@ -102,7 +109,10 @@ $stmt = $pdo->prepare($query);
 $stmt->execute([$_SESSION['admin_id']]);
 $clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $club_count = count($clubs);
-$club_limit = 5; // Set maximum number of clubs allowed
+
+// Determine club limit based on admin type
+$admin_type = $_SESSION['admin_type'] ?? 'multi_club';
+$club_limit = ($admin_type === 'single_club') ? 1 : 5;
 
 // Generate CSRF token for forms
 $csrf_token = $security->generateCSRFToken();

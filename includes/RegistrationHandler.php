@@ -152,8 +152,8 @@ class RegistrationHandler {
             $stmt = $this->pdo->prepare(
                 'INSERT INTO admin_users
                  (username, email, password_hash, email_verification_token, email_token_expiry,
-                 account_status, is_super_admin, is_email_verified, created_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())' // Added created_at assuming it exists
+                 account_status, is_super_admin, is_email_verified, admin_type, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
             );
             $stmt->execute([
                 $fullName, // Assuming 'username' column stores the full name/display name
@@ -161,9 +161,10 @@ class RegistrationHandler {
                 $passwordHash,
                 $verificationData['token'],
                 $verificationData['expiry'],
-                "pending", // account_status
-                0,         // is_super_admin (default to false)
-                0          // is_email_verified (default to false)
+                "pending",     // account_status
+                0,             // is_super_admin (default to false)
+                0,             // is_email_verified (default to false)
+                'single_club'  // admin_type - new registrations are single_club
             ]);
 
             if ($stmt->rowCount() === 0) { // Check if insert actually happened

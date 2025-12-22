@@ -35,6 +35,7 @@ CREATE TABLE `admin_users` (
   `username` varchar(100) NOT NULL,
   `is_deactivated` tinyint(1) DEFAULT 0,
   `is_email_verified` tinyint(1) DEFAULT 0,
+  `admin_type` enum('single_club','multi_club') NOT NULL DEFAULT 'multi_club',
   `email_verification_token` varchar(64) DEFAULT NULL,
   `email_token_expiry` datetime DEFAULT NULL,
   `reset_password_token` varchar(64) DEFAULT NULL,

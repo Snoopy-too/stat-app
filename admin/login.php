@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         error_log('Attempting login for username: ' . $username);
         try {
-            $stmt = $pdo->prepare("SELECT admin_id, username, password_hash, is_deactivated FROM admin_users WHERE username = ?");
+            $stmt = $pdo->prepare("SELECT admin_id, username, password_hash, is_deactivated, admin_type FROM admin_users WHERE username = ?");
             $stmt->execute([$username]);
             $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -48,9 +48,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['is_super_admin'] = true;
                         $_SESSION['admin_id'] = $admin['admin_id'];
                         $_SESSION['admin_username'] = $admin['username'];
+                        $_SESSION['admin_type'] = $admin['admin_type'] ?? 'multi_club';
                         $_SESSION['login_time'] = time();
 
                         error_log("Login successful for user: " . $username);
+
+                        // Check if single_club admin needs to create their first club
+                        if ($_SESSION['admin_type'] === 'single_club') {
+                            $clubStmt = $pdo->prepare("SELECT COUNT(*) FROM club_admins WHERE admin_id = ?");
+                            $clubStmt->execute([$admin['admin_id']]);
+                            if ($clubStmt->fetchColumn() == 0) {
+                                header("Location: create_first_club.php");
+                                exit();
+                            }
+                        }
+
                         header("Location: dashboard.php");
                         exit();
                     }

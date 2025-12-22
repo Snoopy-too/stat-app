@@ -53,16 +53,8 @@ try {
         throw new Exception($adminResult['message']);
     }
 
-    // Create the club entry using the user's full name as the club name
-    $stmt = $pdo->prepare(
-        'INSERT INTO clubs (admin_id, club_name, created_at) VALUES (?, ?, NOW())'
-    );
-    $stmt->execute([
-        $adminResult['admin_id'],
-        $postData['full_name'] . '\'s Club'
-    ]);
-
-    $clubId = $pdo->lastInsertId();
+    // Note: Club creation removed - single_club admins will create their club on first login
+    // This allows them to choose their club name instead of auto-generating one
 
     // Commit transaction
     $pdo->commit();

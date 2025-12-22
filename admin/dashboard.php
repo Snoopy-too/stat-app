@@ -9,6 +9,23 @@ if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSI
     exit();
 }
 
+// Ensure admin_type is in session (fallback for existing logged-in users after migration)
+if (!isset($_SESSION['admin_type']) && isset($_SESSION['admin_id'])) {
+    $typeStmt = $pdo->prepare("SELECT admin_type FROM admin_users WHERE admin_id = ?");
+    $typeStmt->execute([$_SESSION['admin_id']]);
+    $_SESSION['admin_type'] = $typeStmt->fetchColumn() ?: 'multi_club';
+}
+
+// Redirect single_club admins without a club to create their first club
+if (isset($_SESSION['admin_type']) && $_SESSION['admin_type'] === 'single_club') {
+    $clubCheckStmt = $pdo->prepare("SELECT COUNT(*) FROM club_admins WHERE admin_id = ?");
+    $clubCheckStmt->execute([$_SESSION['admin_id']]);
+    if ($clubCheckStmt->fetchColumn() == 0) {
+        header("Location: create_first_club.php");
+        exit();
+    }
+}
+
 // Fetch clubs with statistics for the current admin
 $query = "
     SELECT c.*,

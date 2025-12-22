@@ -48,6 +48,10 @@ $clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // Get total statistics
 $total_members = array_sum(array_column($clubs, 'member_count'));
 $total_games = array_sum(array_column($clubs, 'game_count'));
+
+// Check admin type for conditional display
+$admin_type = $_SESSION['admin_type'] ?? 'multi_club';
+$is_single_club = ($admin_type === 'single_club');
 ?>
 
 <!DOCTYPE html>
@@ -68,6 +72,7 @@ $total_games = array_sum(array_column($clubs, 'game_count'));
 
     <div class="container">
         <div class="dashboard-stats">
+            <?php if (!$is_single_club): ?>
             <a href="manage_clubs.php" class="card stat-card stat-card--navy">
                 <span class="stat-card__label">Total Clubs</span>
                 <div class="stat-card__body">
@@ -75,18 +80,19 @@ $total_games = array_sum(array_column($clubs, 'game_count'));
                     <span class="stat-card__meta">Active clubs under your account</span>
                 </div>
             </a>
+            <?php endif; ?>
             <div class="card stat-card stat-card--sky">
                 <span class="stat-card__label">Total Members</span>
                 <div class="stat-card__body">
                     <span class="stat-card__value"><?php echo $total_members; ?></span>
-                    <span class="stat-card__meta">Across all managed clubs</span>
+                    <span class="stat-card__meta"><?php echo $is_single_club ? 'In your club' : 'Across all managed clubs'; ?></span>
                 </div>
             </div>
             <div class="card stat-card stat-card--neutral">
                 <span class="stat-card__label">Total Games</span>
                 <div class="stat-card__body">
                     <span class="stat-card__value"><?php echo $total_games; ?></span>
-                    <span class="stat-card__meta">Available in your libraries</span>
+                    <span class="stat-card__meta"><?php echo $is_single_club ? 'In your library' : 'Available in your libraries'; ?></span>
                 </div>
             </div>
         </div>
@@ -95,10 +101,12 @@ $total_games = array_sum(array_column($clubs, 'game_count'));
             <div class="card">
                 <div class="card-header">
                     <div>
-                        <h2>Club Overview</h2>
+                        <h2><?php echo $is_single_club ? 'Your Club' : 'Club Overview'; ?></h2>
                         <p class="card-subtitle card-subtitle--muted">Snapshot of club health and activity</p>
                     </div>
+                    <?php if (!$is_single_club): ?>
                     <a href="manage_clubs.php" class="btn btn--small btn--pill">Manage Clubs</a>
+                    <?php endif; ?>
                 </div>
                 <div class="table-responsive">
                     <table class="data-table">

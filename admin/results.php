@@ -86,6 +86,13 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <p><strong>Club:</strong> <?php echo htmlspecialchars($game['club_name']); ?></p>
             <p><strong>Players:</strong> <?php echo $game['min_players'] . '-' . $game['max_players']; ?> players</p>
             <p><strong>Added:</strong> <?php echo date('M j, Y', strtotime($game['created_at'])); ?></p>
+
+            <div class="btn-group" style="margin-top: 1rem;">
+                <a href="add_result.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game_id; ?>"
+                   class="btn">Add New Result</a>
+                <a href="add_team_result.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game_id; ?>"
+                   class="btn">Add New Team Result</a>
+            </div>
         </div>
 
         <div class="card">
@@ -115,13 +122,6 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </tbody>
                 </table>
             <?php endif; ?>
-            
-            <div class="btn-group">
-                <a href="add_result.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game_id; ?>" 
-                   class="btn">Add New Result</a>
-                <a href="add_team_result.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game_id; ?>" 
-                   class="btn">Add New Team Result</a>
-            </div>
         </div>
     </div>
     <script src="../js/sidebar.js"></script>

@@ -451,9 +451,25 @@ class NavigationHelper {
         echo '<span>Dashboard</span>';
         echo '</a>';
 
-        echo '<a href="manage_clubs.php" class="sidebar__link' . ($currentPage === 'clubs' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'clubs' ? $activeLinkStyle : $normalLinkStyle) . '">';
-        echo '<span class="sidebar__link-icon" style="' . $iconStyle . '">🏠</span>';
-        echo '<span>Clubs</span>';
+        // Only show Clubs link for multi_club admins
+        $adminType = $_SESSION['admin_type'] ?? 'multi_club';
+        if ($adminType !== 'single_club') {
+            echo '<a href="manage_clubs.php" class="sidebar__link' . ($currentPage === 'clubs' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'clubs' ? $activeLinkStyle : $normalLinkStyle) . '">';
+            echo '<span class="sidebar__link-icon" style="' . $iconStyle . '">🏠</span>';
+            echo '<span>Clubs</span>';
+            echo '</a>';
+        }
+
+        echo '</div>';
+
+        // Quick Actions section - always show
+        echo '<div class="sidebar__divider" style="height:1px;background:#334155;margin:0.75rem 1rem;"></div>';
+        echo '<div class="sidebar__section" style="margin-bottom:0.5rem;">';
+        echo '<div class="sidebar__section-title" style="padding:0.5rem 1rem;font-size:0.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;">Quick Actions</div>';
+
+        echo '<a href="new_result.php" class="sidebar__link' . ($currentPage === 'new_result' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'new_result' ? $activeLinkStyle : $normalLinkStyle) . '">';
+        echo '<span class="sidebar__link-icon" style="' . $iconStyle . '">➕</span>';
+        echo '<span>New Result</span>';
         echo '</a>';
 
         echo '</div>';

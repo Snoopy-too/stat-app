@@ -148,34 +148,40 @@ $csrf_token = $security->generateCSRFToken();
             <?php unset($_SESSION['api_file']); ?>
         <?php endif; ?>
 
-        <?php if ($club_count < $club_limit): ?>
-        <div class="card">
-            <h2>Create New Club</h2>
-            <form method="POST" class="form">
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                <div class="form-group">
-                    <label for="club_name">Club Name:</label>
-                    <input type="text" id="club_name" name="club_name" placeholder="Club Name" required class="form-control" pattern="[a-zA-Z0-9 _\-]+" title="Only letters, numbers, spaces, dashes and underscores are allowed">
-                </div>
-                <div class="form-group">
-                    <label for="slug">Club URL Slug (optional):</label>
-                    <input type="text" id="slug" name="slug" placeholder="e.g., theflyingdutchmen" class="form-control" pattern="[a-zA-Z0-9\-]+" title="Only letters, numbers, and hyphens allowed">
-                    <small style="display:block; margin-top:0.5rem; color:var(--text-light);">
-                        Leave empty to use ID-based URL. If set, club will be accessible at domain.com/slug
-                    </small>
-                </div>
-                <div class="form-group">
-                    <input type="hidden" name="action" value="create">
-                    <button type="submit" class="btn">Create Club</button>
-                </div>
-            </form>
-        </div>
-        <?php else: ?>
-        <div class="card">
-            <div class="message info">
-                Maximum number of clubs (<?php echo $club_limit; ?>) has been reached. You cannot create more clubs.
+        <?php
+        // Hide create club section entirely for single_club admins who already have a club
+        $hide_create_section = ($admin_type === 'single_club' && $club_count >= 1);
+        ?>
+        <?php if (!$hide_create_section): ?>
+            <?php if ($club_count < $club_limit): ?>
+            <div class="card">
+                <h2>Create New Club</h2>
+                <form method="POST" class="form">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                    <div class="form-group">
+                        <label for="club_name">Club Name:</label>
+                        <input type="text" id="club_name" name="club_name" placeholder="Club Name" required class="form-control" pattern="[a-zA-Z0-9 _\-]+" title="Only letters, numbers, spaces, dashes and underscores are allowed">
+                    </div>
+                    <div class="form-group">
+                        <label for="slug">Club URL Slug (optional):</label>
+                        <input type="text" id="slug" name="slug" placeholder="e.g., theflyingdutchmen" class="form-control" pattern="[a-zA-Z0-9\-]+" title="Only letters, numbers, and hyphens allowed">
+                        <small style="display:block; margin-top:0.5rem; color:var(--text-light);">
+                            Leave empty to use ID-based URL. If set, club will be accessible at domain.com/slug
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <input type="hidden" name="action" value="create">
+                        <button type="submit" class="btn">Create Club</button>
+                    </div>
+                </form>
             </div>
-        </div>
+            <?php else: ?>
+            <div class="card">
+                <div class="message info">
+                    Maximum number of clubs (<?php echo $club_limit; ?>) has been reached. You cannot create more clubs.
+                </div>
+            </div>
+            <?php endif; ?>
         <?php endif; ?>
 
         <div class="card">

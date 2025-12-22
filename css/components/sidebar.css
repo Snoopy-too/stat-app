@@ -442,6 +442,16 @@
     background: rgba(0, 0, 0, 0.6);
 }
 
+[data-theme="dark"] .sidebar-toggle {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
 /* ==================== */
 /* PRINT STYLES         */
 /* ==================== */

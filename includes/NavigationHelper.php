@@ -407,7 +407,7 @@ class NavigationHelper {
             .sidebar{position:fixed!important;top:0!important;left:0!important;width:260px!important;height:100vh!important;background:#1e293b!important;border-right:1px solid #334155!important;display:flex!important;flex-direction:column!important;z-index:1100!important;overflow-y:auto!important;transition:transform .3s ease!important;box-shadow:2px 0 8px rgba(0,0,0,.1)!important}
             .has-sidebar .header{margin-left:260px!important;width:calc(100% - 260px)!important}
             .has-sidebar .container{margin-left:260px!important}
-            .sidebar-toggle{display:none!important}
+            .sidebar-toggle{display:none!important;background:rgba(255,255,255,0.1)!important;border:1px solid rgba(255,255,255,0.25)!important;color:#f1f5f9!important}
             .sidebar__close{display:none!important}
             .sidebar-overlay{display:none!important;position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;background:rgba(15,23,42,.5)!important;z-index:1050!important}
             @media(max-width:768px){

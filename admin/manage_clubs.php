@@ -89,6 +89,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
+        elseif ($_POST['action'] === 'delete' && !empty($_POST['club_id']) && !empty($_POST['password'])) {
+            // Verify Password first
+            $stmt = $pdo->prepare("SELECT password_hash FROM admin_users WHERE admin_id = ?");
+            $stmt->execute([$_SESSION['admin_id']]);
+            $admin_user = $stmt->fetch();
+            
+            if (!$admin_user || !password_verify($_POST['password'], $admin_user['password_hash'])) {
+                $_SESSION['error'] = "Incorrect password. Deletion cancelled.";
+            } else {
+                // Verify Club is not shared
+                $stmt = $pdo->prepare("SELECT COUNT(*) FROM club_admins WHERE club_id = ?");
+                $stmt->execute([$_POST['club_id']]);
+                if ($stmt->fetchColumn() > 1) {
+                    $_SESSION['error'] = "Cannot delete a shared club. Please remove other admins first.";
+                } else {
+                    // Perform Deletion
+                    try {
+                        $pdo->beginTransaction();
+                        $club_id = $_POST['club_id'];
+
+                        // 1. Get Game IDs for cleanup
+                        $stmt = $pdo->prepare("SELECT game_id FROM games WHERE club_id = ?");
+                        $stmt->execute([$club_id]);
+                        $game_ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+                        if (!empty($game_ids)) {
+                            $placeholders = implode(',', array_fill(0, count($game_ids), '?'));
+                            
+                            // Delete game dependent tables
+                            $pdo->prepare("DELETE FROM game_result_losers WHERE result_id IN (SELECT result_id FROM game_results WHERE game_id IN ($placeholders))")->execute($game_ids);
+                            $pdo->prepare("DELETE FROM game_results WHERE game_id IN ($placeholders)")->execute($game_ids);
+                            $pdo->prepare("DELETE FROM team_game_results WHERE game_id IN ($placeholders)")->execute($game_ids);
+                            
+                            // Delete games
+                            $pdo->prepare("DELETE FROM games WHERE club_id = ?")->execute([$club_id]);
+                        }
+
+                        // 2. Delete Club dependents
+                        $pdo->prepare("DELETE FROM champions WHERE club_id = ?")->execute([$club_id]);
+                        $pdo->prepare("DELETE FROM teams WHERE club_id = ?")->execute([$club_id]);
+                        $pdo->prepare("DELETE FROM members WHERE club_id = ?")->execute([$club_id]);
+                        $pdo->prepare("DELETE FROM club_admins WHERE club_id = ?")->execute([$club_id]);
+                        
+                        // 3. Delete Club
+                        $pdo->prepare("DELETE FROM clubs WHERE club_id = ?")->execute([$club_id]);
+
+                        $pdo->commit();
+                        $_SESSION['success'] = "Club deleted successfully.";
+                    } catch (Exception $e) {
+                        $pdo->rollBack();
+                        $_SESSION['error'] = "Deletion failed: " . $e->getMessage();
+                    }
+                }
+            }
+        }
         header("Location: manage_clubs.php");
         exit();
     }
@@ -98,7 +153,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $query = "SELECT c.*, 
           (COALESCE((SELECT COUNT(DISTINCT session_id) FROM game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0) +
            COALESCE((SELECT COUNT(DISTINCT session_id) FROM team_game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0)) as total_plays,
-          ca.role as admin_role
+          ca.role as admin_role,
+          (SELECT COUNT(*) FROM club_admins WHERE club_id = c.club_id) as admin_count
           FROM clubs c
           JOIN club_admins ca ON c.club_id = ca.club_id
           WHERE ca.admin_id = ?
@@ -213,7 +269,12 @@ $csrf_token = $security->generateCSRFToken();
                                     <a href="manage_games.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Games</a>
                                     <a href="club_teams.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Teams</a>
                                     <a href="manage_logo.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Logo</a>
-                                    <button type="button" class="btn btn--xsmall btn--secondary" onclick="confirmApiGeneration(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>')">Create API</button>
+                                    <button type="button" class="btn btn--xsmall btn--secondary" onclick="confirmApiGeneration(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>')">API</button>
+                                    <button type="button" class="btn btn--xsmall btn--danger" 
+                                            onclick="confirmClubDeletion(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>', <?php echo $club['admin_count']; ?>)"
+                                            <?php echo ($club['admin_count'] > 1) ? 'title="Shared clubs cannot be deleted"' : ''; ?>>
+                                        Delete
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -243,7 +304,44 @@ $csrf_token = $security->generateCSRFToken();
             </div>
         </div>
     </div>
-
+    <!-- Delete Club Confirmation Modal -->
+    <div id="deleteClubModal" class="modal">
+        <div class="modal__dialog">
+            <div class="modal__content">
+                <div class="modal__header">
+                    <h3 class="modal__title text-danger">⚠️ Delete Club</h3>
+                    <button type="button" class="modal__close" onclick="closeDeleteModal()">&times;</button>
+                </div>
+                <div class="modal__body">
+                    <p>Are you sure you want to delete <strong id="delete_club_name"></strong>?</p>
+                    <div class="message message--error">
+                        <strong>Warning:</strong> This action is permanent and cannot be undone. All associated data will be permanently erased, including:
+                        <ul style="margin-top: 0.5rem; margin-left: 1.5rem; list-style-type: disc;">
+                            <li>Members and Champions</li>
+                            <li>Games and Statistics</li>
+                            <li>Teams and Match Results</li>
+                        </ul>
+                    </div>
+                    
+                    <form id="deleteClubForm" method="POST">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="club_id" id="delete_club_id">
+                        
+                        <div class="form-group">
+                            <label for="admin_password">Confirm Password</label>
+                            <input type="password" id="admin_password" name="password" class="form-control" required placeholder="Enter your password to confirm">
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn btn--subtle" onclick="closeDeleteModal()">Cancel</button>
+                            <button type="submit" class="btn btn--danger">Delete Club</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
     <script>
         // API Modal Logic
         const apiModal = document.getElementById('apiConfirmModal');
@@ -259,17 +357,38 @@ $csrf_token = $security->generateCSRFToken();
             apiModal.classList.remove('is-open');
         }
 
-        // Close modal when clicking outside of it
+        // Delete Modal Logic
+        const deleteModal = document.getElementById('deleteClubModal');
+        const deleteModalDialog = deleteModal.querySelector('.modal__dialog');
+
+        function confirmClubDeletion(clubId, clubName, adminCount) {
+            if (adminCount > 1) {
+                alert("This club is shared with other administrators. You must remove other admins before deleting this club.");
+                return;
+            }
+            document.getElementById('delete_club_id').value = clubId;
+            document.getElementById('delete_club_name').textContent = clubName;
+            deleteModal.classList.add('is-open');
+        }
+
+        function closeDeleteModal() {
+            deleteModal.classList.remove('is-open');
+            document.getElementById('admin_password').value = '';
+        }
+
+        // Close modals when clicking outside
         window.onclick = function(event) {
             if (event.target === apiModal) {
                 closeApiModal();
             }
+            if (event.target === deleteModal) {
+                closeDeleteModal();
+            }
         };
 
-        // Prevent event propagation from modal content
-        apiModalDialog.addEventListener('click', function(event) {
-            event.stopPropagation();
-        });
+        // Prevent event propagation
+        apiModalDialog.addEventListener('click', e => e.stopPropagation());
+        deleteModalDialog.addEventListener('click', e => e.stopPropagation());
     </script>
     <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>

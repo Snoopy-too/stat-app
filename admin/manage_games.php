@@ -323,7 +323,7 @@ $csrf_token = $security->generateCSRFToken();
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
-        <?php NavigationHelper::renderCompactHeader('Manage Games', $club_name ? htmlspecialchars($club_name) : 'All clubs'); ?>
+        <?php NavigationHelper::renderCompactHeader('Manage Games', $club_name ? $club_name : 'All clubs'); ?>
         <?php if ($club_id): ?>
         <div class="header-actions">
             <a href="../club_game_list.php?id=<?php echo $club_id; ?>" class="btn btn--ghost btn--small" target="_blank" title="View on public site">👁️ Preview</a>

@@ -150,7 +150,7 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
-        <?php NavigationHelper::renderCompactHeader('Add Game Result', htmlspecialchars($club['club_name'])); ?>
+        <?php NavigationHelper::renderCompactHeader('Add Game Result', $club['club_name']); ?>
     </div>
 
     <div class="container">

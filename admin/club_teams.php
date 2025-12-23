@@ -116,7 +116,7 @@ $csrf_token = $security->generateCSRFToken();
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
-        <?php NavigationHelper::renderCompactHeader('Teams', htmlspecialchars($club['club_name'])); ?>
+        <?php NavigationHelper::renderCompactHeader('Teams', $club['club_name']); ?>
     </div>
 
     <div class="container container--wide">

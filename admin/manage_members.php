@@ -218,7 +218,7 @@ $csrf_token = $security->generateCSRFToken();
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
-        <?php NavigationHelper::renderCompactHeader('Manage Members', htmlspecialchars($club['club_name'])); ?>
+        <?php NavigationHelper::renderCompactHeader('Manage Members', $club['club_name']); ?>
         <div class="header-actions">
             <a href="../club_stats.php?id=<?php echo $club_id; ?>" class="btn btn--ghost btn--small" target="_blank" title="View on public site">👁️ Preview</a>
         </div>

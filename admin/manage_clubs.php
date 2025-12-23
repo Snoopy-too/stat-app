@@ -89,6 +89,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
+        elseif ($_POST['action'] === 'leave' && !empty($_POST['club_id'])) {
+            // Verify Club is actually shared
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM club_admins WHERE club_id = ?");
+            $stmt->execute([$_POST['club_id']]);
+            $admin_count = $stmt->fetchColumn();
+
+            if ($admin_count <= 1) {
+                $_SESSION['error'] = "You cannot leave a club that has no other administrators. You must delete it instead.";
+            } else {
+                 try {
+                    // Remove self from club_admins
+                    $stmt = $pdo->prepare("DELETE FROM club_admins WHERE club_id = ? AND admin_id = ?");
+                    $stmt->execute([$_POST['club_id'], $_SESSION['admin_id']]);
+
+                    if ($stmt->rowCount() > 0) {
+                        $_SESSION['success'] = "You have successfully left the club.";
+                    } else {
+                        $_SESSION['error'] = "Failed to leave club. connection not found.";
+                    }
+                } catch (PDOException $e) {
+                    error_log("Failed to leave club: " . $e->getMessage());
+                    $_SESSION['error'] = "An error occurred while attempting to leave the club.";
+                }
+            }
+        }
         elseif ($_POST['action'] === 'delete' && !empty($_POST['club_id']) && !empty($_POST['password'])) {
             // Verify Password first
             $stmt = $pdo->prepare("SELECT password_hash FROM admin_users WHERE admin_id = ?");
@@ -279,6 +304,14 @@ $csrf_token = $security->generateCSRFToken();
                                         <button type="button" onclick="confirmApiGeneration(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>')">
                                             Generate API JSON
                                         </button>
+                                        
+                                        <?php if ($club['admin_count'] > 1): ?>
+                                            <button type="button" style="color: var(--color-warning);" 
+                                                    onclick="confirmLeaveClub(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>')">
+                                                Leave Club (Opt Out)
+                                            </button>
+                                        <?php endif; ?>
+
                                         <button type="button" style="color: var(--color-danger);"
                                                 onclick="confirmClubDeletion(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>', <?php echo $club['admin_count']; ?>)"
                                                 <?php echo ($club['admin_count'] > 1) ? 'title="Shared clubs cannot be deleted"' : ''; ?>>
@@ -314,6 +347,37 @@ $csrf_token = $security->generateCSRFToken();
             </div>
         </div>
     </div>
+    
+    <!-- Leave Club Confirmation Modal -->
+    <div id="leaveClubModal" class="modal">
+        <div class="modal__dialog">
+            <div class="modal__content">
+                <div class="modal__header">
+                    <h3 class="modal__title text-warning">⚠️ Leave Club</h3>
+                    <button type="button" class="modal__close" onclick="closeLeaveModal()">&times;</button>
+                </div>
+                <div class="modal__body">
+                    <p>Are you sure you want to leave <strong id="leave_club_name"></strong>?</p>
+                    <div class="message message--warning">
+                        <strong>Important:</strong> You will lose access to this club and it will be removed from your list. 
+                        The club and its data will remain accessible to other administrators.
+                    </div>
+                    
+                    <form id="leaveClubForm" method="POST">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                        <input type="hidden" name="action" value="leave">
+                        <input type="hidden" name="club_id" id="leave_club_id">
+                        
+                        <div class="form-actions" style="margin-top: 1.5rem;">
+                            <button type="button" class="btn btn--subtle" onclick="closeLeaveModal()">Cancel</button>
+                            <button type="submit" class="btn btn--warning">Leave Club</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Delete Club Confirmation Modal -->
     <div id="deleteClubModal" class="modal">
         <div class="modal__dialog">
@@ -367,13 +431,27 @@ $csrf_token = $security->generateCSRFToken();
             apiModal.classList.remove('is-open');
         }
 
+        // Leave Modal Logic
+        const leaveModal = document.getElementById('leaveClubModal');
+        const leaveModalDialog = leaveModal.querySelector('.modal__dialog');
+
+        function confirmLeaveClub(clubId, clubName) {
+            document.getElementById('leave_club_id').value = clubId;
+            document.getElementById('leave_club_name').textContent = clubName;
+            leaveModal.classList.add('is-open');
+        }
+
+        function closeLeaveModal() {
+            leaveModal.classList.remove('is-open');
+        }
+
         // Delete Modal Logic
         const deleteModal = document.getElementById('deleteClubModal');
         const deleteModalDialog = deleteModal.querySelector('.modal__dialog');
 
         function confirmClubDeletion(clubId, clubName, adminCount) {
             if (adminCount > 1) {
-                alert("This club is shared with other administrators. You must remove other admins before deleting this club.");
+                alert("This club is shared with other administrators. You cannot delete it directly. If you wish to remove it from your list, please use the 'Leave Club' option instead.");
                 return;
             }
             document.getElementById('delete_club_id').value = clubId;
@@ -386,7 +464,6 @@ $csrf_token = $security->generateCSRFToken();
             document.getElementById('admin_password').value = '';
         }
 
-        // Close modals when clicking outside
         // Dropdown Logic
         function toggleDropdown(button, event) {
             event.preventDefault();
@@ -438,6 +515,9 @@ $csrf_token = $security->generateCSRFToken();
             if (event.target === apiModal) {
                 closeApiModal();
             }
+            if (event.target === leaveModal) {
+                closeLeaveModal();
+            }
             if (event.target === deleteModal) {
                 closeDeleteModal();
             }
@@ -445,6 +525,7 @@ $csrf_token = $security->generateCSRFToken();
 
         // Prevent event propagation
         apiModalDialog.addEventListener('click', e => e.stopPropagation());
+        leaveModalDialog.addEventListener('click', e => e.stopPropagation());
         deleteModalDialog.addEventListener('click', e => e.stopPropagation());
     </script>
     <script src="../js/sidebar.js"></script>

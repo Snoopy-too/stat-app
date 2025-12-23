@@ -44,13 +44,38 @@ if ($club_id > 0 || !empty($slug)) {
                     SELECT g.game_id FROM games g
                     INNER JOIN team_game_results tgr ON g.game_id = tgr.game_id
                     WHERE g.club_id = ?
-                ) as all_plays) as play_count
+                ) as all_plays) as play_count,
+                (SELECT COUNT(DISTINCT DATE(gr.played_at)) FROM game_results gr
+                    INNER JOIN games g ON gr.game_id = g.game_id
+                    WHERE g.club_id = ?) as game_days_count,
+                (SELECT COUNT(*) FROM champions WHERE club_id = ?) as champions_count
         ");
-        $count_stmt->execute([$club_id, $club_id, $club_id, $club_id]);
+        $count_stmt->execute([$club_id, $club_id, $club_id, $club_id, $club_id, $club_id]);
         $counts = $count_stmt->fetch(PDO::FETCH_ASSOC);
 
         // Merge counts into club array
         $club = array_merge($club, $counts);
+
+        // Fetch top 5 players by wins for leaderboard
+        $leaderboard_stmt = $pdo->prepare("
+            SELECT
+                m.member_id,
+                m.nickname,
+                COUNT(gr.result_id) as wins,
+                (SELECT COUNT(*) FROM game_results gr2
+                 JOIN games g2 ON gr2.game_id = g2.game_id
+                 WHERE g2.club_id = ? AND (gr2.winner = m.member_id OR gr2.place_2 = m.member_id OR gr2.place_3 = m.member_id)) as total_plays
+            FROM members m
+            LEFT JOIN game_results gr ON gr.winner = m.member_id
+            LEFT JOIN games g ON gr.game_id = g.game_id AND g.club_id = ?
+            WHERE m.club_id = ? AND m.status = 'active'
+            GROUP BY m.member_id, m.nickname
+            HAVING wins > 0
+            ORDER BY wins DESC, total_plays DESC
+            LIMIT 5
+        ");
+        $leaderboard_stmt->execute([$club_id, $club_id, $club_id]);
+        $leaderboard = $leaderboard_stmt->fetchAll(PDO::FETCH_ASSOC);
     } else {
         $error = 'Club not found';
     }
@@ -92,22 +117,41 @@ if ($club_id > 0 || !empty($slug)) {
                     <h2><?php echo htmlspecialchars($club['club_name']); ?></h2>
                 </div>
 
-                <div class="stats-grid">
-                    <a href="club_game_list.php?id=<?php echo $club_id; ?>" class="card-link card-link--stat">
-                        <h3>Games</h3>
-                        <div class="stat-number"><?php echo $club['game_count']; ?></div>
+                <div class="dashboard-stats">
+                    <a href="club_game_list.php?id=<?php echo $club_id; ?>" class="card stat-card stat-card--neutral stat-card--clickable">
+                        <span class="stat-card__label">Games</span>
+                        <div class="stat-card__body">
+                            <span class="stat-card__value"><?php echo $club['game_count']; ?></span>
+                            <span class="stat-card__meta">In the library</span>
+                        </div>
                     </a>
-                    <a href="club_game_results.php?id=<?php echo $club_id; ?>" class="card-link card-link--stat">
-                        <h3>Total Plays</h3>
-                        <div class="stat-number"><?php echo $club['play_count']; ?></div>
+                    <a href="club_game_results.php?id=<?php echo $club_id; ?>" class="card stat-card stat-card--emerald stat-card--clickable">
+                        <span class="stat-card__label">Total Plays</span>
+                        <div class="stat-card__body">
+                            <span class="stat-card__value"><?php echo $club['play_count']; ?></span>
+                            <span class="stat-card__meta">Games played</span>
+                        </div>
                     </a>
-                    <a href="game_days.php?id=<?php echo $club_id; ?>" class="card-link card-link--stat">
-                        <h3>Game Days</h3>
-                        <div class="stat-number">&#128197;</div>
+                    <a href="#members-section" class="card stat-card stat-card--sky stat-card--clickable">
+                        <span class="stat-card__label">Members</span>
+                        <div class="stat-card__body">
+                            <span class="stat-card__value"><?php echo $club['member_count']; ?></span>
+                            <span class="stat-card__meta">Active members</span>
+                        </div>
                     </a>
-                    <a href="club_champions.php?id=<?php echo $club_id; ?>" class="card-link card-link--stat">
-                        <h3>Champions</h3>
-                        <div class="stat-number">&#127942;</div>
+                    <a href="game_days.php?id=<?php echo $club_id; ?>" class="card stat-card stat-card--purple stat-card--clickable">
+                        <span class="stat-card__label">Game Days</span>
+                        <div class="stat-card__body">
+                            <span class="stat-card__value"><?php echo $club['game_days_count']; ?></span>
+                            <span class="stat-card__meta">Days of gaming</span>
+                        </div>
+                    </a>
+                    <a href="club_champions.php?id=<?php echo $club_id; ?>" class="card stat-card stat-card--gold stat-card--clickable">
+                        <span class="stat-card__label">Champions</span>
+                        <div class="stat-card__body">
+                            <span class="stat-card__value"><?php echo $club['champions_count']; ?></span>
+                            <span class="stat-card__meta">Titles awarded</span>
+                        </div>
                     </a>
                 </div>
 
@@ -138,6 +182,27 @@ if ($club_id > 0 || !empty($slug)) {
                     </div>
                 <?php endif; ?>
 
+                <?php if (!empty($leaderboard)): ?>
+                <div class="leaderboard-section card">
+                    <div class="leaderboard-header">
+                        <h3>Top Players</h3>
+                        <span class="leaderboard-subtitle">By wins</span>
+                    </div>
+                    <div class="leaderboard-list">
+                        <?php foreach ($leaderboard as $index => $player): ?>
+                        <a href="member_stathistory.php?id=<?php echo $player['member_id']; ?>" class="leaderboard-item">
+                            <span class="leaderboard-rank"><?php echo $index + 1; ?></span>
+                            <span class="leaderboard-name"><?php echo htmlspecialchars($player['nickname']); ?></span>
+                            <span class="leaderboard-stats">
+                                <span class="leaderboard-wins"><?php echo $player['wins']; ?> wins</span>
+                                <span class="leaderboard-plays"><?php echo $player['total_plays']; ?> plays</span>
+                            </span>
+                        </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <?php
                 // Fetch members of the club
                 $members_stmt = $pdo->prepare("SELECT member_id, nickname FROM members WHERE club_id = ? AND status = 'active' ORDER BY nickname");
@@ -145,7 +210,7 @@ if ($club_id > 0 || !empty($slug)) {
                 $members = $members_stmt->fetchAll(PDO::FETCH_ASSOC);
                 
                 if (count($members) > 0): ?>
-                    <div class="members-section">
+                    <div class="members-section" id="members-section">
                         <h3>Club Members</h3>
                         <div class="members-list">
                             <?php foreach ($members as $member): ?>

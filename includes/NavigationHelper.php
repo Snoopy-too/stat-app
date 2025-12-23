@@ -458,6 +458,20 @@ class NavigationHelper {
             echo '<span class="sidebar__link-icon" style="' . $iconStyle . '">🏠</span>';
             echo '<span>Clubs</span>';
             echo '</a>';
+        } else {
+            // For single_club admins, show Edit Club link
+            global $pdo;
+            if (isset($pdo) && isset($_SESSION['admin_id'])) {
+                $singleClubStmt = $pdo->prepare("SELECT club_id FROM club_admins WHERE admin_id = ? LIMIT 1");
+                $singleClubStmt->execute([$_SESSION['admin_id']]);
+                $singleClubId = $singleClubStmt->fetchColumn();
+                if ($singleClubId) {
+                    echo '<a href="edit_club.php?id=' . (int)$singleClubId . '" class="sidebar__link' . ($currentPage === 'edit_club' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'edit_club' ? $activeLinkStyle : $normalLinkStyle) . '">';
+                    echo '<span class="sidebar__link-icon" style="' . $iconStyle . '">✏️</span>';
+                    echo '<span>Edit Club</span>';
+                    echo '</a>';
+                }
+            }
         }
 
         echo '</div>';

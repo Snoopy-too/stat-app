@@ -666,6 +666,21 @@
     color: rgba(255, 255, 255, 0.82);
 }
 
+/* Stat card pair - two cards side by side taking one grid slot */
+.dashboard-stats .stat-card-pair {
+    display: flex;
+    gap: clamp(0.5rem, 2vw, 1rem);
+}
+
+.dashboard-stats .stat-card-pair .stat-card--half {
+    flex: 1;
+    min-height: 9.5rem;
+}
+
+.dashboard-stats .stat-card-pair .stat-card__value {
+    font-size: clamp(1.8rem, 4vw, 2.2rem);
+}
+
 .stat-card__meta {
     font-size: 0.9rem;
     color: var(--color-text-soft);
@@ -1063,6 +1078,16 @@
 
     .stat-card__value {
         font-size: clamp(1.8rem, 4vw, 2.2rem);
+    }
+
+    /* Keep stat-card-pair side by side but reduce height */
+    .dashboard-stats .stat-card-pair .stat-card--half {
+        min-height: 7.5rem;
+        padding: var(--spacing-3);
+    }
+
+    .dashboard-stats .stat-card-pair .stat-card__value {
+        font-size: clamp(1.5rem, 3.5vw, 1.8rem);
     }
 
     /* Stack all buttons vertically */

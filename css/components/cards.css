@@ -123,6 +123,106 @@
     color: var(--color-text-soft);
 }
 
+/* Stat Card Color Variants */
+.stat-card--navy {
+    background: linear-gradient(135deg, #1e3a5f, #0f2744);
+    border-color: #1e3a5f;
+}
+
+.stat-card--navy .stat-card__label,
+.stat-card--navy .stat-card__value,
+.stat-card--navy .stat-card__meta {
+    color: #fff;
+}
+
+.stat-card--sky {
+    background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+    border-color: #7dd3fc;
+}
+
+.stat-card--sky .stat-card__value {
+    color: #0369a1;
+}
+
+.stat-card--sky .stat-card__label {
+    color: #0284c7;
+}
+
+.stat-card--neutral {
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+    border-color: #cbd5e1;
+}
+
+.stat-card--neutral .stat-card__value {
+    color: #334155;
+}
+
+.stat-card--neutral .stat-card__label {
+    color: #475569;
+}
+
+.stat-card--gold {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border-color: #fcd34d;
+}
+
+.stat-card--gold .stat-card__value {
+    color: #92400e;
+}
+
+.stat-card--gold .stat-card__label {
+    color: #b45309;
+}
+
+.stat-card--purple {
+    background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+    border-color: #c4b5fd;
+}
+
+.stat-card--purple .stat-card__value {
+    color: #5b21b6;
+}
+
+.stat-card--purple .stat-card__label {
+    color: #6d28d9;
+}
+
+.stat-card--emerald {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    border-color: #6ee7b7;
+}
+
+.stat-card--emerald .stat-card__value {
+    color: #065f46;
+}
+
+.stat-card--emerald .stat-card__label {
+    color: #047857;
+}
+
+/* Stat card pair - for side-by-side cards */
+.stat-card-pair {
+    display: flex;
+    gap: var(--spacing-4, 1rem);
+    min-width: 0;
+}
+
+.stat-card--half {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Clickable stat card */
+.stat-card--clickable {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card--clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
 /* Hero Card */
 .hero-card {
     background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-muted) 100%);

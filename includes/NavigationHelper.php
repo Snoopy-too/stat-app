@@ -292,13 +292,19 @@ class NavigationHelper {
         $normalLinkStyle = $activeStyle . 'color:#475569;';
         $activeLinkStyle = $activeStyle . 'color:#6366f1;background:#e0e7ff;font-weight:600;';
 
-        echo '<a href="index.php" class="sidebar__link' . ($currentPage === 'home' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'home' ? $activeLinkStyle : $normalLinkStyle) . '">';
-        echo '<span class="sidebar__link-icon" style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:1rem;">🏠</span>';
-        echo '<span>Home</span>';
-        echo '</a>';
+        // Home link - goes to club stats if viewing a club, otherwise index.php
+        if ($clubId) {
+            echo '<a href="club_stats.php?id=' . (int)$clubId . '" class="sidebar__link' . ($currentPage === 'club_stats' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'club_stats' ? $activeLinkStyle : $normalLinkStyle) . '">';
+            echo '<span class="sidebar__link-icon" style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:1rem;">🏠</span>';
+            echo '<span>Home</span>';
+            echo '</a>';
+        } else {
+            echo '<a href="index.php" class="sidebar__link' . ($currentPage === 'home' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'home' ? $activeLinkStyle : $normalLinkStyle) . '">';
+            echo '<span class="sidebar__link-icon" style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:1rem;">🏠</span>';
+            echo '<span>Home</span>';
+            echo '</a>';
 
-        // Search/Find club link (when no club selected)
-        if (!$clubId) {
+            // Search/Find club link (when no club selected)
             echo '<a href="index.php#clubs" class="sidebar__link' . ($currentPage === 'search' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'search' ? $activeLinkStyle : $normalLinkStyle) . '">';
             echo '<span class="sidebar__link-icon" style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:1rem;">🔍</span>';
             echo '<span>Find a Club</span>';
@@ -311,11 +317,6 @@ class NavigationHelper {
             echo '<div class="sidebar__divider" style="height:1px;background:#e2e8f0;margin:0.75rem 1rem;"></div>';
             echo '<div class="sidebar__section" style="margin-bottom:0.5rem;">';
             echo '<div class="sidebar__section-title" style="padding:0.5rem 1rem;font-size:0.75rem;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Club</div>';
-
-            echo '<a href="club_stats.php?id=' . (int)$clubId . '" class="sidebar__link' . ($currentPage === 'club_stats' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'club_stats' ? $activeLinkStyle : $normalLinkStyle) . '">';
-            echo '<span class="sidebar__link-icon" style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:1rem;">📊</span>';
-            echo '<span>Club Stats</span>';
-            echo '</a>';
 
             echo '<a href="club_game_list.php?id=' . (int)$clubId . '" class="sidebar__link' . ($currentPage === 'games' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'games' ? $activeLinkStyle : $normalLinkStyle) . '">';
             echo '<span class="sidebar__link-icon" style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:1rem;">🎲</span>';

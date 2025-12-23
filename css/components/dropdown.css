@@ -32,7 +32,8 @@
     background: none;
     border: none;
     cursor: pointer;
-    font-size: var(--font-size-sm); /* Ensure consistent font size */
+    font-size: var(--font-size-sm);
+    /* Ensure consistent font size */
     font-family: inherit;
 }
 
@@ -47,4 +48,11 @@
 .dropdown.is-open .dropdown__menu,
 .dropdown:hover .dropdown__menu {
     display: block;
+}
+
+/* Modifiers */
+.dropdown.dropdown--up .dropdown__menu {
+    top: auto;
+    bottom: calc(100% + 0.5rem);
+    transform-origin: bottom right;
 }

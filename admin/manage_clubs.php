@@ -392,22 +392,46 @@ $csrf_token = $security->generateCSRFToken();
             event.preventDefault();
             event.stopPropagation();
             
-            // Close any other open dropdowns first
             const currentDropdown = button.closest('.dropdown');
+            const wasOpen = currentDropdown.classList.contains('is-open');
+
+            // Close any other open dropdowns first
             document.querySelectorAll('.dropdown.is-open').forEach(dropdown => {
                 if (dropdown !== currentDropdown) {
                     dropdown.classList.remove('is-open');
+                    dropdown.classList.remove('dropdown--up'); // Reset position
                 }
             });
             
-            currentDropdown.classList.toggle('is-open');
+            // Toggle current
+            if (!wasOpen) {
+                // Smart Positioning: Check if there's enough space below
+                const rect = button.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const minSpaceRequired = 320; // Approx height of menu + padding
+                
+                // If limited space below and more space above, go up
+                if (spaceBelow < minSpaceRequired && rect.top > spaceBelow) {
+                    currentDropdown.classList.add('dropdown--up');
+                } else {
+                    currentDropdown.classList.remove('dropdown--up');
+                }
+                currentDropdown.classList.add('is-open');
+            } else {
+                currentDropdown.classList.remove('is-open');
+                // Optional: remove direction class on close, though not strictly necessary
+                // currentDropdown.classList.remove('dropdown--up'); 
+            }
         }
 
         // Close modals and dropdowns when clicking outside
         window.onclick = function(event) {
             // Close Dropdowns if clicking outside
             if (!event.target.closest('.dropdown')) {
-                document.querySelectorAll('.dropdown.is-open').forEach(d => d.classList.remove('is-open'));
+                document.querySelectorAll('.dropdown.is-open').forEach(d => {
+                    d.classList.remove('is-open');
+                    d.classList.remove('dropdown--up');
+                });
             }
 
             // Close Modals

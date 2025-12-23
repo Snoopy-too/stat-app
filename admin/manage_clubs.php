@@ -263,18 +263,28 @@ $csrf_token = $security->generateCSRFToken();
                             <td class="hide-on-mobile" data-label="Created"><?php echo date('M j, Y', strtotime($club['created_at'])); ?></td>
                             <td class="hide-on-mobile" data-label="Total Plays"><?php echo $club['total_plays'] ?: 0; ?></td>
                             <td class="actions-cell table-col--primary" data-label="Actions">
-                                <div class="table-actions">
-                                    <a href="edit_club.php?id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Edit</a>
-                                    <a href="manage_members.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Members</a>
-                                    <a href="manage_games.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Games</a>
-                                    <a href="club_teams.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Teams</a>
-                                    <a href="manage_logo.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--xsmall">Logo</a>
-                                    <button type="button" class="btn btn--xsmall btn--secondary" onclick="confirmApiGeneration(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>')">API</button>
-                                    <button type="button" class="btn btn--xsmall btn--danger" 
-                                            onclick="confirmClubDeletion(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>', <?php echo $club['admin_count']; ?>)"
-                                            <?php echo ($club['admin_count'] > 1) ? 'title="Shared clubs cannot be deleted"' : ''; ?>>
-                                        Delete
+                                <div class="dropdown">
+                                    <button type="button" class="btn btn--small btn--secondary dropdown__toggle" onclick="toggleDropdown(this, event)">
+                                        Manage <span style="margin-left: 0.5ch; font-size: 0.8em;">▼</span>
                                     </button>
+                                    <div class="dropdown__menu">
+                                        <a href="edit_club.php?id=<?php echo $club['club_id']; ?>">Edit Details</a>
+                                        <a href="manage_members.php?club_id=<?php echo $club['club_id']; ?>">Manage Members</a>
+                                        <a href="manage_games.php?club_id=<?php echo $club['club_id']; ?>">Manage Games</a>
+                                        <a href="club_teams.php?club_id=<?php echo $club['club_id']; ?>">Manage Teams</a>
+                                        <a href="manage_logo.php?club_id=<?php echo $club['club_id']; ?>">Update Logo</a>
+                                        
+                                        <div style="border-top: 1px solid var(--color-border); margin: 0.25rem 0;"></div>
+                                        
+                                        <button type="button" onclick="confirmApiGeneration(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>')">
+                                            Generate API JSON
+                                        </button>
+                                        <button type="button" style="color: var(--color-danger);"
+                                                onclick="confirmClubDeletion(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>', <?php echo $club['admin_count']; ?>)"
+                                                <?php echo ($club['admin_count'] > 1) ? 'title="Shared clubs cannot be deleted"' : ''; ?>>
+                                            Delete Club
+                                        </button>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -377,7 +387,30 @@ $csrf_token = $security->generateCSRFToken();
         }
 
         // Close modals when clicking outside
+        // Dropdown Logic
+        function toggleDropdown(button, event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Close any other open dropdowns first
+            const currentDropdown = button.closest('.dropdown');
+            document.querySelectorAll('.dropdown.is-open').forEach(dropdown => {
+                if (dropdown !== currentDropdown) {
+                    dropdown.classList.remove('is-open');
+                }
+            });
+            
+            currentDropdown.classList.toggle('is-open');
+        }
+
+        // Close modals and dropdowns when clicking outside
         window.onclick = function(event) {
+            // Close Dropdowns if clicking outside
+            if (!event.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown.is-open').forEach(d => d.classList.remove('is-open'));
+            }
+
+            // Close Modals
             if (event.target === apiModal) {
                 closeApiModal();
             }

@@ -21,15 +21,25 @@
     z-index: 20;
 }
 
-.dropdown__menu a {
+.dropdown__menu a,
+.dropdown__menu button {
     display: block;
+    width: 100%;
+    text-align: left;
     padding: 0.6rem 1rem;
     color: var(--color-text);
     font-weight: var(--font-weight-medium);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: var(--font-size-sm); /* Ensure consistent font size */
+    font-family: inherit;
 }
 
 .dropdown__menu a:hover,
-.dropdown__menu a:focus-visible {
+.dropdown__menu a:focus-visible,
+.dropdown__menu button:hover,
+.dropdown__menu button:focus-visible {
     background: var(--color-primary-soft);
     color: var(--color-primary-strong);
 }

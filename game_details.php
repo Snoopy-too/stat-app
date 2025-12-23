@@ -69,95 +69,7 @@ if ($game_id > 0) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $game ? htmlspecialchars($game['game_name']) : 'Game'; ?> Details - Board Game StatApp</title>
     <link rel="stylesheet" href="css/styles.css">
-    <style>
-        .game-hero {
-            display: flex;
-            gap: var(--spacing-8);
-            background: var(--color-surface);
-            border-radius: var(--radius-xl);
-            padding: var(--spacing-8);
-            margin-bottom: var(--spacing-8);
-            border: 1px solid var(--color-border);
-            box-shadow: var(--shadow-md);
-            align-items: center;
-        }
-        .game-hero__image-container {
-            flex-shrink: 0;
-            width: 300px;
-            height: 300px;
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            box-shadow: var(--shadow-lg);
-            border: 4px solid var(--color-background);
-            background: var(--color-surface-muted);
-        }
-        .game-hero__image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        .game-hero__image-placeholder {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: var(--font-size-sm);
-            color: var(--color-text-soft);
-            background: linear-gradient(135deg, var(--color-surface-muted), var(--color-border));
-        }
-        .game-hero__content {
-            flex-grow: 1;
-        }
-        .game-hero__title {
-            font-size: var(--font-size-4xl);
-            margin-bottom: var(--spacing-4);
-            color: var(--color-heading);
-        }
-        .game-hero__stats {
-            display: flex;
-            gap: var(--spacing-8);
-            flex-wrap: wrap;
-        }
-        .game-stat {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-1);
-        }
-        .game-stat__label {
-            font-size: var(--font-size-xs);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--color-text-muted);
-            font-weight: var(--font-weight-bold);
-        }
-        .game-stat__value {
-            font-size: var(--font-size-2xl);
-            color: var(--color-heading);
-            font-weight: var(--font-weight-bold);
-        }
-        
-        @media (max-width: 48rem) {
-            .game-hero {
-                flex-direction: column;
-                padding: var(--spacing-6);
-                text-align: center;
-                gap: var(--spacing-6);
-            }
-            .game-hero__image-container {
-                width: 200px;
-                height: 200px;
-            }
-            .game-hero__stats {
-                justify-content: center;
-                gap: var(--spacing-4);
-            }
-            .game-hero__title {
-                font-size: var(--font-size-2xl);
-            }
-        }
-    </style>
+    <script src="js/dark-mode.js"></script>
 </head>
 <body class="has-sidebar">
     <?php
@@ -206,12 +118,12 @@ if ($game_id > 0) {
             </div>
 
             <div class="card">
-                <div class="section-header" style="margin-bottom: var(--spacing-6); border-bottom: 2px solid var(--color-border); padding-bottom: var(--spacing-2);">
-                    <h2 style="margin: 0;">Match History</h2>
+                <div class="card-header">
+                    <h2>Match History</h2>
                 </div>
 
                 <?php if (count($results) > 0): ?>
-                    <table class="results-table">
+                    <table class="data-table">
                         <thead>
                             <tr>
                                 <th><a href="?id=<?php echo $game_id; ?>&sort=nickname&order=<?php echo ($sort === 'nickname' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()">Winner <?php if ($sort === 'nickname') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
@@ -235,26 +147,31 @@ if ($game_id > 0) {
                         </tbody>
                     </table>
                 <?php else: ?>
-                    <div class="no-results" style="text-align: center; padding: var(--spacing-12); background: var(--color-surface-muted); border-radius: var(--radius-lg); border: 2px dashed var(--color-border);">
-                        <p style="color: var(--color-text-soft);">No results have been recorded for this game yet.</p>
+                    <div class="empty-state empty-state--no-results">
+                        <div class="empty-state__icon"></div>
+                        <p class="empty-state__description">No results have been recorded for this game yet.</p>
                     </div>
                 <?php endif; ?>
             </div>
         <?php endif; ?>
     </div>
+
     <script src="js/sidebar.js"></script>
+    <script src="js/form-loading.js"></script>
+    <script src="js/confirmations.js"></script>
+    <script src="js/form-validation.js"></script>
     <script src="js/empty-states.js"></script>
-</body>
-<script>
-function saveScroll() {
-    sessionStorage.setItem('scrollPos', window.scrollY);
-}
-window.addEventListener('DOMContentLoaded', function() {
-    var scrollPos = sessionStorage.getItem('scrollPos');
-    if (scrollPos !== null) {
-        window.scrollTo(0, parseInt(scrollPos));
-        sessionStorage.removeItem('scrollPos');
+    <script>
+    function saveScroll() {
+        sessionStorage.setItem('scrollPos', window.scrollY);
     }
-});
-</script>
+    window.addEventListener('DOMContentLoaded', function() {
+        var scrollPos = sessionStorage.getItem('scrollPos');
+        if (scrollPos !== null) {
+            window.scrollTo(0, parseInt(scrollPos));
+            sessionStorage.removeItem('scrollPos');
+        }
+    });
+    </script>
+</body>
 </html>

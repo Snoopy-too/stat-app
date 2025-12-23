@@ -89,11 +89,9 @@ if (!empty($club_ids)) {
 $admin_type = $_SESSION['admin_type'] ?? 'multi_club';
 $is_single_club = ($admin_type === 'single_club');
 
-// Get single club ID for single_club admins
-$single_club_id = null;
-if ($is_single_club && count($clubs) === 1) {
-    $single_club_id = $clubs[0]['club_id'];
-}
+// Check if we should display in single-club mode (either strictly single_club type OR multi_club with exactly one club)
+$single_club_mode = (count($clubs) === 1);
+$direct_link_club_id = $single_club_mode ? $clubs[0]['club_id'] : null;
 ?>
 
 <!DOCTYPE html>
@@ -124,9 +122,9 @@ if ($is_single_club && count($clubs) === 1) {
             </a>
             <?php endif; ?>
 
-            <?php if ($is_single_club && $single_club_id): ?>
-                <!-- Single club admin: direct links -->
-                <a href="manage_members.php?club_id=<?php echo $single_club_id; ?>" class="card stat-card stat-card--sky stat-card--clickable">
+            <?php if ($single_club_mode): ?>
+                <!-- Single club (or effective single club): direct links -->
+                <a href="manage_members.php?club_id=<?php echo $direct_link_club_id; ?>" class="card stat-card stat-card--sky stat-card--clickable">
                     <span class="stat-card__label">Total Members</span>
                     <div class="stat-card__body">
                         <span class="stat-card__value"><?php echo $total_members; ?></span>
@@ -134,14 +132,14 @@ if ($is_single_club && count($clubs) === 1) {
                     </div>
                 </a>
                 <div class="stat-card-pair">
-                    <a href="manage_games.php?club_id=<?php echo $single_club_id; ?>" class="card stat-card stat-card--neutral stat-card--clickable stat-card--half">
+                    <a href="manage_games.php?club_id=<?php echo $direct_link_club_id; ?>" class="card stat-card stat-card--neutral stat-card--clickable stat-card--half">
                         <span class="stat-card__label">Games</span>
                         <div class="stat-card__body">
                             <span class="stat-card__value"><?php echo $total_games; ?></span>
                             <span class="stat-card__meta">In your library</span>
                         </div>
                     </a>
-                    <a href="club_new_results.php?club_id=<?php echo $single_club_id; ?>" class="card stat-card stat-card--emerald stat-card--clickable stat-card--half">
+                    <a href="club_new_results.php?club_id=<?php echo $direct_link_club_id; ?>" class="card stat-card stat-card--emerald stat-card--clickable stat-card--half">
                         <span class="stat-card__label">Results</span>
                         <div class="stat-card__body">
                             <span class="stat-card__value"><?php echo $total_results; ?></span>
@@ -149,14 +147,14 @@ if ($is_single_club && count($clubs) === 1) {
                         </div>
                     </a>
                 </div>
-                <a href="manage_champions.php?club_id=<?php echo $single_club_id; ?>" class="card stat-card stat-card--gold stat-card--clickable">
+                <a href="manage_champions.php?club_id=<?php echo $direct_link_club_id; ?>" class="card stat-card stat-card--gold stat-card--clickable">
                     <span class="stat-card__label">Champions</span>
                     <div class="stat-card__body">
                         <span class="stat-card__value"><?php echo $total_champions; ?></span>
                         <span class="stat-card__meta">Total champions to date</span>
                     </div>
                 </a>
-                <a href="club_teams.php?club_id=<?php echo $single_club_id; ?>" class="card stat-card stat-card--purple stat-card--clickable">
+                <a href="club_teams.php?club_id=<?php echo $direct_link_club_id; ?>" class="card stat-card stat-card--purple stat-card--clickable">
                     <span class="stat-card__label">Teams</span>
                     <div class="stat-card__body">
                         <span class="stat-card__value"><?php echo $total_teams; ?></span>

@@ -230,6 +230,24 @@
     .header {
         flex-wrap: wrap;
     }
+
+    /* Keep header-actions visible on compact headers (sidebar pages) */
+    .header--compact .header-actions {
+        max-height: none;
+        overflow: visible;
+        opacity: 1;
+        order: 0;
+        width: auto;
+        flex-direction: row;
+        padding: 0;
+        border: none;
+        margin: 0;
+        margin-left: auto;
+    }
+
+    .header--compact .header-actions .btn {
+        width: auto;
+    }
 }
 
 /* ==================== */

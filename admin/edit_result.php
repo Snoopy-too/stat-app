@@ -163,6 +163,7 @@ $csrf_token = $security->generateCSRFToken();
 
             <div class="form-group">
                 <button type="submit" class="btn">Update Result</button>
+                <a href="view_result.php?result_id=<?php echo $result_id; ?>" class="btn btn--secondary">Cancel</a>
             </div>
         </form>
     </div>

@@ -24,21 +24,42 @@ if (!$member) {
 
 $club_id = $member['club_id'];
 
-// Calculate Average Finish and get game history for the member (both individual and team games)
-$stmt = $pdo->prepare("SELECT DISTINCT gr.played_at as game_date, g.game_name, CASE WHEN gr.winner = ? THEN 1 WHEN gr.place_2 = ? THEN 2 WHEN gr.place_3 = ? THEN 3 WHEN gr.place_4 = ? THEN 4 WHEN gr.place_5 = ? THEN 5 WHEN gr.place_6 = ? THEN 6 WHEN gr.place_7 = ? THEN 7 WHEN gr.place_8 = ? THEN 8 END as position, gr.num_players, gr.game_id, 'individual' as game_type FROM game_results gr JOIN games g ON gr.game_id = g.game_id WHERE gr.winner = ? OR gr.place_2 = ? OR gr.place_3 = ? OR gr.place_4 = ? OR gr.place_5 = ? OR gr.place_6 = ? OR gr.place_7 = ? OR gr.place_8 = ? UNION ALL SELECT DISTINCT tgr.played_at as game_date, g.game_name, CASE WHEN tgr.winner = t.team_id THEN 1 WHEN tgr.place_2 = t.team_id THEN 2 WHEN tgr.place_3 = t.team_id THEN 3 WHEN tgr.place_4 = t.team_id THEN 4 END as position, tgr.num_teams as num_players, tgr.game_id, 'team' as game_type FROM teams t JOIN team_game_results tgr ON (t.team_id = tgr.winner OR t.team_id = tgr.place_2 OR t.team_id = tgr.place_3 OR t.team_id = tgr.place_4) JOIN games g ON tgr.game_id = g.game_id WHERE (t.member1_id = ? OR t.member2_id = ? OR t.member3_id = ? OR t.member4_id = ?) ORDER BY $sort $order");
+// Calculate Average Finish and get game history for the member (individual, team, and cooperative games)
+$stmt = $pdo->prepare("SELECT DISTINCT gr.played_at as game_date, g.game_name, CASE WHEN gr.winner = ? THEN 1 WHEN gr.place_2 = ? THEN 2 WHEN gr.place_3 = ? THEN 3 WHEN gr.place_4 = ? THEN 4 WHEN gr.place_5 = ? THEN 5 WHEN gr.place_6 = ? THEN 6 WHEN gr.place_7 = ? THEN 7 WHEN gr.place_8 = ? THEN 8 END as position, gr.num_players, gr.game_id, gr.result_id, 'individual' as game_type, NULL as coop_outcome FROM game_results gr JOIN games g ON gr.game_id = g.game_id WHERE gr.winner = ? OR gr.place_2 = ? OR gr.place_3 = ? OR gr.place_4 = ? OR gr.place_5 = ? OR gr.place_6 = ? OR gr.place_7 = ? OR gr.place_8 = ?
+UNION ALL
+SELECT DISTINCT tgr.played_at as game_date, g.game_name, CASE WHEN tgr.winner = t.team_id THEN 1 WHEN tgr.place_2 = t.team_id THEN 2 WHEN tgr.place_3 = t.team_id THEN 3 WHEN tgr.place_4 = t.team_id THEN 4 END as position, tgr.num_teams as num_players, tgr.game_id, tgr.result_id, 'team' as game_type, NULL as coop_outcome FROM teams t JOIN team_game_results tgr ON (t.team_id = tgr.winner OR t.team_id = tgr.place_2 OR t.team_id = tgr.place_3 OR t.team_id = tgr.place_4) JOIN games g ON tgr.game_id = g.game_id WHERE (t.member1_id = ? OR t.member2_id = ? OR t.member3_id = ? OR t.member4_id = ?)
+UNION ALL
+SELECT cgr.played_at as game_date, g.game_name, CASE cgr.outcome WHEN 'win' THEN 0 ELSE -1 END as position, cgr.num_participants as num_players, cgr.game_id, cgr.result_id, 'cooperative' as game_type, cgr.outcome as coop_outcome FROM cooperative_game_results cgr JOIN cooperative_result_participants crp ON cgr.result_id = crp.result_id JOIN games g ON cgr.game_id = g.game_id WHERE crp.participant_type = 'member' AND crp.member_id = ?
+UNION ALL
+SELECT cgr.played_at as game_date, g.game_name, CASE cgr.outcome WHEN 'win' THEN 0 ELSE -1 END as position, cgr.num_participants as num_players, cgr.game_id, cgr.result_id, 'cooperative' as game_type, cgr.outcome as coop_outcome FROM cooperative_game_results cgr JOIN cooperative_result_participants crp ON cgr.result_id = crp.result_id JOIN teams t ON crp.team_id = t.team_id JOIN games g ON cgr.game_id = g.game_id WHERE crp.participant_type = 'team' AND (t.member1_id = ? OR t.member2_id = ? OR t.member3_id = ? OR t.member4_id = ?)
+ORDER BY $sort $order");
 
 $params = array_fill(0, 16, $member_id); // For individual games
 $params = array_merge($params, array_fill(0, 4, $member_id)); // For team games
+$params[] = $member_id; // For cooperative games (direct member)
+$params = array_merge($params, array_fill(0, 4, $member_id)); // For cooperative games (via team)
 $stmt->execute($params);
 $game_history = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Calculate Average Finish
+// Calculate Average Finish (excluding cooperative games)
 $total_points = 0;
-$total_games = count($game_history);
+$competitive_games = 0;
+$coop_wins = 0;
+$coop_total = 0;
+
 foreach ($game_history as $game) {
-    $total_points += $game['position'];
+    if ($game['game_type'] === 'cooperative') {
+        $coop_total++;
+        if ($game['coop_outcome'] === 'win') {
+            $coop_wins++;
+        }
+    } else {
+        $total_points += $game['position'];
+        $competitive_games++;
+    }
 }
-$average_finish = $total_games > 0 ? number_format($total_points / $total_games, 2) : 0;
+$average_finish = $competitive_games > 0 ? number_format($total_points / $competitive_games, 2) : 0;
+$coop_win_rate = $coop_total > 0 ? number_format(($coop_wins / $coop_total) * 100, 0) : null;
 ?>
 
 <!DOCTYPE html>
@@ -67,7 +88,10 @@ $average_finish = $total_games > 0 ? number_format($total_points / $total_games,
         <h1 class="member-name"><?php echo htmlspecialchars($member['nickname']); ?>'s Game History</h1>
         
         <div class="stats-summary">
-            <p><strong><span class="tooltip-trigger" data-tooltip="Lower is better! 1.00 = 1st place in every game played.">Average Finish:</span></strong> <?php echo $average_finish; ?></p>
+            <p><strong><span class="tooltip-trigger" data-tooltip="Lower is better! 1.00 = 1st place in every game played.">Average Finish:</span></strong> <?php echo $average_finish; ?> <span style="font-size: 0.875em; color: var(--color-text-muted);">(<?php echo $competitive_games; ?> competitive games)</span></p>
+            <?php if ($coop_win_rate !== null): ?>
+            <p><strong>Co-op Win Rate:</strong> <?php echo $coop_win_rate; ?>% <span style="font-size: 0.875em; color: var(--color-text-muted);">(<?php echo $coop_wins; ?>/<?php echo $coop_total; ?> games)</span></p>
+            <?php endif; ?>
         </div>
         
         <?php if (count($game_history) > 0): ?>
@@ -91,7 +115,13 @@ $average_finish = $total_games > 0 ? number_format($total_points / $total_games,
                     </td>
                     <td>
                     <?php
-                    if ($game['position'] == 1) {
+                    if ($game['game_type'] === 'cooperative') {
+                        if ($game['coop_outcome'] === 'win') {
+                            echo '<span class="outcome-badge outcome-win">WIN</span>';
+                        } else {
+                            echo '<span class="outcome-badge outcome-loss">LOSS</span>';
+                        }
+                    } elseif ($game['position'] == 1) {
                         echo '<span class="button-gold-static">Winner</span>';
                     } elseif ($game['position'] == 2) {
                         echo 'Second Place';

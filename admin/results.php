@@ -31,20 +31,20 @@ if (!$game) {
     exit();
 }
 
-// Get both individual and team game results
+// Get individual, team, and cooperative game results
 $stmt = $pdo->prepare("
-    (SELECT 
+    (SELECT
         gr.result_id,
         gr.played_at,
         m.nickname as winner_name,
         'individual' as game_type,
         gr.duration,
         gr.notes
-    FROM game_results gr 
-    LEFT JOIN members m ON gr.member_id = m.member_id 
+    FROM game_results gr
+    LEFT JOIN members m ON gr.member_id = m.member_id
     WHERE gr.game_id = ?)
     UNION ALL
-    (SELECT 
+    (SELECT
         tgr.result_id,
         tgr.played_at,
         t.team_name as winner_name,
@@ -54,9 +54,19 @@ $stmt = $pdo->prepare("
     FROM team_game_results tgr
     LEFT JOIN teams t ON tgr.winner = t.team_id
     WHERE tgr.game_id = ?)
+    UNION ALL
+    (SELECT
+        cgr.result_id,
+        cgr.played_at,
+        CONCAT(UPPER(cgr.outcome), ' - Co-op') as winner_name,
+        'cooperative' as game_type,
+        cgr.duration,
+        cgr.notes
+    FROM cooperative_game_results cgr
+    WHERE cgr.game_id = ?)
     ORDER BY played_at DESC
 ");
-$stmt->execute([$game_id, $game_id]);
+$stmt->execute([$game_id, $game_id, $game_id]);
 $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -92,6 +102,8 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                    class="btn">Add New Result</a>
                 <a href="add_team_result.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game_id; ?>"
                    class="btn">Add New Team Result</a>
+                <a href="add_cooperative_result.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game_id; ?>"
+                   class="btn">Add Cooperative Result</a>
             </div>
         </div>
 
@@ -114,7 +126,15 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <td><?php echo date('M j, Y', strtotime($result['played_at'])); ?></td>
                                 <td><?php echo htmlspecialchars($result['winner_name']); ?></td>
                                 <td>
-                                    <a href="<?php echo $result['game_type'] === 'individual' ? 'view_result.php' : 'view_team_result.php'; ?>?result_id=<?php echo $result['result_id']; ?>" 
+                                    <?php
+                                    $view_url = match($result['game_type']) {
+                                        'individual' => 'view_result.php',
+                                        'team' => 'view_team_result.php',
+                                        'cooperative' => 'view_cooperative_result.php',
+                                        default => 'view_result.php'
+                                    };
+                                    ?>
+                                    <a href="<?php echo $view_url; ?>?result_id=<?php echo $result['result_id']; ?>"
                                        class="btn">View Details</a>
                                 </td>
                             </tr>

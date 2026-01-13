@@ -31,19 +31,19 @@ if ($game_id > 0) {
 
     if ($game) {
         $club_id = $game['club_id'];
-        // Fetch both individual and team results for this game
+        // Fetch individual, team, and cooperative results for this game
         $results_stmt = $pdo->prepare("
-            (SELECT 
+            (SELECT
                 gr.result_id,
                 m.nickname,
                 gr.position,
                 gr.played_at,
                 'individual' as game_type
-            FROM game_results gr 
-            JOIN members m ON gr.member_id = m.member_id 
+            FROM game_results gr
+            JOIN members m ON gr.member_id = m.member_id
             WHERE gr.game_id = ?)
             UNION ALL
-            (SELECT 
+            (SELECT
                 tgr.result_id,
                 t.team_name as nickname,
                 tgr.position,
@@ -52,8 +52,17 @@ if ($game_id > 0) {
             FROM team_game_results tgr
             JOIN teams t ON tgr.team_id = t.team_id
             WHERE tgr.game_id = ?)
+            UNION ALL
+            (SELECT
+                cgr.result_id,
+                CONCAT(UPPER(cgr.outcome), ' - Co-op') as nickname,
+                CASE cgr.outcome WHEN 'win' THEN 1 ELSE 0 END as position,
+                cgr.played_at,
+                'cooperative' as game_type
+            FROM cooperative_game_results cgr
+            WHERE cgr.game_id = ?)
             ORDER BY $sort $order");
-        $results_stmt->execute([$game_id, $game_id]);
+        $results_stmt->execute([$game_id, $game_id, $game_id]);
         $results = $results_stmt->fetchAll(PDO::FETCH_ASSOC);
     } else {
         $error = 'Game not found';
@@ -133,12 +142,28 @@ if ($game_id > 0) {
                         </thead>
                         <tbody>
                             <?php foreach ($results as $result): ?>
-                                <tr onclick="window.location='<?php echo $result['game_type'] === 'team' ? 'team_game_play_details.php' : 'game_play_details.php'; ?>?result_id=<?php echo $result['result_id']; ?>'" class="table-row--link">
+                                <?php
+                                $detail_url = match($result['game_type']) {
+                                    'team' => 'team_game_play_details.php',
+                                    'cooperative' => 'cooperative_game_play_details.php',
+                                    default => 'game_play_details.php'
+                                };
+                                ?>
+                                <tr onclick="window.location='<?php echo $detail_url; ?>?result_id=<?php echo $result['result_id']; ?>'" class="table-row--link">
                                     <td>
-                                        <?php $position = (int) $result['position']; ?>
-                                        <span class="position-badge position-<?php echo ($position >= 1 && $position <= 8) ? $position : 1; ?>">
-                                            <?php echo htmlspecialchars($result['nickname']); ?>
-                                        </span>
+                                        <?php if ($result['game_type'] === 'cooperative'): ?>
+                                            <?php
+                                            $outcome = strtolower(explode(' - ', $result['nickname'])[0]);
+                                            ?>
+                                            <span class="outcome-badge outcome-<?php echo $outcome; ?>">
+                                                <?php echo htmlspecialchars($result['nickname']); ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <?php $position = (int) $result['position']; ?>
+                                            <span class="position-badge position-<?php echo ($position >= 1 && $position <= 8) ? $position : 1; ?>">
+                                                <?php echo htmlspecialchars($result['nickname']); ?>
+                                            </span>
+                                        <?php endif; ?>
                                     </td>
                                     <td><?php echo ucfirst($result['game_type']); ?></td>
                                     <td><?php echo date('F j, Y', strtotime($result['played_at'])); ?></td>

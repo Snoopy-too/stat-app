@@ -57,20 +57,27 @@ $count_sql = "
         JOIN games g ON gr.game_id = g.game_id
         JOIN members m ON gr.winner = m.member_id
         WHERE m.club_id = :club_id_individual
-        
+
         UNION ALL
-        
+
         SELECT tgr.result_id
         FROM team_game_results tgr
         JOIN games g ON tgr.game_id = g.game_id
         JOIN teams t ON tgr.winner = t.team_id
         WHERE t.club_id = :club_id_team
+
+        UNION ALL
+
+        SELECT cgr.result_id
+        FROM cooperative_game_results cgr
+        JOIN games g ON cgr.game_id = g.game_id
+        WHERE g.club_id = :club_id_coop
     ) as all_results
 ";
 
 try {
     $count_stmt = $pdo->prepare($count_sql);
-    $count_stmt->execute(['club_id_individual' => $club_id, 'club_id_team' => $club_id]);
+    $count_stmt->execute(['club_id_individual' => $club_id, 'club_id_team' => $club_id, 'club_id_coop' => $club_id]);
     $total_results = $count_stmt->fetch(PDO::FETCH_ASSOC)['total'];
     $total_pages = ceil($total_results / $results_per_page);
     $has_more = $page < $total_pages;
@@ -78,7 +85,7 @@ try {
     die("Database count query failed: " . $e->getMessage());
 }
 
-// Get combined game results (individual and team) for the club with LIMIT
+// Get combined game results (individual, team, and cooperative) for the club with LIMIT
 $sql = "
     -- Individual Games
     SELECT
@@ -103,24 +110,41 @@ $sql = "
         g.game_name,
         g.game_image,
         t.team_name as winner_identifier,
-        tgr.num_teams as participants, -- Representing number of teams
+        tgr.num_teams as participants,
         tgr.game_id,
         'Team' as game_type,
         tgr.result_id as record_id
     FROM team_game_results tgr
     JOIN games g ON tgr.game_id = g.game_id
-    JOIN teams t ON tgr.winner = t.team_id -- <<< CORRECTED THIS LINE
+    JOIN teams t ON tgr.winner = t.team_id
     WHERE t.club_id = :club_id_team
+
+    UNION ALL
+
+    -- Cooperative Games
+    SELECT
+        cgr.played_at,
+        g.game_name,
+        g.game_image,
+        CONCAT(UPPER(cgr.outcome), ' - Co-op') as winner_identifier,
+        cgr.num_participants as participants,
+        cgr.game_id,
+        'Cooperative' as game_type,
+        cgr.result_id as record_id
+    FROM cooperative_game_results cgr
+    JOIN games g ON cgr.game_id = g.game_id
+    WHERE g.club_id = :club_id_coop
 
     ORDER BY $sort_column $order
     LIMIT :limit OFFSET :offset
 ";
 
-// Prepare and execute the statement (Line 60 where the error originally occurred)
+// Prepare and execute the statement
 try {
     $stmt = $pdo->prepare($sql);
     $stmt->bindValue(':club_id_individual', $club_id, PDO::PARAM_INT);
     $stmt->bindValue(':club_id_team', $club_id, PDO::PARAM_INT);
+    $stmt->bindValue(':club_id_coop', $club_id, PDO::PARAM_INT);
     $stmt->bindValue(':limit', $results_per_page, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
@@ -212,7 +236,14 @@ try {
                     </thead>
                     <tbody>
                         <?php foreach ($game_results as $result): ?>
-                        <tr>
+                        <?php
+                        $detail_url = match($result['game_type']) {
+                            'Team' => 'team_game_play_details.php',
+                            'Cooperative' => 'cooperative_game_play_details.php',
+                            default => 'game_play_details.php'
+                        };
+                        ?>
+                        <tr onclick="window.location='<?php echo $detail_url; ?>?result_id=<?php echo urlencode($result['record_id']); ?>'" class="table-row--link">
                             <td data-label="Date Played"><?php echo date('F j, Y', strtotime($result['played_at'])); ?></td>
                             <td class="col-image">
                                 <?php if ($result['game_image']): ?>
@@ -221,14 +252,19 @@ try {
                                     <div class="game-thumbnail game-thumbnail--skeleton" title="No image uploaded"></div>
                                 <?php endif; ?>
                             </td>
-                            <td data-label="Game">
-                                <a href="<?php echo $result['game_type'] === 'Team' ? 'team_game_play_details.php' : 'game_play_details.php'; ?>?result_id=<?php echo urlencode($result['record_id']); ?>" class="game-link">
-                                    <?php echo htmlspecialchars($result['game_name']); ?>
-                                </a>
-                            </td>
+                            <td data-label="Game"><?php echo htmlspecialchars($result['game_name']); ?></td>
                             <td data-label="Type"><?php echo htmlspecialchars($result['game_type']); ?></td>
-                            <td data-label="Winner / Team"><span class="position-badge position-1"><?php echo htmlspecialchars($result['winner_identifier']); ?></span></td>
-                            <td data-label="Participants"><?php echo htmlspecialchars($result['participants']); ?> <?php echo ($result['game_type'] === 'Individual') ? 'Players' : 'Teams'; ?></td>
+                            <td data-label="Winner / Team">
+                                <?php if ($result['game_type'] === 'Cooperative'): ?>
+                                    <?php
+                                    $outcome = strtolower(explode(' - ', $result['winner_identifier'])[0]);
+                                    ?>
+                                    <span class="outcome-badge outcome-<?php echo $outcome; ?>"><?php echo htmlspecialchars($result['winner_identifier']); ?></span>
+                                <?php else: ?>
+                                    <span class="position-badge position-1"><?php echo htmlspecialchars($result['winner_identifier']); ?></span>
+                                <?php endif; ?>
+                            </td>
+                            <td data-label="Participants"><?php echo htmlspecialchars($result['participants']); ?> <?php echo ($result['game_type'] === 'Individual') ? 'Players' : (($result['game_type'] === 'Team') ? 'Teams' : 'Players'); ?></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>

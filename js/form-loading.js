@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     forms.forEach(form => {
         form.addEventListener('submit', function(e) {
+            if (e.defaultPrevented) return;
+
             // Find the submit button(s)
             const submitButtons = form.querySelectorAll('button[type="submit"]');
 

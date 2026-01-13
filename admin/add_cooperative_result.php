@@ -91,6 +91,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $error = null;
+    $missing_fields = [];
+
     $outcome = $_POST['outcome'] ?? null;
     $score = !empty($_POST['score']) ? (int)$_POST['score'] : null;
     $difficulty = !empty($_POST['difficulty']) ? $_POST['difficulty'] : null;
@@ -110,15 +112,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $difficulty = null;
     }
 
-    // Validation
+    // Validation - collect all missing required fields
+    if (empty($played_at)) {
+        $missing_fields[] = 'Date Played';
+    }
     if (empty($outcome)) {
-        $error = 'Please select an outcome (Win or Loss).';
-    } elseif (empty($duration)) {
-        $error = 'Please enter the duration of the game.';
-    } elseif ($participant_type === 'members' && empty($participants)) {
-        $error = 'Please select at least one participant.';
-    } elseif ($participant_type === 'team' && empty($team_id)) {
-        $error = 'Please select a team.';
+        $missing_fields[] = 'Outcome (Win or Loss)';
+    }
+    if (empty($duration)) {
+        $missing_fields[] = 'Duration';
+    }
+    if ($participant_type === 'members' && empty($participants)) {
+        $missing_fields[] = 'At least one Participant';
+    }
+    if ($participant_type === 'team' && empty($team_id)) {
+        $missing_fields[] = 'Team';
+    }
+
+    // Build error message from missing fields
+    if (!empty($missing_fields)) {
+        $error = 'Please fill in the following required fields: ' . implode(', ', $missing_fields) . '.';
     } else {
         // Check for duplicate participants if using members
         if ($participant_type === 'members' && count($participants) !== count(array_unique($participants))) {
@@ -208,6 +221,9 @@ $csrf_token = $security->generateCSRFToken();
     <title>Add Cooperative Result - <?php echo htmlspecialchars($game['game_name']); ?></title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
+    <style>
+        .required-marker { color: var(--color-error, #ef4444); font-weight: bold; }
+    </style>
 </head>
 <body class="has-sidebar">
     <?php NavigationHelper::renderAdminSidebar('games', $club_id); ?>
@@ -226,19 +242,21 @@ $csrf_token = $security->generateCSRFToken();
                 <?php unset($_SESSION['success_message']); ?>
             <?php endif; ?>
 
-            <form method="POST" class="stack">
+            <form method="POST" class="stack" id="cooperative-form" novalidate>
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
 
+                <div id="validation-errors" class="message message--error" style="display: none;"></div>
+
                 <div class="form-group">
-                    <label for="played_at">Date Played:</label>
-                    <input type="datetime-local" id="played_at" name="played_at" required class="form-control">
+                    <label for="played_at">Date Played: <span class="required-marker">*</span></label>
+                    <input type="datetime-local" id="played_at" name="played_at" class="form-control">
                 </div>
 
                 <div class="form-group">
-                    <label>Outcome:</label>
+                    <label>Outcome: <span class="required-marker">*</span></label>
                     <div class="radio-group">
                         <label class="radio-label">
-                            <input type="radio" name="outcome" value="win" required> Win
+                            <input type="radio" name="outcome" value="win"> Win
                         </label>
                         <label class="radio-label">
                             <input type="radio" name="outcome" value="loss"> Loss
@@ -288,7 +306,7 @@ $csrf_token = $security->generateCSRFToken();
                 </div>
 
                 <div id="members-section">
-                    <label>Participants:</label>
+                    <label>Participants: <span class="required-marker">*</span></label>
                     <div id="participants-container"></div>
                     <div class="form-group">
                         <button type="button" id="add-participant" class="btn">Add Participant</button>
@@ -297,7 +315,7 @@ $csrf_token = $security->generateCSRFToken();
 
                 <div id="team-section" style="display: none;">
                     <div class="form-group">
-                        <label for="team_id">Team:</label>
+                        <label for="team_id">Team: <span class="required-marker">*</span></label>
                         <select id="team_id" name="team_id" class="form-control">
                             <option value="">Select Team</option>
                             <?php foreach ($teams as $team): ?>
@@ -310,8 +328,8 @@ $csrf_token = $security->generateCSRFToken();
                 </div>
 
                 <div class="form-group">
-                    <label for="duration">Duration (minutes):</label>
-                    <input type="number" id="duration" name="duration" min="1" class="form-control" required>
+                    <label for="duration">Duration (minutes): <span class="required-marker">*</span></label>
+                    <input type="number" id="duration" name="duration" min="1" class="form-control">
                 </div>
 
                 <div class="form-group">
@@ -327,7 +345,7 @@ $csrf_token = $security->generateCSRFToken();
             </form>
         </div>
     </div>
-    <script src="../js/script.js"></script>
+
 
     <script>
     // Member options for dynamic dropdowns
@@ -383,7 +401,7 @@ $csrf_token = $security->generateCSRFToken();
         participantDiv.innerHTML = `
             <div class="cluster items-start gap-md">
                 <div class="w-100">
-                    <select name="participants[]" class="form-control" required>
+                    <select name="participants[]" class="form-control">
                         <option value="">Select Participant</option>
                         ${memberOptions.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}
                     </select>
@@ -404,6 +422,55 @@ $csrf_token = $security->generateCSRFToken();
     }
 
     document.getElementById('add-participant').addEventListener('click', addParticipantField);
+
+    // Form validation
+    document.getElementById('cooperative-form').addEventListener('submit', function(e) {
+        const missingFields = [];
+        const errorDiv = document.getElementById('validation-errors');
+
+        // Check Date Played
+        const playedAt = document.getElementById('played_at').value;
+        if (!playedAt) {
+            missingFields.push('Date Played');
+        }
+
+        // Check Outcome
+        const outcome = document.querySelector('input[name="outcome"]:checked');
+        if (!outcome) {
+            missingFields.push('Outcome (Win or Loss)');
+        }
+
+        // Check Duration
+        const duration = document.getElementById('duration').value;
+        if (!duration) {
+            missingFields.push('Duration');
+        }
+
+        // Check Participants based on type
+        const participantType = document.querySelector('input[name="participant_type"]:checked').value;
+        if (participantType === 'members') {
+            const participants = document.querySelectorAll('select[name="participants[]"]');
+            const hasParticipant = Array.from(participants).some(select => select.value !== '');
+            if (!hasParticipant) {
+                missingFields.push('At least one Participant');
+            }
+        } else {
+            const teamId = document.getElementById('team_id').value;
+            if (!teamId) {
+                missingFields.push('Team');
+            }
+        }
+
+        // Show errors or submit
+        if (missingFields.length > 0) {
+            e.preventDefault();
+            errorDiv.innerHTML = '<strong>Please fill in the following required fields:</strong><br>' + missingFields.join(', ') + '.';
+            errorDiv.style.display = 'block';
+            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            errorDiv.style.display = 'none';
+        }
+    });
 
     // Set default date to user's current local time
     const now = new Date();

@@ -276,6 +276,39 @@ $csrf_token = $security->generateCSRFToken();
             <?php endforeach; ?>
         `;
 
+        // Update disabled options across all dropdowns to prevent duplicates
+        function updateDisabledOptions() {
+            const winnerSelect = document.getElementById('member_id');
+            const loserSelects = document.querySelectorAll('select[name="losers[]"]');
+
+            // Collect all selected values
+            const selectedValues = [];
+            if (winnerSelect.value) {
+                selectedValues.push(winnerSelect.value);
+            }
+            loserSelects.forEach(select => {
+                if (select.value) {
+                    selectedValues.push(select.value);
+                }
+            });
+
+            // Update winner dropdown - disable anyone selected as a loser
+            Array.from(winnerSelect.options).forEach(option => {
+                if (option.value === '') return;
+                const isSelectedElsewhere = selectedValues.includes(option.value) && option.value !== winnerSelect.value;
+                option.disabled = isSelectedElsewhere;
+            });
+
+            // Update each loser dropdown
+            loserSelects.forEach(select => {
+                Array.from(select.options).forEach(option => {
+                    if (option.value === '') return;
+                    const isSelectedElsewhere = selectedValues.includes(option.value) && option.value !== select.value;
+                    option.disabled = isSelectedElsewhere;
+                });
+            });
+        }
+
         function addLoserField() {
             const container = document.getElementById('losers-container');
             const loserDiv = document.createElement('div');
@@ -293,20 +326,38 @@ $csrf_token = $security->generateCSRFToken();
 
             container.appendChild(loserDiv);
 
+            const newSelect = loserDiv.querySelector('select');
+            newSelect.addEventListener('change', updateDisabledOptions);
+
             loserDiv.querySelector('.remove-loser').addEventListener('click', function() {
                 loserDiv.remove();
+                updateDisabledOptions();
             });
+
+            updateDisabledOptions();
         }
 
         // Set up add loser button
         document.getElementById('add-loser').addEventListener('click', addLoserField);
 
+        // Set up winner dropdown change listener
+        document.getElementById('member_id').addEventListener('change', updateDisabledOptions);
+
+        // Set up existing loser dropdowns
+        document.querySelectorAll('select[name="losers[]"]').forEach(select => {
+            select.addEventListener('change', updateDisabledOptions);
+        });
+
         // Set up existing remove buttons
         document.querySelectorAll('.remove-loser').forEach(btn => {
             btn.addEventListener('click', function() {
                 this.closest('.form-group').remove();
+                updateDisabledOptions();
             });
         });
+
+        // Initialize disabled state on page load
+        updateDisabledOptions();
     </script>
     <?php endif; ?>
 

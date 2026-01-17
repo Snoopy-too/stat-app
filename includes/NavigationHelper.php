@@ -268,6 +268,7 @@ class NavigationHelper {
                 body.sidebar-open{overflow:hidden!important}
                 .sidebar-overlay.sidebar-overlay--visible{display:block!important;opacity:1!important}
             }
+            .sidebar__theme-toggle:hover{background:#e2e8f0!important}
         </style>';
 
         echo '<aside class="sidebar" aria-label="Main navigation">';
@@ -343,10 +344,12 @@ class NavigationHelper {
 
         echo '</nav>';
 
-        // Footer with club info (if viewing a club)
+        // Footer section
+        echo '<div class="sidebar__footer" style="padding:1rem;border-top:1px solid #e2e8f0;flex-shrink:0;">';
+
+        // Club info (if viewing a club)
         if ($clubId && $clubName) {
-            echo '<div class="sidebar__footer" style="padding:1rem;border-top:1px solid #e2e8f0;flex-shrink:0;">';
-            echo '<a href="club_stats.php?id=' . (int)$clubId . '" class="sidebar__club-info" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;background:#f1f5f9;border-radius:0.75rem;text-decoration:none;color:#0f172a;">';
+            echo '<a href="club_stats.php?id=' . (int)$clubId . '" class="sidebar__club-info" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;background:#f1f5f9;border-radius:0.75rem;text-decoration:none;color:#0f172a;margin-bottom:0.75rem;">';
 
             if ($clubLogo) {
                 echo '<img src="images/club_logos/' . htmlspecialchars($clubLogo) . '" alt="" class="sidebar__club-logo" style="width:40px;height:40px;border-radius:0.375rem;object-fit:cover;">';
@@ -359,8 +362,15 @@ class NavigationHelper {
             echo '<div class="sidebar__club-name" style="font-size:0.875rem;font-weight:600;color:#1e293b;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' . htmlspecialchars($clubName) . '</div>';
             echo '</div>';
             echo '</a>';
-            echo '</div>';
         }
+
+        // Theme toggle button
+        echo '<button type="button" data-theme-toggle class="sidebar__theme-toggle" style="display:flex;align-items:center;gap:0.75rem;width:100%;padding:0.75rem;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:0.75rem;cursor:pointer;font-size:0.875rem;color:#475569;transition:background 0.2s;">';
+        echo '<span data-theme-icon class="theme-toggle__icon" style="font-size:1.125rem;"></span>';
+        echo '<span>Toggle Theme</span>';
+        echo '</button>';
+
+        echo '</div>';
 
         echo '</aside>';
 
@@ -420,6 +430,7 @@ class NavigationHelper {
                 body.sidebar-open{overflow:hidden!important}
                 .sidebar-overlay.sidebar-overlay--visible{display:block!important;opacity:1!important}
             }
+            .sidebar__theme-toggle:hover{background:rgba(255,255,255,0.1)!important}
         </style>';
 
         echo '<aside class="sidebar" aria-label="Admin navigation">';
@@ -536,18 +547,27 @@ class NavigationHelper {
 
         echo '</nav>';
 
-        // Footer with club info (if managing a specific club)
+        // Footer section
+        echo '<div class="sidebar__footer" style="padding:1rem;border-top:1px solid #334155;flex-shrink:0;">';
+
+        // Club info (if managing a specific club)
         if ($clubId && $clubName) {
-            echo '<div class="sidebar__footer" style="padding:1rem;border-top:1px solid #334155;flex-shrink:0;">';
-            echo '<a href="manage_clubs.php" class="sidebar__club-info" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;background:rgba(255,255,255,0.05);border-radius:0.75rem;text-decoration:none;color:#f1f5f9;">';
+            echo '<a href="manage_clubs.php" class="sidebar__club-info" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;background:rgba(255,255,255,0.05);border-radius:0.75rem;text-decoration:none;color:#f1f5f9;margin-bottom:0.75rem;">';
             echo '<div class="sidebar__club-logo-placeholder" style="width:40px;height:40px;border-radius:0.375rem;background:linear-gradient(135deg,rgba(99,102,241,0.3),rgba(139,92,246,0.3));display:flex;align-items:center;justify-content:center;font-size:1.25rem;">🎯</div>';
             echo '<div>';
             echo '<div class="sidebar__club-label" style="font-size:0.75rem;color:#64748b;">Managing</div>';
             echo '<div class="sidebar__club-name" style="font-size:0.875rem;font-weight:600;color:#f1f5f9;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' . htmlspecialchars($clubName) . '</div>';
             echo '</div>';
             echo '</a>';
-            echo '</div>';
         }
+
+        // Theme toggle button (styled for dark sidebar)
+        echo '<button type="button" data-theme-toggle class="sidebar__theme-toggle" style="display:flex;align-items:center;gap:0.75rem;width:100%;padding:0.75rem;background:rgba(255,255,255,0.05);border:1px solid #334155;border-radius:0.75rem;cursor:pointer;font-size:0.875rem;color:#94a3b8;transition:background 0.2s;">';
+        echo '<span data-theme-icon class="theme-toggle__icon" style="font-size:1.125rem;"></span>';
+        echo '<span>Toggle Theme</span>';
+        echo '</button>';
+
+        echo '</div>';
 
         echo '</aside>';
 

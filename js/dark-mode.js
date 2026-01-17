@@ -16,8 +16,8 @@ class DarkModeHandler {
 
         // DOM elements
         this.html = document.documentElement;
-        this.toggleButton = null;
-        this.themeIcon = null;
+        this.toggleButtons = [];
+        this.initialized = false;
 
         this.init();
     }
@@ -26,14 +26,20 @@ class DarkModeHandler {
      * Initialize dark mode handler
      */
     init() {
+        if (this.initialized) return;
+        this.initialized = true;
+
         // Apply saved or system preference on page load
         this.applyInitialTheme();
 
         // Listen for system theme changes
         this.watchSystemPreference();
 
-        // Look for and setup toggle button
-        this.setupToggleButton();
+        // Look for and setup toggle buttons (there may be multiple on a page)
+        this.setupToggleButtons();
+
+        // Listen for storage changes from other tabs
+        this.syncAcrossTabs();
     }
 
     /**
@@ -98,11 +104,8 @@ class DarkModeHandler {
         // Set data attribute on html element
         this.html.setAttribute(this.dataAttribute, theme);
 
-        // Update toggle button state if present
-        if (this.toggleButton) {
-            this.toggleButton.setAttribute('aria-pressed', theme === this.THEME_DARK);
-            this.updateToggleIcon(theme);
-        }
+        // Update all toggle buttons
+        this.updateAllToggleButtons(theme);
 
         // Remove transition class after animation completes
         if (animate) {
@@ -115,6 +118,30 @@ class DarkModeHandler {
                 this.html.classList.remove(this.transitionClass);
             }, 350);
         }
+    }
+
+    /**
+     * Update all toggle buttons to reflect current theme
+     * @param {string} theme - Current theme
+     */
+    updateAllToggleButtons(theme) {
+        // Update all registered toggle buttons
+        this.toggleButtons.forEach(btn => {
+            btn.setAttribute('aria-pressed', theme === this.THEME_DARK);
+            const icon = btn.querySelector('[data-theme-icon]');
+            if (icon) {
+                this.updateToggleIcon(icon, theme);
+            }
+        });
+
+        // Also update any buttons we haven't registered yet (dynamically added)
+        document.querySelectorAll('[data-theme-toggle]').forEach(btn => {
+            btn.setAttribute('aria-pressed', theme === this.THEME_DARK);
+            const icon = btn.querySelector('[data-theme-icon]');
+            if (icon) {
+                this.updateToggleIcon(icon, theme);
+            }
+        });
     }
 
     /**
@@ -148,79 +175,70 @@ class DarkModeHandler {
     }
 
     /**
-     * Setup toggle button if it exists or create one
+     * Setup all toggle buttons on the page
      */
-    setupToggleButton() {
-        // Look for existing toggle button
-        this.toggleButton = document.querySelector('[data-theme-toggle]');
+    setupToggleButtons() {
+        // Find all existing toggle buttons
+        const buttons = document.querySelectorAll('[data-theme-toggle]');
+        const currentTheme = this.html.getAttribute(this.dataAttribute);
 
-        if (!this.toggleButton) {
-            // Look for a preferred location to insert button
-            const headerActions = document.querySelector('.header-actions');
-            if (headerActions) {
-                this.toggleButton = this.createToggleButton();
-                headerActions.insertBefore(this.toggleButton, headerActions.firstChild);
-            }
-        }
-
-        if (this.toggleButton) {
-            // Setup button attributes
-            this.toggleButton.setAttribute('data-theme-toggle', '');
-            this.toggleButton.setAttribute('aria-label', 'Toggle dark mode');
-            this.toggleButton.setAttribute('aria-pressed',
-                this.html.getAttribute(this.dataAttribute) === this.THEME_DARK
-            );
-
-            // Find icon element or create it
-            this.themeIcon = this.toggleButton.querySelector('[data-theme-icon]');
-            if (!this.themeIcon) {
-                this.themeIcon = document.createElement('span');
-                this.themeIcon.setAttribute('data-theme-icon', '');
-                this.toggleButton.appendChild(this.themeIcon);
-            }
-
-            // Update initial icon
-            const currentTheme = this.html.getAttribute(this.dataAttribute);
-            this.updateToggleIcon(currentTheme);
-
-            // Attach click handler
-            this.toggleButton.addEventListener('click', () => this.toggle());
-        }
+        buttons.forEach(button => {
+            this.initializeToggleButton(button, currentTheme);
+        });
     }
 
     /**
-     * Create toggle button element
-     * @returns {HTMLElement} Button element
+     * Initialize a single toggle button
+     * @param {HTMLElement} button - The button element
+     * @param {string} currentTheme - Current theme
      */
-    createToggleButton() {
-        const button = document.createElement('button');
-        button.className = 'btn btn--icon theme-toggle';
-        button.type = 'button';
-        button.title = 'Toggle dark mode';
+    initializeToggleButton(button, currentTheme) {
+        // Skip if already initialized
+        if (button.dataset.themeInitialized) return;
+        button.dataset.themeInitialized = 'true';
 
-        const icon = document.createElement('span');
-        icon.setAttribute('data-theme-icon', '');
-        icon.className = 'theme-toggle__icon';
+        // Setup button attributes
+        button.setAttribute('aria-label', 'Toggle dark mode');
+        button.setAttribute('aria-pressed', currentTheme === this.THEME_DARK);
 
-        button.appendChild(icon);
-        return button;
+        // Find or create icon element
+        let icon = button.querySelector('[data-theme-icon]');
+        if (!icon) {
+            icon = document.createElement('span');
+            icon.setAttribute('data-theme-icon', '');
+            icon.className = 'theme-toggle__icon';
+            button.appendChild(icon);
+        }
+
+        // Update icon
+        this.updateToggleIcon(icon, currentTheme);
+
+        // Attach click handler
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.toggle();
+        });
+
+        // Track this button
+        this.toggleButtons.push(button);
     }
 
     /**
      * Update toggle button icon based on current theme
+     * @param {HTMLElement} icon - The icon element
      * @param {string} theme - Current theme
      */
-    updateToggleIcon(theme) {
-        if (!this.themeIcon) return;
+    updateToggleIcon(icon, theme) {
+        if (!icon) return;
 
         // Show appropriate icon based on current theme
         // (icon represents the theme you can switch TO, not current)
         if (theme === this.THEME_DARK) {
-            this.themeIcon.textContent = '☀️'; // Show sun icon (can switch to light)
-            this.themeIcon.setAttribute('aria-label', 'Switch to light mode');
+            icon.textContent = '☀️'; // Show sun icon (can switch to light)
+            icon.setAttribute('aria-label', 'Switch to light mode');
         } else {
-            this.themeIcon.textContent = '🌙'; // Show moon icon (can switch to dark)
-            this.themeIcon.setAttribute('aria-label', 'Switch to dark mode');
+            icon.textContent = '🌙'; // Show moon icon (can switch to dark)
+            icon.setAttribute('aria-label', 'Switch to dark mode');
         }
     }
 
@@ -233,37 +251,23 @@ class DarkModeHandler {
                 this.setTheme(e.newValue, false);
             }
         });
+    }
+}
 
-        // Also listen for custom theme change events from other tabs
-        window.addEventListener('themechange', (e) => {
-            this.setTheme(e.detail.theme, false);
+// Initialize dark mode handler - single initialization point
+(function() {
+    function initDarkMode() {
+        if (window.darkModeHandler) return; // Already initialized
+
+        window.darkModeHandler = new DarkModeHandler({
+            storageKey: 'stat-app-theme',
+            transitionClass: 'theme-transitioning'
         });
     }
-}
 
-// Initialize dark mode handler when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    window.darkModeHandler = new DarkModeHandler({
-        storageKey: 'stat-app-theme',
-        transitionClass: 'theme-transitioning'
-    });
-
-    // Enable cross-tab syncing
-    window.darkModeHandler.syncAcrossTabs();
-});
-
-// Also support early initialization (before DOMContentLoaded)
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-        if (!window.darkModeHandler) {
-            window.darkModeHandler = new DarkModeHandler();
-            window.darkModeHandler.syncAcrossTabs();
-        }
-    });
-} else {
-    // DOM is already loaded
-    if (!window.darkModeHandler) {
-        window.darkModeHandler = new DarkModeHandler();
-        window.darkModeHandler.syncAcrossTabs();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDarkMode);
+    } else {
+        initDarkMode();
     }
-}
+})();

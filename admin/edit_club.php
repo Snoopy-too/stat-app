@@ -118,14 +118,14 @@ $csrf_token = $security->generateCSRFToken();
                             <strong style="display:block; margin-bottom:0.5rem;">Current Vanity URL:</strong>
                             <div style="display:flex; gap:0.5rem; align-items:center;">
                                 <code id="vanity-url" style="flex:1; padding:0.5rem; background:var(--bg-primary); border-radius:0.25rem; font-size:0.9rem;">
-                                    <?php 
+                                    <?php
                                     $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
                                     $host = $_SERVER['HTTP_HOST'];
-                                    $base_path = dirname(dirname($_SERVER['PHP_SELF']));
-                                    echo htmlspecialchars($protocol . '://' . $host . $base_path . '/' . $club['slug']); 
+                                    $base_path = rtrim(dirname(dirname($_SERVER['PHP_SELF'])), '/');
+                                    echo htmlspecialchars($protocol . '://' . $host . $base_path . '/' . $club['slug']);
                                     ?>
                                 </code>
-                                <button type="button" class="btn btn--small btn--subtle" onclick="copyVanityUrl()">Copy</button>
+                                <button type="button" class="btn btn--small btn--subtle" onclick="copyVanityUrl(this)">Copy</button>
                             </div>
                         </div>
                     <?php endif; ?>
@@ -253,17 +253,16 @@ $csrf_token = $security->generateCSRFToken();
             }
         }
 
-        function copyVanityUrl() {
+        function copyVanityUrl(btn) {
             const urlElement = document.getElementById('vanity-url');
             if (!urlElement) return;
             const url = urlElement.textContent.trim();
-            
+
             navigator.clipboard.writeText(url).then(() => {
-                const btn = event.target;
                 const originalText = btn.textContent;
                 btn.textContent = 'Copied!';
                 btn.classList.add('btn--success');
-                
+
                 setTimeout(() => {
                     btn.textContent = originalText;
                     btn.classList.remove('btn--success');

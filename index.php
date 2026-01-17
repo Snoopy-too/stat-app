@@ -1,5 +1,12 @@
 <?php
 session_start();
+
+// Redirect admin users directly to their dashboard
+if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
+    header('Location: admin/dashboard.php');
+    exit;
+}
+
 require_once 'config/database.php';
 
 // Get club info if user is logged in

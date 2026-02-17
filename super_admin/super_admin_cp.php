@@ -278,7 +278,7 @@ unset($_SESSION['sa_error'], $_SESSION['sa_success']);
                         <form method="POST" action="impersonate.php" style="display:inline;">
                             <input type="hidden" name="admin_id" value="<?php echo $aid; ?>">
                             <button class="btn btn--info btn--small" type="submit"
-                                    onclick="return confirm('Switch to <?php echo htmlspecialchars($admin['username'], ENT_QUOTES); ?>\'s dashboard?');">
+                                    onclick="return confirmAction(event, this.form, 'Confirm Access', 'Switch to dashboard for <strong><?php echo htmlspecialchars($admin['username'], ENT_QUOTES); ?></strong>?', 'primary', 'Switch User');">
                                 Login As
                             </button>
                         </form>
@@ -287,7 +287,8 @@ unset($_SESSION['sa_error'], $_SESSION['sa_success']);
                         <form class="action-form" method="POST" style="display:inline;">
                             <input type="hidden" name="admin_id" value="<?php echo $aid; ?>">
                             <input type="hidden" name="action" value="<?php echo $admin['is_deactivated'] ? 'activate' : 'deactivate'; ?>">
-                            <button class="btn <?php echo $admin['is_deactivated'] ? 'btn--success' : 'btn--danger'; ?> btn--small" type="submit">
+                            <button class="btn <?php echo $admin['is_deactivated'] ? 'btn--success' : 'btn--danger'; ?> btn--small" type="submit"
+                                    onclick="return confirmAction(event, this.form, 'Confirm Status Change', 'Are you sure you want to <strong><?php echo $admin['is_deactivated'] ? 'activate' : 'deactivate'; ?></strong> this user?', '<?php echo $admin['is_deactivated'] ? 'primary' : 'danger'; ?>', '<?php echo $admin['is_deactivated'] ? 'Activate' : 'Deactivate'; ?>');">
                                 <?php echo $admin['is_deactivated'] ? 'Activate' : 'Deactivate'; ?>
                             </button>
                         </form>
@@ -337,7 +338,7 @@ unset($_SESSION['sa_error'], $_SESSION['sa_success']);
                                     <input type="hidden" name="target_admin_id" value="<?php echo $aid; ?>">
                                     <input type="hidden" name="club_id"         value="<?php echo $ac['club_id']; ?>">
                                     <button type="submit" class="chip-remove" title="Unassign"
-                                            onclick="return confirm('Unassign &quot;<?php echo htmlspecialchars($ac['club_name'], ENT_QUOTES); ?>&quot; from <?php echo htmlspecialchars($admin['username'], ENT_QUOTES); ?>?');">
+                                            onclick="return confirmAction(event, this.form, 'Unassign Club', 'Remove access to <strong><?php echo htmlspecialchars($ac['club_name'], ENT_QUOTES); ?></strong> from <strong><?php echo htmlspecialchars($admin['username'], ENT_QUOTES); ?></strong>?', 'danger', 'Unassign');">
                                         &times;
                                     </button>
                                 </form>
@@ -357,7 +358,13 @@ unset($_SESSION['sa_error'], $_SESSION['sa_success']);
                             <option value="">— select club —</option>
                             <?php foreach ($available as $c): ?>
                                 <option value="<?php echo $c['club_id']; ?>">
-                                    <?php echo htmlspecialchars($c['club_name']); ?>
+                                    <?php 
+                                        $cleanName = strip_tags(html_entity_decode($c['club_name']));
+                                        if (trim($cleanName) === '') {
+                                            $cleanName = "Club #" . $c['club_id'];
+                                        }
+                                        echo htmlspecialchars(mb_strimwidth($cleanName, 0, 50, "...")); 
+                                    ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -369,6 +376,7 @@ unset($_SESSION['sa_error'], $_SESSION['sa_success']);
         <?php endforeach; ?>
     </div>
 
+    <script src="../js/confirmations.js"></script>
     <script>
     function toggleClubs(btn) {
         const detail = btn.nextElementSibling;
@@ -376,6 +384,18 @@ unset($_SESSION['sa_error'], $_SESSION['sa_success']);
         btn.textContent = detail.classList.contains('open')
             ? btn.textContent.replace('▸', '▾')
             : btn.textContent.replace('▾', '▸');
+    }
+
+    // Proxy function to handle form submissions via the modal
+    function confirmAction(event, form, title, message, type = 'warning', confirmText = 'Confirm') {
+        showConfirmDialog(event, {
+            title: title,
+            message: message,
+            type: type,
+            confirmText: confirmText,
+            onConfirm: () => form.submit()
+        });
+        return false;
     }
     </script>
 </body>

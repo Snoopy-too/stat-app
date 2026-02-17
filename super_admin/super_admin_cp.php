@@ -108,8 +108,8 @@ unset($_SESSION['sa_error'], $_SESSION['sa_success']);
             margin: 2rem 0 0.75rem;
             font-size: 1.1rem;
             font-weight: 600;
-            color: var(--text-primary, #1e293b);
-            border-bottom: 2px solid var(--border-color, #e2e8f0);
+            color: var(--color-heading);
+            border-bottom: 2px solid var(--color-border);
             padding-bottom: 0.35rem;
         }
         .club-chips {
@@ -122,8 +122,9 @@ unset($_SESSION['sa_error'], $_SESSION['sa_success']);
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
-            background: var(--color-bg-muted, #f1f5f9);
-            border: 1px solid var(--border-color, #e2e8f0);
+            background: var(--color-surface-muted);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
             border-radius: 1rem;
             padding: 0.2rem 0.65rem;
             font-size: 0.82rem;
@@ -134,14 +135,14 @@ unset($_SESSION['sa_error'], $_SESSION['sa_success']);
         .club-chip .chip-remove {
             background: none;
             border: none;
-            color: var(--color-danger, #ef4444);
+            color: var(--color-error-text, #ef4444);
             cursor: pointer;
             font-size: 1rem;
             line-height: 1;
             padding: 0;
         }
         .club-chip .chip-remove:hover {
-            color: #b91c1c;
+            color: #f87171;
         }
         .assign-row {
             display: flex;
@@ -151,13 +152,17 @@ unset($_SESSION['sa_error'], $_SESSION['sa_success']);
         }
         .assign-row select {
             max-width: 220px;
+            background-color: var(--color-surface);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
         }
         .admin-card {
-            border: 1px solid var(--border-color, #e2e8f0);
+            border: 1px solid var(--color-border);
             border-radius: 0.5rem;
             padding: 1.25rem;
             margin-bottom: 1rem;
-            background: var(--color-bg-card, #fff);
+            background: var(--color-surface);
+            color: var(--color-text);
         }
         .admin-card.deactivated {
             opacity: 0.55;
@@ -173,10 +178,11 @@ unset($_SESSION['sa_error'], $_SESSION['sa_success']);
         .admin-card-header h3 {
             margin: 0;
             font-size: 1.05rem;
+            color: var(--color-heading);
         }
         .admin-meta {
             font-size: 0.85rem;
-            color: var(--text-secondary, #64748b);
+            color: var(--color-text-muted);
             margin-bottom: 0.5rem;
         }
         .badge {
@@ -186,9 +192,9 @@ unset($_SESSION['sa_error'], $_SESSION['sa_success']);
             font-size: 0.75rem;
             font-weight: 600;
         }
-        .badge--green  { background: #dcfce7; color: #166534; }
-        .badge--red    { background: #fee2e2; color: #991b1b; }
-        .badge--blue   { background: #dbeafe; color: #1e40af; }
+        .badge--green  { background: var(--color-success-bg); color: var(--color-success-text); }
+        .badge--red    { background: var(--color-error-bg);   color: var(--color-error-text); }
+        .badge--blue   { background: var(--color-primary-soft); color: var(--color-primary-strong); }
         .admin-actions {
             display: flex;
             gap: 0.5rem;
@@ -201,22 +207,32 @@ unset($_SESSION['sa_error'], $_SESSION['sa_success']);
             margin-bottom: 1rem;
             font-size: 0.9rem;
         }
-        .sa-flash--error   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
-        .sa-flash--success { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .sa-flash--error   { background: var(--color-error-bg);   color: var(--color-error-text);   border: 1px solid var(--color-error-border); }
+        .sa-flash--success { background: var(--color-success-bg); color: var(--color-success-text); border: 1px solid var(--color-success-border); }
         .toggle-clubs-btn {
-            background: none;
-            border: 1px solid var(--border-color, #e2e8f0);
+            background: var(--color-surface-muted);
+            border: 1px solid var(--color-border);
             border-radius: 0.35rem;
             padding: 0.25rem 0.6rem;
             font-size: 0.8rem;
             cursor: pointer;
-            color: var(--text-secondary, #64748b);
+            color: var(--color-text-muted);
         }
         .toggle-clubs-btn:hover {
-            background: var(--color-bg-muted, #f1f5f9);
+            background: var(--color-surface-alt);
+            color: var(--color-text);
         }
         .clubs-detail { display: none; margin-top: 0.75rem; }
         .clubs-detail.open { display: block; }
+        /* Labels inside admin cards */
+        .admin-card label {
+            color: var(--color-text-muted);
+        }
+        .no-clubs-msg {
+            font-size: 0.85rem;
+            color: var(--color-text-soft);
+            margin: 0.5rem 0;
+        }
     </style>
 </head>
 <body>
@@ -329,7 +345,7 @@ unset($_SESSION['sa_error'], $_SESSION['sa_success']);
                         <?php endforeach; ?>
                     </div>
                 <?php else: ?>
-                    <p style="font-size:0.85rem;color:var(--text-secondary,#94a3b8);margin:0.5rem 0;">No clubs assigned.</p>
+                    <p class="no-clubs-msg">No clubs assigned.</p>
                 <?php endif; ?>
 
                 <!-- Assign new club -->

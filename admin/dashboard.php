@@ -105,6 +105,17 @@ $direct_link_club_id = $single_club_mode ? $clubs[0]['club_id'] : null;
 <body class="has-sidebar">
     <?php NavigationHelper::renderAdminSidebar('dashboard'); ?>
 
+    <?php if (!empty($_SESSION['is_impersonating'])): ?>
+    <div style="background:#fef3c7;border-bottom:2px solid #f59e0b;padding:0.6rem 1.25rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;font-size:0.9rem;position:sticky;top:0;z-index:1500;">
+        <span>
+            ⚠️ You are viewing as <strong><?php echo htmlspecialchars($_SESSION['admin_username'] ?? ''); ?></strong> (impersonation mode).
+        </span>
+        <a href="../super_admin/return_to_super_admin.php" style="font-weight:600;color:#92400e;text-decoration:underline;">
+            ← Return to Super Admin Panel
+        </a>
+    </div>
+    <?php endif; ?>
+
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
         <?php NavigationHelper::renderCompactHeader('Admin Dashboard', 'Monitor membership and game activity'); ?>

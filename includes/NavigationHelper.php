@@ -573,5 +573,21 @@ class NavigationHelper {
 
         // Overlay for mobile
         echo '<div class="sidebar-overlay" aria-hidden="true"></div>';
+
+        // Render Impersonation Banner if active
+        if (!empty($_SESSION['is_impersonating'])) {
+            $adminUsername = htmlspecialchars($_SESSION['admin_username'] ?? '');
+            echo '<div style="background:#fef3c7;border-bottom:2px solid #f59e0b;padding:0.6rem 1.25rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;font-size:0.9rem;position:sticky;top:0;z-index:1040;margin-left:260px;" class="impersonation-banner">';
+            echo '<span>⚠️ You are viewing as <strong>' . $adminUsername . '</strong> (impersonation mode).</span>';
+            echo '<a href="../super_admin/return_to_super_admin.php" style="font-weight:600;color:#92400e;text-decoration:underline;">← Return to Super Admin Panel</a>';
+            echo '</div>';
+            
+            // Add responsive style for the banner
+            echo '<style>
+                @media(max-width:768px) {
+                    .impersonation-banner { margin-left: 0 !important; }
+                }
+            </style>';
+        }
     }
 }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 session_start();
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
@@ -171,6 +172,39 @@ $csrf_token = $security->generateCSRFToken();
         <?php NavigationHelper::renderCompactHeader('Edit Game Result', htmlspecialchars($result['game_name'])); ?>
     </div>
     
+    <style>
+    .checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: var(--spacing-3);
+        max-height: 300px;
+        overflow-y: auto;
+        padding: var(--spacing-3);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface-muted);
+    }
+    
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-2);
+        padding: var(--spacing-2);
+        border-radius: var(--radius-sm);
+        transition: background-color var(--transition-fast);
+    }
+    
+    .checkbox-item:hover {
+        background-color: var(--color-surface);
+    }
+
+    .checkbox-item input:disabled + label {
+        color: var(--color-text-muted);
+        text-decoration: line-through;
+        cursor: not-allowed;
+    }
+    </style>
+    
     <div class="container">
         <?php display_session_message('error'); ?>
 
@@ -208,29 +242,21 @@ $csrf_token = $security->generateCSRFToken();
             <?php if ($is_winner_losers): ?>
                 <!-- Winner + Losers format -->
                 <div id="losers-section">
-                    <label>Losers:</label>
-                    <div id="losers-container">
-                        <?php foreach ($losers as $loser_id): ?>
-                            <div class="form-group">
-                                <div class="cluster items-start gap-md">
-                                    <div class="w-100">
-                                        <select name="losers[]" class="form-control" required>
-                                            <option value="">Select Loser</option>
-                                            <?php foreach ($members as $member): ?>
-                                                <option value="<?php echo $member['member_id']; ?>" <?php echo $loser_id == $member['member_id'] ? 'selected' : ''; ?>>
-                                                    <?php echo htmlspecialchars($member['nickname']); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-                                    <button type="button" class="btn btn--secondary remove-loser mt-0">Remove</button>
-                                </div>
+                    <label class="form-label">Select Losers:</label>
+                    <div id="losers-checkbox-list" class="checkbox-grid">
+                        <?php foreach ($members as $member): ?>
+                            <div class="form-check checkbox-item">
+                                <input type="checkbox" name="losers[]" id="loser_<?php echo $member['member_id']; ?>" 
+                                       value="<?php echo $member['member_id']; ?>" 
+                                       class="form-check-input loser-checkbox"
+                                       <?php echo in_array($member['member_id'], $losers) ? 'checked' : ''; ?>>
+                                <label for="loser_<?php echo $member['member_id']; ?>" class="form-check-label">
+                                    <?php echo htmlspecialchars($member['nickname']); ?>
+                                </label>
                             </div>
                         <?php endforeach; ?>
                     </div>
-                    <div class="form-group">
-                        <button type="button" id="add-loser" class="btn btn--secondary">Add Loser</button>
-                    </div>
+                    <div class="help-text mt-2">Select all members who lost this game. The winner cannot be selected as a loser.</div>
                 </div>
             <?php else: ?>
                 <!-- Ranked format -->
@@ -268,93 +294,58 @@ $csrf_token = $security->generateCSRFToken();
 
     <?php if ($is_winner_losers): ?>
     <script>
-        // Member options for dynamically added loser fields
-        const memberOptions = `
-            <option value="">Select Loser</option>
-            <?php foreach ($members as $member): ?>
-                <option value="<?php echo $member['member_id']; ?>"><?php echo htmlspecialchars(addslashes($member['nickname'])); ?></option>
-            <?php endforeach; ?>
-        `;
-
         // Update disabled options across all dropdowns to prevent duplicates
         function updateDisabledOptions() {
-            const winnerSelect = document.getElementById('member_id');
-            const loserSelects = document.querySelectorAll('select[name="losers[]"]');
-
-            // Collect all selected values
-            const selectedValues = [];
-            if (winnerSelect.value) {
-                selectedValues.push(winnerSelect.value);
+            const winnerId = document.getElementById('member_id').value;
+            
+            // Get all selected values in ranked section (if they exist)
+            const selectedRankedIds = [winnerId];
+            for (let i = 2; i <= 8; i++) {
+                const el = document.getElementById('place_' + i);
+                if (el && el.value) selectedRankedIds.push(el.value);
             }
-            loserSelects.forEach(select => {
-                if (select.value) {
-                    selectedValues.push(select.value);
+
+            // Update ranked dropdowns
+            for (let i = 2; i <= 8; i++) {
+                const el = document.getElementById('place_' + i);
+                if (el) {
+                    Array.from(el.options).forEach(option => {
+                        if (option.value) {
+                            option.disabled = selectedRankedIds.includes(option.value) && option.value !== el.value;
+                        }
+                    });
+                }
+            }
+            
+            const winnerSelect = document.getElementById('member_id');
+            if (winnerSelect) {
+                Array.from(winnerSelect.options).forEach(option => {
+                    if (option.value) {
+                        option.disabled = selectedRankedIds.includes(option.value) && option.value !== winnerSelect.value;
+                    }
+                });
+            }
+
+            // Update loser checkboxes
+            const loserCheckboxes = document.querySelectorAll('.loser-checkbox');
+            loserCheckboxes.forEach(checkbox => {
+                if (winnerId && checkbox.value === winnerId) {
+                    checkbox.disabled = true;
+                    checkbox.checked = false;
+                } else {
+                    checkbox.disabled = false;
                 }
             });
-
-            // Update winner dropdown - disable anyone selected as a loser
-            Array.from(winnerSelect.options).forEach(option => {
-                if (option.value === '') return;
-                const isSelectedElsewhere = selectedValues.includes(option.value) && option.value !== winnerSelect.value;
-                option.disabled = isSelectedElsewhere;
-            });
-
-            // Update each loser dropdown
-            loserSelects.forEach(select => {
-                Array.from(select.options).forEach(option => {
-                    if (option.value === '') return;
-                    const isSelectedElsewhere = selectedValues.includes(option.value) && option.value !== select.value;
-                    option.disabled = isSelectedElsewhere;
-                });
-            });
         }
-
-        function addLoserField() {
-            const container = document.getElementById('losers-container');
-            const loserDiv = document.createElement('div');
-            loserDiv.className = 'form-group';
-            loserDiv.innerHTML = `
-                <div class="cluster items-start gap-md">
-                    <div class="w-100">
-                        <select name="losers[]" class="form-control" required>
-                            ${memberOptions}
-                        </select>
-                    </div>
-                    <button type="button" class="btn btn--secondary remove-loser mt-0">Remove</button>
-                </div>
-            `;
-
-            container.appendChild(loserDiv);
-
-            const newSelect = loserDiv.querySelector('select');
-            newSelect.addEventListener('change', updateDisabledOptions);
-
-            loserDiv.querySelector('.remove-loser').addEventListener('click', function() {
-                loserDiv.remove();
-                updateDisabledOptions();
-            });
-
-            updateDisabledOptions();
-        }
-
-        // Set up add loser button
-        document.getElementById('add-loser').addEventListener('click', addLoserField);
 
         // Set up winner dropdown change listener
         document.getElementById('member_id').addEventListener('change', updateDisabledOptions);
 
-        // Set up existing loser dropdowns
-        document.querySelectorAll('select[name="losers[]"]').forEach(select => {
-            select.addEventListener('change', updateDisabledOptions);
-        });
-
-        // Set up existing remove buttons
-        document.querySelectorAll('.remove-loser').forEach(btn => {
-            btn.addEventListener('click', function() {
-                this.closest('.form-group').remove();
-                updateDisabledOptions();
-            });
-        });
+        // Set up ranked dropdown listeners
+        for (let i = 2; i <= 8; i++) {
+            const el = document.getElementById('place_' + i);
+            if (el) el.addEventListener('change', updateDisabledOptions);
+        }
 
         // Initialize disabled state on page load
         updateDisabledOptions();

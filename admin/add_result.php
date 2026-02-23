@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 session_start();
 require_once '../config/database.php';
 require_once '../includes/SecurityUtils.php';
@@ -201,6 +202,39 @@ $csrf_token = $security->generateCSRFToken();
         <?php NavigationHelper::renderSidebarToggle(); ?>
         <?php NavigationHelper::renderCompactHeader('Add Game Result', htmlspecialchars($game['game_name'])); ?>
     </div>
+    
+    <style>
+    .checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: var(--spacing-3);
+        max-height: 300px;
+        overflow-y: auto;
+        padding: var(--spacing-3);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface-muted);
+    }
+    
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-2);
+        padding: var(--spacing-2);
+        border-radius: var(--radius-sm);
+        transition: background-color var(--transition-fast);
+    }
+    
+    .checkbox-item:hover {
+        background-color: var(--color-surface);
+    }
+
+    .checkbox-item input:disabled + label {
+        color: var(--color-text-muted);
+        text-decoration: line-through;
+        cursor: not-allowed;
+    }
+    </style>
     <div class="container">
         <div class="card">
             <?php if (isset($error)): ?>
@@ -263,11 +297,16 @@ $csrf_token = $security->generateCSRFToken();
                 </div>
 
                 <div id="losers-section" style="display: none;">
-                    <label>Losers:</label>
-                    <div id="losers-container"></div>
-                    <div class="form-group">
-                        <button type="button" id="add-loser" class="btn">Add Loser</button>
+                    <label class="form-label">Select Losers:</label>
+                    <div id="losers-checkbox-list" class="checkbox-grid">
+                        <?php foreach ($members as $member): ?>
+                            <div class="form-check checkbox-item">
+                                <input type="checkbox" name="losers[]" id="loser_<?php echo $member['id']; ?>" value="<?php echo $member['id']; ?>" class="form-check-input loser-checkbox">
+                                <label for="loser_<?php echo $member['id']; ?>" class="form-check-label"><?php echo htmlspecialchars($member['name']); ?></label>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
+                    <div class="help-text mt-2">Select all members who lost this game. The winner cannot be selected as a loser.</div>
                 </div>
                 
                 <div class="form-group">
@@ -293,15 +332,7 @@ $csrf_token = $security->generateCSRFToken();
     <script>
     // Function to update disabled options across all dropdowns
     function updateDisabledOptions() {
-        const dropdowns = document.querySelectorAll('select[name^="winner_id"], select[name^="second_place_id"], select[name^="additional_places"], select[name^="losers"]');
-        const selectedValues = Array.from(dropdowns).map(select => select.value).filter(value => value !== '');
-        
-        dropdowns.forEach(dropdown => {
-            Array.from(dropdown.options).forEach(option => {
-                if (option.value === '') return; // Skip the placeholder option
-                option.disabled = selectedValues.includes(option.value) && option.value !== dropdown.value;
-            });
-        });
+        updatePlayerSelections();
     }
 
     function toggleGameType() {
@@ -312,20 +343,14 @@ $csrf_token = $security->generateCSRFToken();
         if (gameType === 'ranked') {
             rankedSection.style.display = 'block';
             losersSection.style.display = 'none';
-            // Clear losers
-            document.getElementById('losers-container').innerHTML = '';
         } else {
             rankedSection.style.display = 'none';
             losersSection.style.display = 'block';
+            
             // Clear ranked inputs
             document.getElementById('second_place_id').value = '';
             document.getElementById('additional-places').innerHTML = '';
             placeCount = 2;
-            
-            // Add first loser field if empty
-            if (document.getElementById('losers-container').children.length === 0) {
-                addLoserField();
-            }
         }
         updateDisabledOptions();
     }
@@ -384,35 +409,9 @@ $csrf_token = $security->generateCSRFToken();
         });
     });
 
-    function addLoserField() {
-        const container = document.getElementById('losers-container');
-        const loserDiv = document.createElement('div');
-        loserDiv.className = 'form-group';
-        loserDiv.innerHTML = `
-            <div class="cluster items-start gap-md">
-                <div class="w-100">
-                    <select name="losers[]" class="form-control" required>
-                        <option value="">Select Loser</option>
-                        ${Array.from(document.getElementById('winner_id').options)
-                            .map(opt => `<option value="${opt.value}">${opt.text}</option>`).join('')}
-                    </select>
-                </div>
-                <button type="button" class="btn btn--secondary remove-loser mt-0">Remove</button>
-            </div>
-        `;
-        
-        container.appendChild(loserDiv);
-        
-        loserDiv.querySelector('select').addEventListener('change', updateDisabledOptions);
-        updateDisabledOptions();
-        
-        loserDiv.querySelector('.remove-loser').addEventListener('click', function() {
-            loserDiv.remove();
-            updateDisabledOptions();
-        });
-    }
+    // Loser fields are now handled by checkboxes
 
-    document.getElementById('add-loser').addEventListener('click', addLoserField);
+    // add-loser button is removed
     
     function getOrdinalSuffix(i) {
         const j = i % 10,
@@ -424,15 +423,40 @@ $csrf_token = $security->generateCSRFToken();
     }
     
     function updatePlayerSelections() {
-        const allSelects = document.querySelectorAll('select[id^="place_"], #winner_id, #second_place_id, select[name^="losers"]');
-        const selectedValues = Array.from(allSelects).map(select => select.value).filter(Boolean);
+        const winnerId = document.getElementById('winner_id').value;
+        const secondPlaceId = document.getElementById('second_place_id').value;
+        const additionalPlacesSelects = document.querySelectorAll('select[name^="additional_places"]');
         
-        allSelects.forEach(select => {
+        // Get all selected member IDs from the ranked section
+        const selectedRankedIds = [winnerId, secondPlaceId];
+        additionalPlacesSelects.forEach(select => {
+            if (select.value) selectedRankedIds.push(select.value);
+        });
+        
+        // Update ranked dropdowns to disable already selected members
+        const allRankedSelects = [
+            document.getElementById('winner_id'),
+            document.getElementById('second_place_id'),
+            ...Array.from(additionalPlacesSelects)
+        ];
+        
+        allRankedSelects.forEach(select => {
             Array.from(select.options).forEach(option => {
                 if (option.value) {
-                    option.disabled = selectedValues.includes(option.value) && option.value !== select.value;
+                    option.disabled = selectedRankedIds.includes(option.value) && option.value !== select.value;
                 }
             });
+        });
+
+        // Update loser checkboxes
+        const loserCheckboxes = document.querySelectorAll('.loser-checkbox');
+        loserCheckboxes.forEach(checkbox => {
+            if (winnerId && checkbox.value === winnerId) {
+                checkbox.disabled = true;
+                checkbox.checked = false;
+            } else {
+                checkbox.disabled = false;
+            }
         });
     }
     

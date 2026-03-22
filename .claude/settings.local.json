@@ -19,7 +19,8 @@
       "Bash(del \"C:\\xampp\\htdocs\\stat-app\\test-tooltip.html\")",
       "Bash(dir:*)",
       "Bash(grep -E \"\\\\.php$|^d\")",
-      "Bash(wc -l \"C:\\\\xampp\\\\htdocs\\\\stat-app/admin\"/*.php)"
+      "Bash(wc -l \"C:\\\\xampp\\\\htdocs\\\\stat-app/admin\"/*.php)",
+      "Bash(successfully\" message shows after a successful reset.:*)"
     ],
     "deny": [],
     "ask": []

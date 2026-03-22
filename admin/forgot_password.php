@@ -33,13 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if ($user) {
                     // Ensure reset columns exist before using them
-                    try {
-                        $pdo->query("SELECT reset_token FROM admin_users LIMIT 0");
-                    } catch (PDOException $colErr) {
-                        $pdo->exec("ALTER TABLE admin_users
-                                    ADD COLUMN reset_token VARCHAR(64) NULL,
-                                    ADD COLUMN reset_token_expiry DATETIME NULL");
-                    }
+                    try { $pdo->exec("ALTER TABLE admin_users ADD COLUMN reset_token VARCHAR(64) NULL"); } catch (PDOException $e) {}
+                    try { $pdo->exec("ALTER TABLE admin_users ADD COLUMN reset_token_expiry DATETIME NULL"); } catch (PDOException $e) {}
 
                     $token = bin2hex(random_bytes(32));
                     $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));

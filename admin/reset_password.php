@@ -7,6 +7,25 @@ require_once '../includes/SecurityUtils.php';
 require_once '../includes/helpers.php';
 
 $security = new SecurityUtils($pdo);
+
+// Auto-create csrf_tokens table if it doesn't exist
+try {
+    $pdo->query("SELECT 1 FROM csrf_tokens LIMIT 1");
+} catch (PDOException $e) {
+    try {
+        $pdo->exec("CREATE TABLE csrf_tokens (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            token VARCHAR(64) NOT NULL,
+            session_id VARCHAR(128) NOT NULL,
+            expires_at DATETIME NOT NULL,
+            INDEX idx_token_session (token, session_id),
+            INDEX idx_expires (expires_at)
+        )");
+    } catch (PDOException $e2) {
+        error_log("Failed to create csrf_tokens table: " . $e2->getMessage());
+    }
+}
+
 $csrf_token = $security->generateCSRFToken();
 
 $token = $_GET['token'] ?? '';
@@ -38,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $hash = password_hash($password, PASSWORD_DEFAULT);
             $update = $pdo->prepare("UPDATE admin_users SET password_hash = ?, reset_token = NULL, reset_token_expiry = NULL WHERE admin_id = ?");
             $update->execute([$hash, $user['admin_id']]);
-            
+
             $_SESSION['success'] = "Password reset successfully. You can now login.";
             header("Location: login.php");
             exit();

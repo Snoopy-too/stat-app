@@ -3,32 +3,56 @@ ob_start();
 require_once '../config/security_headers.php';
 require_once '../config/session.php';
 require_once '../config/database.php';
-require_once '../config/app_config.php';
 require_once '../includes/SecurityUtils.php';
 require_once '../includes/helpers.php';
 
-$security = new SecurityUtils($pdo);
-$csrf_token = $security->generateCSRFToken();
+// Load app config if available (gitignored - may not exist on all environments)
+if (file_exists(__DIR__ . '/../config/app_config.php')) {
+    require_once '../config/app_config.php';
+}
 
-// Auto-migration to ensure columns exist (Hack for no-CLI access)
+$security = new SecurityUtils($pdo);
+
+// Auto-create csrf_tokens table if it doesn't exist
+try {
+    $pdo->query("SELECT 1 FROM csrf_tokens LIMIT 1");
+} catch (PDOException $e) {
+    try {
+        $pdo->exec("CREATE TABLE csrf_tokens (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            token VARCHAR(64) NOT NULL,
+            session_id VARCHAR(128) NOT NULL,
+            expires_at DATETIME NOT NULL,
+            INDEX idx_token_session (token, session_id),
+            INDEX idx_expires (expires_at)
+        )");
+    } catch (PDOException $e2) {
+        // Table creation failed - log it
+        error_log("Failed to create csrf_tokens table: " . $e2->getMessage());
+    }
+}
+
+// Auto-migration to ensure reset columns exist
 try {
     $pdo->query("SELECT reset_token FROM admin_users LIMIT 1");
 } catch (PDOException $e) {
     try {
-        $pdo->exec("ALTER TABLE admin_users 
-                    ADD COLUMN reset_token VARCHAR(64) NULL AFTER email_token_expiry,
-                    ADD COLUMN reset_token_expiry DATETIME NULL AFTER reset_token");
+        $pdo->exec("ALTER TABLE admin_users
+                    ADD COLUMN reset_token VARCHAR(64) NULL,
+                    ADD COLUMN reset_token_expiry DATETIME NULL");
     } catch (PDOException $e2) {
-        // Ignore if already exists or other error, will fail later if critical
+        error_log("Failed to add reset columns: " . $e2->getMessage());
     }
 }
+
+$csrf_token = $security->generateCSRFToken();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
         $_SESSION['error'] = "Invalid security token.";
     } else {
         $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
-        
+
         if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $stmt = $pdo->prepare("SELECT admin_id, username FROM admin_users WHERE email = ?");
             $stmt->execute([$email]);
@@ -41,18 +65,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $update = $pdo->prepare("UPDATE admin_users SET reset_token = ?, reset_token_expiry = ? WHERE admin_id = ?");
                 $update->execute([$token, $expiry, $user['admin_id']]);
 
-                // Send Email
-                $resetLink = BASE_URL . "/admin/reset_password.php?token=" . $token;
+                // Build reset link using configured BASE_URL or derive from request
+                $baseUrl = defined('BASE_URL') ? BASE_URL : 'https://' . $_SERVER['HTTP_HOST'];
+                $resetLink = $baseUrl . "/admin/reset_password.php?token=" . $token;
+                $fromEmail = defined('FROM_EMAIL') ? FROM_EMAIL : 'noreply@' . $_SERVER['HTTP_HOST'];
+                $signature = defined('EMAIL_SIGNATURE') ? EMAIL_SIGNATURE : 'Board Game Club StatApp Team';
+
                 $subject = "Password Reset Request";
                 $message = "Hi " . $user['username'] . ",\n\n";
                 $message .= "Click the link below to reset your password:\n";
                 $message .= $resetLink . "\n\n";
                 $message .= "This link expires in 1 hour.\n\n";
-                $message .= EMAIL_SIGNATURE . "\n";
-                $headers = "From: " . FROM_EMAIL;
+                $message .= $signature . "\n";
+                $headers = "From: " . $fromEmail;
 
-                // In a real environment, use mail() or a library. 
-                // For local dev, we might just log it or display it if mail() fails.
                 if (mail($email, $subject, $message, $headers)) {
                     $_SESSION['success'] = "Password reset instructions have been sent to your email.";
                 } else {
@@ -94,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card auth-card">
             <?php display_session_message('success'); ?>
             <?php display_session_message('error'); ?>
-            
+
             <p class="text-muted mb-4">Enter your email address and we'll send you a link to reset your password.</p>
 
             <form method="POST" class="stack">

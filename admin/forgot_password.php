@@ -3,7 +3,6 @@ ob_start();
 require_once '../config/security_headers.php';
 require_once '../config/session.php';
 require_once '../config/database.php';
-require_once '../includes/SecurityUtils.php';
 require_once '../includes/helpers.php';
 
 // Load app config if available (gitignored - may not exist on all environments)
@@ -11,26 +10,11 @@ if (file_exists(__DIR__ . '/../config/app_config.php')) {
     require_once '../config/app_config.php';
 }
 
-$security = new SecurityUtils($pdo);
-
-// Auto-create csrf_tokens table if it doesn't exist
-try {
-    $pdo->query("SELECT 1 FROM csrf_tokens LIMIT 1");
-} catch (PDOException $e) {
-    try {
-        $pdo->exec("CREATE TABLE csrf_tokens (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            token VARCHAR(64) NOT NULL,
-            session_id VARCHAR(128) NOT NULL,
-            expires_at DATETIME NOT NULL,
-            INDEX idx_token_session (token, session_id),
-            INDEX idx_expires (expires_at)
-        )");
-    } catch (PDOException $e2) {
-        // Table creation failed - log it
-        error_log("Failed to create csrf_tokens table: " . $e2->getMessage());
-    }
+// Session-based CSRF token (no database table required)
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
+$csrf_token = $_SESSION['csrf_token'];
 
 // Auto-migration to ensure reset columns exist
 try {
@@ -45,12 +29,13 @@ try {
     }
 }
 
-$csrf_token = $security->generateCSRFToken();
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
+    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])) {
         $_SESSION['error'] = "Invalid security token.";
     } else {
+        // Regenerate CSRF token after successful validation
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+
         $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
 
         if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -82,7 +67,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (mail($email, $subject, $message, $headers)) {
                     $_SESSION['success'] = "Password reset instructions have been sent to your email.";
                 } else {
-                    // Fallback for local dev without mail server
                     error_log("Password Reset Link for $email: $resetLink");
                     $_SESSION['success'] = "Password reset instructions have been sent to your email. (Check server logs for link in dev)";
                 }

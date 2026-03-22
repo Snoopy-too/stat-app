@@ -1,5 +1,7 @@
 <?php
-session_start();
+ob_start();
+require_once '../config/security_headers.php';
+require_once '../config/session.php';
 require_once '../config/database.php';
 require_once '../includes/SecurityUtils.php';
 require_once '../includes/helpers.php';

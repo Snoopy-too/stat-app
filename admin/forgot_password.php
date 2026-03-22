@@ -1,6 +1,9 @@
 <?php
-session_start();
+ob_start();
+require_once '../config/security_headers.php';
+require_once '../config/session.php';
 require_once '../config/database.php';
+require_once '../config/app_config.php';
 require_once '../includes/SecurityUtils.php';
 require_once '../includes/helpers.php';
 
@@ -39,13 +42,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $update->execute([$token, $expiry, $user['admin_id']]);
 
                 // Send Email
-                $resetLink = "http://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/reset_password.php?token=" . $token;
+                $resetLink = BASE_URL . "/admin/reset_password.php?token=" . $token;
                 $subject = "Password Reset Request";
                 $message = "Hi " . $user['username'] . ",\n\n";
                 $message .= "Click the link below to reset your password:\n";
                 $message .= $resetLink . "\n\n";
-                $message .= "This link expires in 1 hour.\n";
-                $headers = "From: no-reply@stat-app.com";
+                $message .= "This link expires in 1 hour.\n\n";
+                $message .= EMAIL_SIGNATURE . "\n";
+                $headers = "From: " . FROM_EMAIL;
 
                 // In a real environment, use mail() or a library. 
                 // For local dev, we might just log it or display it if mail() fails.

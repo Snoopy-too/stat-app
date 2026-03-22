@@ -70,9 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <div class="container container--narrow auth-shell">
+        <?php display_session_message('error'); ?>
         <div class="card auth-card">
-            <?php display_session_message('error'); ?>
-
             <?php if ($valid_token): ?>
                 <form method="POST" class="stack">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">

@@ -104,8 +104,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <div class="container container--narrow auth-shell">
+        <?php display_session_message('success'); ?>
+        <?php display_session_message('error'); ?>
         <div class="card auth-card">
-            <?php display_session_message('error'); ?>
             <form action="login.php" method="POST" class="stack">
                 <div class="form-group">
                     <label for="username">Admin Username:</label>

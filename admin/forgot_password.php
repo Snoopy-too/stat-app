@@ -97,10 +97,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <div class="container container--narrow auth-shell">
+        <?php display_session_message('success'); ?>
+        <?php display_session_message('error'); ?>
         <div class="card auth-card">
-            <?php display_session_message('success'); ?>
-            <?php display_session_message('error'); ?>
-
             <p class="text-muted mb-4">Enter your email address and we'll send you a link to reset your password.</p>
 
             <form method="POST" class="stack">

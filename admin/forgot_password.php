@@ -16,67 +16,68 @@ if (empty($_SESSION['csrf_token'])) {
 }
 $csrf_token = $_SESSION['csrf_token'];
 
-// Auto-migration to ensure reset columns exist
-try {
-    $pdo->query("SELECT reset_token FROM admin_users LIMIT 1");
-} catch (PDOException $e) {
-    try {
-        $pdo->exec("ALTER TABLE admin_users
-                    ADD COLUMN reset_token VARCHAR(64) NULL,
-                    ADD COLUMN reset_token_expiry DATETIME NULL");
-    } catch (PDOException $e2) {
-        error_log("Failed to add reset columns: " . $e2->getMessage());
-    }
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])) {
-        $_SESSION['error'] = "Invalid security token.";
-    } else {
-        // Regenerate CSRF token after successful validation
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    try {
+        if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])) {
+            $_SESSION['error'] = "Invalid security token.";
+        } else {
+            // Regenerate CSRF token after successful validation
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
-        $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
+            $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
 
-        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $stmt = $pdo->prepare("SELECT admin_id, username FROM admin_users WHERE email = ?");
-            $stmt->execute([$email]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $stmt = $pdo->prepare("SELECT admin_id, username FROM admin_users WHERE email = ?");
+                $stmt->execute([$email]);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($user) {
-                $token = bin2hex(random_bytes(32));
-                $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
+                if ($user) {
+                    // Ensure reset columns exist before using them
+                    try {
+                        $pdo->query("SELECT reset_token FROM admin_users LIMIT 0");
+                    } catch (PDOException $colErr) {
+                        $pdo->exec("ALTER TABLE admin_users
+                                    ADD COLUMN reset_token VARCHAR(64) NULL,
+                                    ADD COLUMN reset_token_expiry DATETIME NULL");
+                    }
 
-                $update = $pdo->prepare("UPDATE admin_users SET reset_token = ?, reset_token_expiry = ? WHERE admin_id = ?");
-                $update->execute([$token, $expiry, $user['admin_id']]);
+                    $token = bin2hex(random_bytes(32));
+                    $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
-                // Build reset link using configured BASE_URL or derive from request
-                $baseUrl = defined('BASE_URL') ? BASE_URL : 'https://' . $_SERVER['HTTP_HOST'];
-                $resetLink = $baseUrl . "/admin/reset_password.php?token=" . $token;
-                $fromEmail = defined('FROM_EMAIL') ? FROM_EMAIL : 'noreply@' . $_SERVER['HTTP_HOST'];
-                $signature = defined('EMAIL_SIGNATURE') ? EMAIL_SIGNATURE : 'Board Game Club StatApp Team';
+                    $update = $pdo->prepare("UPDATE admin_users SET reset_token = ?, reset_token_expiry = ? WHERE admin_id = ?");
+                    $update->execute([$token, $expiry, $user['admin_id']]);
 
-                $subject = "Password Reset Request";
-                $message = "Hi " . $user['username'] . ",\n\n";
-                $message .= "Click the link below to reset your password:\n";
-                $message .= $resetLink . "\n\n";
-                $message .= "This link expires in 1 hour.\n\n";
-                $message .= $signature . "\n";
-                $headers = "From: " . $fromEmail;
+                    // Build reset link using configured BASE_URL or derive from request
+                    $baseUrl = defined('BASE_URL') ? BASE_URL : 'https://' . $_SERVER['HTTP_HOST'];
+                    $resetLink = $baseUrl . "/admin/reset_password.php?token=" . $token;
+                    $fromEmail = defined('FROM_EMAIL') ? FROM_EMAIL : 'noreply@' . $_SERVER['HTTP_HOST'];
+                    $signature = defined('EMAIL_SIGNATURE') ? EMAIL_SIGNATURE : 'Board Game Club StatApp Team';
 
-                if (mail($email, $subject, $message, $headers)) {
-                    $_SESSION['success'] = "Password reset instructions have been sent to your email.";
+                    $subject = "Password Reset Request";
+                    $message = "Hi " . $user['username'] . ",\n\n";
+                    $message .= "Click the link below to reset your password:\n";
+                    $message .= $resetLink . "\n\n";
+                    $message .= "This link expires in 1 hour.\n\n";
+                    $message .= $signature . "\n";
+                    $headers = "From: " . $fromEmail;
+
+                    if (@mail($email, $subject, $message, $headers)) {
+                        $_SESSION['success'] = "Password reset instructions have been sent to your email.";
+                    } else {
+                        error_log("Password Reset Link for $email: $resetLink");
+                        $_SESSION['success'] = "Password reset instructions have been sent to your email. (Check server logs for link in dev)";
+                    }
                 } else {
-                    error_log("Password Reset Link for $email: $resetLink");
-                    $_SESSION['success'] = "Password reset instructions have been sent to your email. (Check server logs for link in dev)";
+                    // Don't reveal if user exists
+                    $_SESSION['success'] = "If an account exists with that email, instructions have been sent.";
                 }
             } else {
-                // Don't reveal if user exists
-                $_SESSION['success'] = "If an account exists with that email, instructions have been sent.";
+                $_SESSION['error'] = "Invalid email address.";
             }
-        } else {
-            $_SESSION['error'] = "Invalid email address.";
         }
+    } catch (Throwable $e) {
+        error_log("Forgot password error: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+        $_SESSION['error'] = "An error occurred. Please try again. [" . $e->getMessage() . "]";
     }
     header("Location: forgot_password.php");
     exit();

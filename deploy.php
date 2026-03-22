@@ -230,26 +230,51 @@ function copy_dir($src, $dst) {
 /**
  * Recursively copy directory, excluding certain directories
  */
-function copy_dir_selective($src, $dst, $exclude_dirs) {
+function copy_dir_selective($src, $dst, $exclude_dirs, $depth = 0) {
     $dir = opendir($src);
-    @mkdir($dst, 0755, true);
+    if ($dir === false) {
+        log_message("ERROR: Could not open source directory: $src");
+        return;
+    }
+
+    if (!is_dir($dst)) {
+        if (!mkdir($dst, 0755, true)) {
+            log_message("ERROR: Could not create directory: $dst");
+            return;
+        }
+    }
+
+    $file_count = 0;
+    $error_count = 0;
 
     while (false !== ($file = readdir($dir))) {
-        if ($file != "." && $file != "..") {
-            // Skip excluded directories
-            if (in_array($file, $exclude_dirs)) {
-                log_message("Skipping excluded directory: $file");
-                continue;
-            }
+        if ($file === "." || $file === "..") {
+            continue;
+        }
 
-            if (is_dir("$src/$file")) {
-                copy_dir_selective("$src/$file", "$dst/$file", $exclude_dirs);
+        // Skip excluded directories (only at top level)
+        if ($depth === 0 && in_array($file, $exclude_dirs) && is_dir("$src/$file")) {
+            log_message("Skipping excluded directory: $file");
+            continue;
+        }
+
+        if (is_dir("$src/$file")) {
+            copy_dir_selective("$src/$file", "$dst/$file", $exclude_dirs, $depth + 1);
+        } else {
+            if (copy("$src/$file", "$dst/$file")) {
+                $file_count++;
             } else {
-                copy("$src/$file", "$dst/$file");
+                $error_count++;
+                log_message("ERROR: Failed to copy $src/$file to $dst/$file");
             }
         }
     }
     closedir($dir);
+
+    $dir_name = basename($src);
+    if ($file_count > 0 || $error_count > 0) {
+        log_message("Copied $file_count files in $dir_name/ ($error_count errors)");
+    }
 }
 
 /**

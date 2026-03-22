@@ -3,7 +3,7 @@
  * GitHub Webhook Deployment Script
  *
  * This script receives GitHub webhooks and automatically deploys your app
- * to your hosting account.
+ * to your hosting account. Includes per-directory copy logging.
  *
  * SECURITY: Configuration is loaded from config/.env.deploy
  * Never commit .env.deploy to version control!

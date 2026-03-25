@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Check if rate limit exceeded
     if (!$security->checkLoginAttempts($email, $ipAddress)) {
-        $_SESSION['error'] = "Too many failed login attempts. Please try again in 30 minutes.";
+        $_SESSION['error'] = "Too many failed login attempts. Please try again in 15 minutes.";
         header("Location: login.php");
         exit();
     }

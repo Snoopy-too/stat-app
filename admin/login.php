@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Check if rate limit exceeded (use username as email for admin logins)
     if (!$security->checkLoginAttempts($username, $ipAddress)) {
-        $_SESSION['error'] = "Too many failed login attempts. Please try again in 30 minutes.";
+        $_SESSION['error'] = "Too many failed login attempts. Please try again in 15 minutes.";
         error_log("Rate limit exceeded for username: $username from IP: $ipAddress");
     } else {
         error_log('Attempting login for username: ' . $username);

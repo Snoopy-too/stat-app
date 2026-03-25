@@ -3,7 +3,7 @@ class SecurityUtils {
     private $pdo;
     private const MAX_LOGIN_ATTEMPTS = 5;
     private const MAX_REGISTRATION_ATTEMPTS = 3;
-    private const ATTEMPT_WINDOW_MINUTES = 30;
+    private const ATTEMPT_WINDOW_MINUTES = 15;
     private const TOKEN_LENGTH = 64;
     private const TOKEN_EXPIRY_HOURS = 24;
 
@@ -65,12 +65,12 @@ class SecurityUtils {
     public function checkLoginAttempts(string $email, string $ipAddress): bool {
         try {
             $stmt = $this->pdo->prepare(
-                'SELECT COUNT(*) FROM login_attempts 
-                WHERE (email = ? OR ip_address = ?) 
-                AND attempt_time > DATE_SUB(NOW(), INTERVAL ? MINUTE) 
-                AND is_successful = FALSE'
+                'SELECT COUNT(*) FROM login_attempts
+                WHERE email = ?
+                AND attempt_time > DATE_SUB(NOW(), INTERVAL ? MINUTE)
+                AND is_successful = 0'
             );
-            $stmt->execute([$email, $ipAddress, self::ATTEMPT_WINDOW_MINUTES]);
+            $stmt->execute([$email, self::ATTEMPT_WINDOW_MINUTES]);
 
             return $stmt->fetchColumn() < self::MAX_LOGIN_ATTEMPTS;
         } catch (PDOException $e) {
@@ -84,11 +84,25 @@ class SecurityUtils {
     }
 
     public function logLoginAttempt(string $email, string $ipAddress, bool $success): void {
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO login_attempts (email, ip_address, is_successful) 
-            VALUES (?, ?, ?)'
-        );
-        $stmt->execute([$email, $ipAddress, $success]);
+        try {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO login_attempts (email, ip_address, is_successful)
+                VALUES (?, ?, ?)'
+            );
+            $stmt->execute([$email, $ipAddress, $success ? 1 : 0]);
+        } catch (PDOException $e) {
+            // If table doesn't exist, create it and retry
+            if ($e->getCode() == '42S02') {
+                $this->createLoginAttemptsTable();
+                $stmt = $this->pdo->prepare(
+                    'INSERT INTO login_attempts (email, ip_address, is_successful)
+                    VALUES (?, ?, ?)'
+                );
+                $stmt->execute([$email, $ipAddress, $success ? 1 : 0]);
+            } else {
+                error_log("Failed to log login attempt: " . $e->getMessage());
+            }
+        }
     }
 
     public function checkRegistrationAttempts(string $ipAddress): bool {
@@ -112,11 +126,38 @@ class SecurityUtils {
     }
 
     public function logRegistrationAttempt(string $ipAddress, bool $success): void {
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO registration_attempts (ip_address, is_successful) 
-            VALUES (?, ?)'
-        );
-        $stmt->execute([$ipAddress, $success]);
+        try {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO registration_attempts (ip_address, is_successful)
+                VALUES (?, ?)'
+            );
+            $stmt->execute([$ipAddress, $success ? 1 : 0]);
+        } catch (PDOException $e) {
+            if ($e->getCode() == '42S02') {
+                $this->createRegistrationAttemptsTable();
+                $stmt = $this->pdo->prepare(
+                    'INSERT INTO registration_attempts (ip_address, is_successful)
+                    VALUES (?, ?)'
+                );
+                $stmt->execute([$ipAddress, $success ? 1 : 0]);
+            } else {
+                error_log("Failed to log registration attempt: " . $e->getMessage());
+            }
+        }
+    }
+
+    public function clearLoginAttempts(string $email): void {
+        try {
+            $stmt = $this->pdo->prepare(
+                'DELETE FROM login_attempts
+                WHERE email = ? AND is_successful = 0'
+            );
+            $stmt->execute([$email]);
+        } catch (PDOException $e) {
+            if ($e->getCode() != '42S02') {
+                error_log("Failed to clear login attempts: " . $e->getMessage());
+            }
+        }
     }
 
     public function generateEmailVerificationToken(): array {

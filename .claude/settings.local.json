@@ -20,7 +20,10 @@
       "Bash(dir:*)",
       "Bash(grep -E \"\\\\.php$|^d\")",
       "Bash(wc -l \"C:\\\\xampp\\\\htdocs\\\\stat-app/admin\"/*.php)",
-      "Bash(successfully\" message shows after a successful reset.:*)"
+      "Bash(successfully\" message shows after a successful reset.:*)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -l \"admin_users\\\\|manage.*admin\\\\|list.*admin\" /c/xampp/htdocs/stat-app/admin/*.php)",
+      "Bash(grep -E \"\\\\.\\(php|sql\\)$\")"
     ],
     "deny": [],
     "ask": []

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 session_start();
 require_once '../config/database.php';
+require_once '../includes/SecurityUtils.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
     header("Location: login.php");
@@ -35,6 +36,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $hashed = password_hash($new_password, PASSWORD_DEFAULT);
                     $stmt = $pdo->prepare("UPDATE admin_users SET password_hash = ? WHERE admin_id = ?");
                     $stmt->execute([$hashed, $admin_id]);
+                }
+            } elseif ($_POST['action'] === 'clear_lockout') {
+                // Clear failed login attempts for this admin (by username and email)
+                $stmt = $pdo->prepare("SELECT username, email FROM admin_users WHERE admin_id = ?");
+                $stmt->execute([$admin_id]);
+                $targetAdmin = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($targetAdmin) {
+                    $security = new SecurityUtils($pdo);
+                    $security->clearLoginAttempts($targetAdmin['username']);
+                    if ($targetAdmin['email'] && $targetAdmin['email'] !== $targetAdmin['username']) {
+                        $security->clearLoginAttempts($targetAdmin['email']);
+                    }
+                    $_SESSION['sa_success'] = "Login lockout cleared for " . $targetAdmin['username'] . ".";
                 }
             }
         }
@@ -87,6 +101,23 @@ $caStmt = $pdo->query(
 );
 foreach ($caStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
     $clubsByAdmin[(int)$row['admin_id']][] = $row;
+}
+
+// Build a map: admin username/email → failed attempt count in the current window
+$lockoutCounts = [];
+try {
+    $lockoutStmt = $pdo->prepare(
+        "SELECT email, COUNT(*) as fail_count FROM login_attempts
+         WHERE is_successful = 0
+         AND attempt_time > DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+         GROUP BY email"
+    );
+    $lockoutStmt->execute();
+    foreach ($lockoutStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $lockoutCounts[$row['email']] = (int)$row['fail_count'];
+    }
+} catch (PDOException $e) {
+    // Table may not exist yet
 }
 
 // Flash messages
@@ -195,6 +226,7 @@ unset($_SESSION['sa_error'], $_SESSION['sa_success']);
         .badge--green  { background: var(--color-success-bg); color: var(--color-success-text); }
         .badge--red    { background: var(--color-error-bg);   color: var(--color-error-text); }
         .badge--blue   { background: var(--color-primary-soft); color: var(--color-primary-strong); }
+        .badge--yellow { background: var(--color-warning-bg, #fef3c7); color: var(--color-warning-text, #92400e); }
         .admin-actions {
             display: flex;
             gap: 0.5rem;
@@ -257,6 +289,8 @@ unset($_SESSION['sa_error'], $_SESSION['sa_success']);
             $assignedClubs = $clubsByAdmin[$aid] ?? [];
             $assignedIds   = array_column($assignedClubs, 'club_id');
             $available     = array_filter($allClubs, fn($c) => !in_array($c['club_id'], $assignedIds));
+            $failCount     = ($lockoutCounts[$admin['username']] ?? 0) + ($admin['email'] !== $admin['username'] ? ($lockoutCounts[$admin['email']] ?? 0) : 0);
+            $isLockedOut   = $failCount >= 5;
         ?>
         <div class="admin-card <?php echo $admin['is_deactivated'] ? 'deactivated' : ''; ?>">
             <!-- ── Header row ────────────────────────────────────────── -->
@@ -271,6 +305,11 @@ unset($_SESSION['sa_error'], $_SESSION['sa_success']);
                         <span class="badge badge--red">Deactivated</span>
                     <?php else: ?>
                         <span class="badge badge--green">Active</span>
+                    <?php endif; ?>
+                    <?php if ($isLockedOut): ?>
+                        <span class="badge badge--red">Locked Out (<?php echo $failCount; ?> attempts)</span>
+                    <?php elseif ($failCount > 0): ?>
+                        <span class="badge badge--yellow"><?php echo $failCount; ?> failed attempt<?php echo $failCount > 1 ? 's' : ''; ?></span>
                     <?php endif; ?>
                 </h3>
                 <div class="admin-actions">
@@ -290,6 +329,16 @@ unset($_SESSION['sa_error'], $_SESSION['sa_success']);
                             <button class="btn <?php echo $admin['is_deactivated'] ? 'btn--success' : 'btn--danger'; ?> btn--small" type="submit"
                                     onclick="return confirmAction(event, this.form, 'Confirm Status Change', 'Are you sure you want to <strong><?php echo $admin['is_deactivated'] ? 'activate' : 'deactivate'; ?></strong> this user?', '<?php echo $admin['is_deactivated'] ? 'primary' : 'danger'; ?>', '<?php echo $admin['is_deactivated'] ? 'Activate' : 'Deactivate'; ?>');">
                                 <?php echo $admin['is_deactivated'] ? 'Activate' : 'Deactivate'; ?>
+                            </button>
+                        </form>
+                    <?php endif; ?>
+                    <?php if ($failCount > 0): ?>
+                        <form class="action-form" method="POST" style="display:inline;">
+                            <input type="hidden" name="admin_id" value="<?php echo $aid; ?>">
+                            <input type="hidden" name="action" value="clear_lockout">
+                            <button class="btn btn--warning btn--small" type="submit"
+                                    onclick="return confirmAction(event, this.form, 'Clear Login Lockout', 'Clear all failed login attempts for <strong><?php echo htmlspecialchars($admin['username'], ENT_QUOTES); ?></strong>? They will be able to log in again immediately.', 'warning', 'Clear Lockout');">
+                                Clear Lockout
                             </button>
                         </form>
                     <?php endif; ?>

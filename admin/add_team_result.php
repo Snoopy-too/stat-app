@@ -46,17 +46,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    if (empty($_POST['winner_id']) || empty($_POST['second_place_id'])) {
-        $error = 'Both winner and second place teams must be selected.';
-    } else {
-        $winner_id = $_POST['winner_id'];
-        $second_place_id = $_POST['second_place_id'];
-        $duration = $_POST['duration'];
-        $notes = $_POST['notes'];
-        $played_at = $_POST['played_at'];
-        $additional_places = isset($_POST['additional_places']) ? $_POST['additional_places'] : [];
+    $error = null;
+    $missing_fields = [];
+
+    if (empty($_POST['winner_id'])) {
+        $missing_fields[] = 'Winner Team';
     }
-    
+    if (empty($_POST['second_place_id'])) {
+        $missing_fields[] = 'Second Place Team';
+    }
+    if (empty($_POST['duration'])) {
+        $missing_fields[] = 'Duration';
+    }
+    if (empty($_POST['played_at'])) {
+        $missing_fields[] = 'Date Played';
+    }
+
+    if (!empty($missing_fields)) {
+        $error = 'Please fill in the following required fields: ' . implode(', ', $missing_fields) . '.';
+    }
+
+    $winner_id = $_POST['winner_id'] ?? null;
+    $second_place_id = $_POST['second_place_id'] ?? null;
+    $duration = $_POST['duration'] ?? null;
+    $notes = $_POST['notes'] ?? '';
+    $played_at = $_POST['played_at'] ?? null;
+    $additional_places = isset($_POST['additional_places']) ? $_POST['additional_places'] : [];
+
+    // Check for duplicate teams
+    if ($error === null) {
+        $all_selected = array_filter(array_merge([$winner_id, $second_place_id], $additional_places));
+        if (count($all_selected) !== count(array_unique($all_selected))) {
+            $error = 'Duplicate teams selected. Each team can only occupy one place.';
+        }
+    }
+
+    if ($error === null) {
     try {
         $pdo->beginTransaction();
         
@@ -111,6 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->rollBack();
         $error = 'Error saving team game result: ' . $e->getMessage();
     }
+    } // end if ($error === null)
 }
 
 // Generate CSRF token for form
@@ -125,6 +151,9 @@ $csrf_token = $security->generateCSRFToken();
     <title>Add Team Game Result - <?php echo htmlspecialchars($game['game_name']); ?></title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
+    <style>
+        .required-marker { color: var(--color-error, #ef4444); font-weight: bold; }
+    </style>
 </head>
 <body class="has-sidebar">
     <?php NavigationHelper::renderAdminSidebar('games', $club_id); ?>
@@ -143,16 +172,17 @@ $csrf_token = $security->generateCSRFToken();
                 <?php unset($_SESSION['success_message']); ?>
             <?php endif; ?>
             
-            <form method="POST" class="stack">
+            <form method="POST" class="stack" id="team-result-form" novalidate>
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                <div id="validation-errors" class="message message--error" style="display: none;"></div>
                 <div class="form-group">
-                    <label for="played_at">Date Played:</label>
-                    <input type="datetime-local" id="played_at" name="played_at" required class="form-control">
+                    <label for="played_at">Date Played: <span class="required-marker">*</span></label>
+                    <input type="datetime-local" id="played_at" name="played_at" class="form-control">
                 </div>
                 
                 <div class="form-group">
-                    <label for="winner_id">Winner Team:</label>
-                    <select id="winner_id" name="winner_id" required class="form-control">
+                    <label for="winner_id">Winner Team: <span class="required-marker">*</span></label>
+                    <select id="winner_id" name="winner_id" class="form-control">
                         <option value="">Select Winner Team</option>
                         <?php foreach ($teams as $team): ?>
                             <option value="<?php echo $team['id']; ?>">
@@ -163,7 +193,7 @@ $csrf_token = $security->generateCSRFToken();
                 </div>
                 
                 <div class="form-group">
-                    <label for="second_place_id">Second Place Team:</label>
+                    <label for="second_place_id">Second Place Team: <span class="required-marker">*</span></label>
                     <select id="second_place_id" name="second_place_id" class="form-control">
                         <option value="">Select Second Place Team</option>
                         <?php foreach ($teams as $team): ?>
@@ -181,7 +211,7 @@ $csrf_token = $security->generateCSRFToken();
                 </div>
                 
                 <div class="form-group">
-                    <label for="duration">Duration (minutes):</label>
+                    <label for="duration">Duration (minutes): <span class="required-marker">*</span></label>
                     <input type="number" id="duration" name="duration" min="1" class="form-control">
                 </div>
                 
@@ -286,6 +316,55 @@ $csrf_token = $security->generateCSRFToken();
     // Add event listeners for existing dropdowns
     document.getElementById('winner_id').addEventListener('change', updateTeamSelections);
     document.getElementById('second_place_id').addEventListener('change', updateTeamSelections);
+
+    // Form validation
+    document.getElementById('team-result-form').addEventListener('submit', function(e) {
+        const missingFields = [];
+        const errorDiv = document.getElementById('validation-errors');
+
+        // Check Date Played
+        if (!document.getElementById('played_at').value) {
+            missingFields.push('Date Played');
+        }
+
+        // Check Winner Team
+        if (!document.getElementById('winner_id').value) {
+            missingFields.push('Winner Team');
+        }
+
+        // Check Second Place Team
+        if (!document.getElementById('second_place_id').value) {
+            missingFields.push('Second Place Team');
+        }
+
+        // Check Duration
+        if (!document.getElementById('duration').value) {
+            missingFields.push('Duration');
+        }
+
+        // Check for duplicate team selections
+        if (missingFields.length === 0) {
+            const allSelects = document.querySelectorAll('select[id^="place_"], #winner_id, #second_place_id');
+            const selectedValues = Array.from(allSelects).map(s => s.value).filter(Boolean);
+            if (selectedValues.length !== new Set(selectedValues).size) {
+                e.preventDefault();
+                errorDiv.innerHTML = '<strong>Duplicate teams selected.</strong> Each team can only occupy one place.';
+                errorDiv.style.display = 'block';
+                errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+        }
+
+        // Show errors or submit
+        if (missingFields.length > 0) {
+            e.preventDefault();
+            errorDiv.innerHTML = '<strong>Please fill in the following required fields:</strong><br>' + missingFields.join(', ') + '.';
+            errorDiv.style.display = 'block';
+            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            errorDiv.style.display = 'none';
+        }
+    });
     </script>
     <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>

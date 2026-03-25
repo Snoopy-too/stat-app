@@ -194,6 +194,9 @@ $csrf_token = $security->generateCSRFToken();
     <title>Add Game Result - <?php echo htmlspecialchars($game['game_name']); ?></title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
+    <style>
+        .required-marker { color: var(--color-error, #ef4444); font-weight: bold; }
+    </style>
 </head>
 <body class="has-sidebar">
     <?php NavigationHelper::renderAdminSidebar('games', $club_id); ?>
@@ -245,11 +248,12 @@ $csrf_token = $security->generateCSRFToken();
                 <?php unset($_SESSION['success_message']); ?>
             <?php endif; ?>
             
-            <form method="POST" class="stack">
+            <form method="POST" class="stack" id="result-form" novalidate>
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                <div id="validation-errors" class="message message--error" style="display: none;"></div>
                 <div class="form-group">
-                    <label for="played_at">Date Played:</label>
-                    <input type="datetime-local" id="played_at" name="played_at" required class="form-control">
+                    <label for="played_at">Date Played: <span class="required-marker">*</span></label>
+                    <input type="datetime-local" id="played_at" name="played_at" class="form-control">
                 </div>
                 
                 <div class="form-group">
@@ -265,8 +269,8 @@ $csrf_token = $security->generateCSRFToken();
                 </div>
                 
                 <div class="form-group">
-                    <label for="winner_id">Winner:</label>
-                    <select id="winner_id" name="winner_id" required class="form-control">
+                    <label for="winner_id">Winner: <span class="required-marker">*</span></label>
+                    <select id="winner_id" name="winner_id" class="form-control">
                         <option value="">Select Winner</option>
                         <?php foreach ($members as $member): ?>
                             <option value="<?php echo $member['id']; ?>">
@@ -278,7 +282,7 @@ $csrf_token = $security->generateCSRFToken();
                 
                 <div id="ranked-section">
                     <div class="form-group">
-                        <label for="second_place_id">Second Place:</label>
+                        <label for="second_place_id">Second Place: <span class="required-marker">*</span></label>
                         <select id="second_place_id" name="second_place_id" class="form-control">
                             <option value="">Select Second Place</option>
                             <?php foreach ($members as $member): ?>
@@ -310,8 +314,8 @@ $csrf_token = $security->generateCSRFToken();
                 </div>
                 
                 <div class="form-group">
-                    <label for="duration">Duration (minutes):</label>
-                    <input type="number" id="duration" name="duration" min="1" class="form-control" required>
+                    <label for="duration">Duration (minutes): <span class="required-marker">*</span></label>
+                    <input type="number" id="duration" name="duration" min="1" class="form-control">
                 </div>
                 
                 <div class="form-group">
@@ -463,6 +467,51 @@ $csrf_token = $security->generateCSRFToken();
     // Add event listeners for existing dropdowns
     document.getElementById('winner_id').addEventListener('change', updatePlayerSelections);
     document.getElementById('second_place_id').addEventListener('change', updatePlayerSelections);
+
+    // Form validation
+    document.getElementById('result-form').addEventListener('submit', function(e) {
+        const missingFields = [];
+        const errorDiv = document.getElementById('validation-errors');
+        const gameType = document.querySelector('input[name="game_type"]:checked').value;
+
+        // Check Date Played
+        if (!document.getElementById('played_at').value) {
+            missingFields.push('Date Played');
+        }
+
+        // Check Winner
+        if (!document.getElementById('winner_id').value) {
+            missingFields.push('Winner');
+        }
+
+        // Check ranked fields
+        if (gameType === 'ranked') {
+            if (!document.getElementById('second_place_id').value) {
+                missingFields.push('Second Place');
+            }
+        } else {
+            // Check losers
+            const loserCheckboxes = document.querySelectorAll('.loser-checkbox:checked');
+            if (loserCheckboxes.length === 0) {
+                missingFields.push('At least one Loser');
+            }
+        }
+
+        // Check Duration
+        if (!document.getElementById('duration').value) {
+            missingFields.push('Duration');
+        }
+
+        // Show errors or submit
+        if (missingFields.length > 0) {
+            e.preventDefault();
+            errorDiv.innerHTML = '<strong>Please fill in the following required fields:</strong><br>' + missingFields.join(', ') + '.';
+            errorDiv.style.display = 'block';
+            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            errorDiv.style.display = 'none';
+        }
+    });
     </script>
     <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>

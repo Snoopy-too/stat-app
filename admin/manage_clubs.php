@@ -306,7 +306,7 @@ $csrf_token = $security->generateCSRFToken();
                     <tbody>
                         <?php foreach ($clubs as $club): ?>
                             <?php $is_active = ($club['club_id'] == $active_club_id); ?>
-                            <tr style="<?php echo $is_active ? 'background: rgba(99, 102, 241, 0.06); box-shadow: inset 3px 0 0 var(--color-primary, #6366f1);' : ''; ?>">
+                            <tr style="<?php echo $is_active ? 'background: rgba(99, 102, 241, 0.06);' : ''; ?>">
                                 <td class="club-name-cell" data-label="Club Name">
                                     <div style="display:flex; align-items:center; gap:0.75rem;">
                                         <?php if ($club['logo_image']): ?>

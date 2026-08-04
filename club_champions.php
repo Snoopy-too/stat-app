@@ -6,6 +6,14 @@ require_once 'includes/NavigationHelper.php';
 // Get club ID from URL parameter
 $club_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
+if ($club_id <= 0) {
+    $stmt = $pdo->query("SELECT club_id FROM clubs ORDER BY club_id ASC LIMIT 1");
+    $first = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($first) {
+        $club_id = (int)$first['club_id'];
+    }
+}
+
 // Fetch club details
 $club = null;
 $error = '';

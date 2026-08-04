@@ -28,18 +28,25 @@ $clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $club_count = count($clubs);
 
-if ($club_count === 0) {
-    // No clubs - redirect to dashboard with message
-    $_SESSION['error'] = "You need to create a club first before adding game results.";
-    header("Location: dashboard.php");
-    exit();
-} elseif ($club_count === 1) {
-    // Single club - go directly to game selection
-    header("Location: club_new_results.php?club_id=" . $clubs[0]['club_id']);
+$target_club = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
+if (!$target_club && !empty($_SESSION['current_club_id'])) {
+    $target_club = (int)$_SESSION['current_club_id'];
+}
+if (!$target_club && !empty($_SESSION['club_id'])) {
+    $target_club = (int)$_SESSION['club_id'];
+}
+if (!$target_club && !empty($clubs)) {
+    $target_club = (int)$clubs[0]['club_id'];
+}
+
+if ($target_club > 0) {
+    $_SESSION['current_club_id'] = $target_club;
+    $_SESSION['club_id'] = $target_club;
+    header("Location: club_new_results.php?club_id=" . $target_club);
     exit();
 } else {
-    // Multiple clubs - go to club selection
-    header("Location: club_list.php");
+    $_SESSION['error'] = "You need to create a club first before adding game results.";
+    header("Location: dashboard.php");
     exit();
 }
 ?>

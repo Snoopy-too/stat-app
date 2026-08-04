@@ -1,13 +1,8 @@
 <?php
 session_start();
-require_once '../config/database.php';
-require_once '../includes/NavigationHelper.php';
-
-// Ensure user is logged in and has appropriate admin access
-if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
-    header("Location: login.php");
-    exit();
-}
+header("Location: manage_clubs.php");
+exit();
+?>
 
 // Ensure admin_type is in session (fallback for existing logged-in users after migration)
 if (!isset($_SESSION['admin_type']) && isset($_SESSION['admin_id'])) {
@@ -94,15 +89,11 @@ $single_club_mode = (count($clubs) === 1);
 $direct_link_club_id = $single_club_mode ? $clubs[0]['club_id'] : null;
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Board Game Club StatApp</title>
-    <link rel="stylesheet" href="../css/styles.css"> <!-- Link to external CSS -->
-</head>
-<body class="has-sidebar">
+<?php
+$pageTitle = 'Admin Dashboard - Board Game Club StatApp';
+$bodyClass = 'has-sidebar';
+require_once '../includes/templates/header.php';
+?>
     <?php NavigationHelper::renderAdminSidebar('dashboard'); ?>
 
 
@@ -213,7 +204,7 @@ $direct_link_club_id = $single_club_mode ? $clubs[0]['club_id'] : null;
         <div class="modal-content card" style="max-width:400px;width:90%;margin:auto;padding:1.5rem;">
             <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
                 <h3 style="margin:0;" id="modalTitle">Select a Club</h3>
-                <button onclick="closeClubSelector()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#64748b;">&times;</button>
+                <button onclick="closeClubSelector()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--color-text-muted);">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="club-list" style="display:flex;flex-direction:column;gap:0.5rem;">
@@ -301,5 +292,4 @@ $direct_link_club_id = $single_club_mode ? $clubs[0]['club_id'] : null;
     });
     </script>
     <?php endif; ?>
-</body>
-</html>
+    <?php require_once '../includes/templates/footer.php'; ?>

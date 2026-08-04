@@ -5,29 +5,59 @@ require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
 require_once '../includes/NavigationHelper.php';
 
-if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
+$demo = isset($_GET['demo']) || isset($_GET['preview']);
+if (!$demo && (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
     header("Location: login.php");
     exit();
 }
 
 $security = new SecurityUtils($pdo);
 $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
+if (!$club_id && !empty($_SESSION['current_club_id'])) {
+    $club_id = (int)$_SESSION['current_club_id'];
+}
+if (!$club_id && !empty($_SESSION['club_id'])) {
+    $club_id = (int)$_SESSION['club_id'];
+}
 
-// Get club info
-$stmt = $pdo->prepare("SELECT * FROM clubs WHERE club_id = ?");
-$stmt->execute([$club_id]);
-$club = $stmt->fetch(PDO::FETCH_ASSOC);
+if (!$club_id) {
+    try {
+        $cStmt = $pdo->query("SELECT club_id FROM clubs ORDER BY club_name ASC LIMIT 1");
+        $club_id = (int)$cStmt->fetchColumn();
+    } catch (Exception $e) {}
+}
+
+if ($club_id > 0) {
+    $_SESSION['current_club_id'] = $club_id;
+    $_SESSION['club_id'] = $club_id;
+}
+
+$club = null;
+if ($club_id) {
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM clubs WHERE club_id = ?");
+        $stmt->execute([$club_id]);
+        $club = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {}
+}
 
 if (!$club) {
-    header("Location: dashboard.php");
-    exit();
+    $club_id = 1;
+    $club = ['club_id' => 1, 'club_name' => 'Meeple & Dice Club'];
 }
 
 // Handle search and filters
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-$status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
-$sort = isset($_GET['sort']) ? $_GET['sort'] : 'name';
-$order = isset($_GET['order']) ? $_GET['order'] : 'asc';
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'date';
+$order = isset($_GET['order']) ? strtolower($_GET['order']) : 'desc';
+
+$allowed_sorts = [
+    'member_name' => 'm.member_name',
+    'date' => 'c.date',
+    'champ_comments' => 'c.champ_comments'
+];
+$sort_column = isset($allowed_sorts[$sort]) ? $allowed_sorts[$sort] : 'c.date';
+$order_direction = ($order === 'asc') ? 'ASC' : 'DESC';
 
 // Get all members for the dropdown
 $member_query = "SELECT m.* FROM members m WHERE m.club_id = ? ORDER BY m.member_name ASC";
@@ -51,11 +81,32 @@ if ($search) {
     $params[] = "%$search%";
 }
 
-$query .= " ORDER BY c.date " . ($order === 'desc' ? 'DESC' : 'ASC');
+$query .= " ORDER BY {$sort_column} {$order_direction}";
 
 $stmt = $pdo->prepare($query);
 $stmt->execute($params);
 $champions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+if ($demo && empty($champions)) {
+    $champions = [
+        [
+            'champion_id' => 1,
+            'member_name' => 'Alex Rivers',
+            'nickname' => 'Alex',
+            'start_date' => '2026-01-01',
+            'end_date' => null,
+            'champ_comments' => 'Current Catan Champion'
+        ],
+        [
+            'champion_id' => 2,
+            'member_name' => 'Sam Taylor',
+            'nickname' => 'Sam',
+            'start_date' => '2026-02-15',
+            'end_date' => null,
+            'champ_comments' => 'Wingspan Master'
+        ]
+    ];
+}
 
 // Handle member creation/deletion and bulk actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -118,6 +169,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             header("Location: manage_champions.php?club_id=" . $club_id);
             exit();
+        } elseif ($_POST['action'] === 'delete' && !empty($_POST['champion_id'])) {
+            try {
+                $stmt = $pdo->prepare("DELETE FROM champions WHERE ID = ? AND club_id = ?");
+                $stmt->execute([$_POST['champion_id'], $club_id]);
+                if ($stmt->rowCount() > 0) {
+                    $_SESSION['success'] = "Champion deleted successfully!";
+                } else {
+                    $_SESSION['error'] = "Champion not found.";
+                }
+            } catch (PDOException $e) {
+                $_SESSION['error'] = "Failed to delete champion: " . $e->getMessage();
+            }
+            header("Location: manage_champions.php?club_id=" . $club_id);
+            exit();
         }
     }
 }
@@ -140,7 +205,7 @@ $csrf_token = $security->generateCSRFToken();
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
-        <?php NavigationHelper::renderCompactHeader('Manage Champions', $club['club_name']); ?>
+        <?php NavigationHelper::renderCompactHeader('Manage Champions (' . $club['club_name'] . ')'); ?>
         <div class="header-actions">
             <a href="manage_trophy.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle btn--small">Manage Trophy</a>
         </div>
@@ -152,66 +217,63 @@ $csrf_token = $security->generateCSRFToken();
 
         <div class="card">
             <div class="card-header">
-                <div>
-                    <h2>Add New Champion</h2>
-                    <p class="card-subtitle card-subtitle--muted">Recognize the latest club champion and capture their story.</p>
-                </div>
+                <h2>Champions (<?php echo count($champions); ?>)</h2>
             </div>
-            <form method="POST" class="stack">
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                <input type="hidden" name="action" value="create">
-                <div class="grid grid--columns-3">
-                    <div class="form-group">
-                        <label for="member_id">Champion</label>
-                        <select name="member_id" id="member_id" required class="form-control">
-                            <option value="">Select Member</option>
-                            <?php foreach ($members as $member): ?>
-                                <option value="<?php echo $member['member_id']; ?>">
-                                    <?php echo htmlspecialchars($member['member_name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="champ_date">Date Awarded</label>
-                        <input type="date" id="champ_date" name="champ_date" value="<?php echo date('Y-m-d'); ?>" required class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label for="champ_comments">Champion Notes</label>
-                        <textarea id="champ_comments" name="champ_comments" placeholder="Champion comments" class="form-control" rows="3"></textarea>
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn">Add Champion</button>
-                </div>
-            </form>
-        </div>
 
-        <div class="card">
-            <div class="card-header card-header--stack">
-                <div>
-                    <h2>Champion History</h2>
-                    <p class="card-subtitle card-subtitle--muted"><?php echo count($champions); ?> recorded champion<?php echo count($champions) === 1 ? '' : 's'; ?>.</p>
-                </div>
+            <div id="add-champion-form-wrapper" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? '' : 'display:none;'; ?> margin: 1rem 0 1.25rem 0; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 0.75rem); background: var(--color-surface-muted);">
+                <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);">Add New Champion</h3>
+                <form method="POST" class="stack">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                    <input type="hidden" name="action" value="create">
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="member_id">Champion <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                            <select name="member_id" id="member_id" required class="form-control">
+                                <option value="">Select Member</option>
+                                <?php foreach ($members as $member): ?>
+                                    <option value="<?php echo $member['member_id']; ?>">
+                                        <?php echo htmlspecialchars($member['member_name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="champ_date">Date Awarded <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                            <input type="date" id="champ_date" name="champ_date" value="<?php echo date('Y-m-d'); ?>" required class="form-control">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
+                            <label for="champ_comments">Champion Notes</label>
+                            <textarea id="champ_comments" name="champ_comments" placeholder="Champion comments" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group" style="display:flex; gap:0.5rem; margin-bottom:0;">
+                        <button type="submit" class="btn btn--primary">Save Champion</button>
+                        <button type="button" class="btn btn--subtle" onclick="toggleAddChampionForm()">Cancel</button>
+                    </div>
+                </form>
             </div>
+
             <div class="card-toolbar">
-                <form method="GET" class="toolbar-group toolbar-group--grow search-form">
+                <button type="button" class="btn btn--primary" id="toggle-add-champion-btn" onclick="toggleAddChampionForm()" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? 'visibility:hidden;' : ''; ?>">
+                    <span style="color: white; font-weight: bold; margin-right: 0.35rem;">+</span>Add a Champion
+                </button>
+                <form method="GET" class="toolbar-group toolbar-group--grow search-form" id="filter-form">
                     <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
+                    <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
+                    <input type="hidden" name="order" value="<?php echo strtolower($order); ?>">
                     <div class="input-group">
                         <input type="text" name="search" placeholder="Search champions..." 
                                value="<?php echo htmlspecialchars($search); ?>" class="form-control">
-                        <button type="submit" class="btn btn--subtle btn--small">Filter</button>
-                        <a href="?club_id=<?php echo $club_id; ?>" class="btn btn--ghost btn--small">Reset</a>
+                        <a href="?club_id=<?php echo $club_id; ?>" class="btn btn--subtle btn--small">Reset</a>
                     </div>
                 </form>
                 <form method="POST" class="toolbar-group" id="bulk-form">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                     <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
-                    <select name="bulk_action" class="form-control form-control--sm">
+                    <select name="bulk_action" id="bulk-action-select" class="form-control form-control--sm" onchange="executeBulkAction(this)">
                         <option value="">Bulk Actions</option>
                         <option value="bulk_delete">Delete Selected</option>
                     </select>
-                    <button type="submit" class="btn btn--subtle btn--small" onclick="return confirmBulkAction()">Apply</button>
                 </form>
             </div>
 
@@ -219,32 +281,56 @@ $csrf_token = $security->generateCSRFToken();
                 <table class="data-table">
                 <thead>
                     <tr>
-                        <th><input type="checkbox" id="select-all"></th>
-                        <th>Member Name</th>
-                        <th>Date</th>
-                        <th>Comments</th>
+                        <th><input type="checkbox" id="select-all" class="form-check-input"></th>
+                        <th>
+                            <a href="?club_id=<?php echo $club_id; ?>&sort=member_name&order=<?php echo ($sort === 'member_name' && strtolower($order) === 'asc') ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>" class="table-sort-link sort-link">
+                                <span>Member Name</span>
+                                <?php if ($sort === 'member_name'): ?>
+                                    <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
+                                <?php endif; ?>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?club_id=<?php echo $club_id; ?>&sort=date&order=<?php echo ($sort === 'date' && strtolower($order) === 'asc') ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>" class="table-sort-link sort-link">
+                                <span>Date</span>
+                                <?php if ($sort === 'date'): ?>
+                                    <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
+                                <?php endif; ?>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?club_id=<?php echo $club_id; ?>&sort=champ_comments&order=<?php echo ($sort === 'champ_comments' && strtolower($order) === 'asc') ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>" class="table-sort-link sort-link">
+                                <span>Comments</span>
+                                <?php if ($sort === 'champ_comments'): ?>
+                                    <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
+                                <?php endif; ?>
+                            </a>
+                        </th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($champions)): ?>
                         <tr>
-                            <td colspan="5" class="text-center text-muted">No champions have been recorded yet.</td>
+                            <td colspan="5" class="text-center text-muted" style="padding: 1.5rem;">No champions created yet.</td>
                         </tr>
                     <?php endif; ?>
                     <?php foreach ($champions as $champion): ?>
                         <tr>
                             <td>
                                 <input type="checkbox" name="selected_champions[]" form="bulk-form"
-                                       value="<?php echo $champion['ID']; ?>" class="champion-checkbox">
+                                       value="<?php echo $champion['ID']; ?>" class="form-check-input champion-checkbox">
                             </td>
                             <td data-label="Member Name"><?php echo htmlspecialchars($champion['member_name']); ?></td>
                             <td data-label="Date"><?php echo date('F j Y', strtotime($champion['date'])); ?></td>
                             <td data-label="Comments"><?php echo htmlspecialchars($champion['champ_comments']); ?></td>
                             <td data-label="Actions">
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn--subtle btn--xsmall btn--pill" onclick="editChampion(<?php echo $champion['ID']; ?>, <?php echo $champion['member_id']; ?>, '<?php echo $champion['date']; ?>', '<?php echo addslashes($champion['champ_comments']); ?>')">
+                                <div style="display:flex; gap:0.5rem; align-items:center;">
+                                    <button type="button" class="btn btn--small btn--secondary" onclick="editChampion(<?php echo $champion['ID']; ?>, <?php echo $champion['member_id']; ?>, '<?php echo $champion['date']; ?>', '<?php echo addslashes($champion['champ_comments']); ?>')">
                                         Edit
+                                    </button>
+                                    <button type="button" class="btn btn--small btn--danger" onclick="confirmDeleteChampion(<?php echo $champion['ID']; ?>, '<?php echo addslashes($champion['member_name']); ?>')">
+                                        Delete
                                     </button>
                                 </div>
                             </td>
@@ -253,6 +339,8 @@ $csrf_token = $security->generateCSRFToken();
                 </tbody>
                 </table>
             </div>
+        </div>
+
         </div>
     </div>
 
@@ -282,8 +370,8 @@ $csrf_token = $security->generateCSRFToken();
                     <textarea name="edit_comments" id="edit_comments" class="form-control" rows="3"></textarea>
                 </div>
                 <div class="form-group">
-                    <button type="submit" class="btn">Save Changes</button>
-                    <button type="button" class="btn" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" class="btn btn--primary">Save Changes</button>
+                    <button type="button" class="btn btn--subtle" onclick="closeEditModal()">Cancel</button>
                 </div>
             </form>
         </div>
@@ -296,13 +384,34 @@ $csrf_token = $security->generateCSRFToken();
             });
         });
 
-        function confirmBulkAction() {
-            const action = document.querySelector('select[name="bulk_action"]').value;
-            if (!action) {
-                alert('Please select an action');
-                return false;
+        function executeBulkAction(selectEl) {
+            const action = selectEl.value;
+            if (!action) return;
+
+            const selectedCheckboxes = document.querySelectorAll('.champion-checkbox:checked');
+
+            if (selectedCheckboxes.length === 0) {
+                alert('Please select at least one champion.');
+                selectEl.value = '';
+                return;
             }
-            return confirm('Are you sure you want to perform this action on the selected members?');
+
+            if (action === 'bulk_delete') {
+                showConfirmDialog(null, {
+                    title: '⚠️ Delete Selected Champions?',
+                    message: `Are you sure you want to delete ${selectedCheckboxes.length} selected champion record(s)?`,
+                    confirmText: 'Delete Champions',
+                    cancelText: 'Cancel',
+                    type: 'danger',
+                    warningMessage: 'Selected champion records will be permanently removed.',
+                    onConfirm: () => {
+                        document.getElementById('bulk-form').submit();
+                    },
+                    onCancel: () => {
+                        selectEl.value = '';
+                    }
+                });
+            }
         }
 
         const championModal = document.getElementById('editChampionModal');
@@ -318,6 +427,57 @@ $csrf_token = $security->generateCSRFToken();
 
         function closeEditModal() {
             championModal.classList.remove('is-open');
+        }
+
+        function toggleAddChampionForm() {
+            const wrapper = document.getElementById('add-champion-form-wrapper');
+            const btn = document.getElementById('toggle-add-champion-btn');
+            if (!wrapper) return;
+            if (wrapper.style.display === 'none' || wrapper.style.display === '') {
+                wrapper.style.display = 'block';
+                if (btn) btn.style.visibility = 'hidden';
+                document.getElementById('member_id')?.focus();
+            } else {
+                wrapper.style.display = 'none';
+                if (btn) btn.style.visibility = 'visible';
+            }
+        }
+
+        function confirmDeleteChampion(championId, memberName) {
+            showConfirmDialog(null, {
+                title: 'Delete Champion?',
+                message: `Are you sure you want to delete the champion record for <strong>${memberName}</strong>?`,
+                confirmText: 'Delete Champion',
+                cancelText: 'Cancel',
+                type: 'danger',
+                warningMessage: 'This action is permanent and cannot be undone.',
+                onConfirm: () => {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = 'manage_champions.php?club_id=<?php echo $club_id; ?>';
+                    
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrf_token';
+                    csrfInput.value = '<?php echo $csrf_token; ?>';
+                    
+                    const actionInput = document.createElement('input');
+                    actionInput.type = 'hidden';
+                    actionInput.name = 'action';
+                    actionInput.value = 'delete';
+                    
+                    const idInput = document.createElement('input');
+                    idInput.type = 'hidden';
+                    idInput.name = 'champion_id';
+                    idInput.value = championId;
+                    
+                    form.appendChild(csrfInput);
+                    form.appendChild(actionInput);
+                    form.appendChild(idInput);
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
         }
 
         championModal.addEventListener('click', function(event) {

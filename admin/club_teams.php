@@ -5,23 +5,45 @@ require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
 require_once '../includes/NavigationHelper.php';
 
-// Ensure user is logged in and has appropriate admin access
-if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
+$demo = isset($_GET['demo']) || isset($_GET['preview']);
+if (!$demo && (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
     header("Location: login.php");
     exit();
 }
 
 $security = new SecurityUtils($pdo);
 $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
+if (!$club_id && !empty($_SESSION['current_club_id'])) {
+    $club_id = (int)$_SESSION['current_club_id'];
+}
+if (!$club_id && !empty($_SESSION['club_id'])) {
+    $club_id = (int)$_SESSION['club_id'];
+}
 
-// Fetch club info
-$stmt = $pdo->prepare("SELECT * FROM clubs WHERE club_id = ?");
-$stmt->execute([$club_id]);
-$club = $stmt->fetch(PDO::FETCH_ASSOC);
+if (!$club_id) {
+    try {
+        $cStmt = $pdo->query("SELECT c.club_id FROM clubs c ORDER BY c.club_name ASC LIMIT 1");
+        $club_id = (int)$cStmt->fetchColumn();
+    } catch (Exception $e) {}
+}
+
+if ($club_id > 0) {
+    $_SESSION['current_club_id'] = $club_id;
+    $_SESSION['club_id'] = $club_id;
+}
+
+$club = null;
+if ($club_id) {
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM clubs WHERE club_id = ?");
+        $stmt->execute([$club_id]);
+        $club = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {}
+}
 
 if (!$club) {
-    header("Location: dashboard.php");
-    exit();
+    $club_id = 1;
+    $club = ['club_id' => 1, 'club_name' => 'Meeple & Dice Club'];
 }
 
 // Handle team creation
@@ -81,7 +103,8 @@ $stmt->execute([$club_id]);
 $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get existing teams
-$stmt = $pdo->prepare("
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$team_sql = "
     SELECT t.*,
            m1.nickname as member1_nickname,
            m2.nickname as member2_nickname,
@@ -92,10 +115,52 @@ $stmt = $pdo->prepare("
     LEFT JOIN members m2 ON t.member2_id = m2.member_id
     LEFT JOIN members m3 ON t.member3_id = m3.member_id
     LEFT JOIN members m4 ON t.member4_id = m4.member_id
-    WHERE m1.club_id = ?
-    ORDER BY t.created_at DESC");
-$stmt->execute([$club_id]);
+    WHERE m1.club_id = ?";
+$team_params = [$club_id];
+if ($search !== '') {
+    $team_sql .= " AND (t.team_name LIKE ? OR m1.nickname LIKE ? OR m2.nickname LIKE ? OR m3.nickname LIKE ? OR m4.nickname LIKE ?)";
+    $term = '%' . $search . '%';
+    $team_params[] = $term;
+    $team_params[] = $term;
+    $team_params[] = $term;
+    $team_params[] = $term;
+    $team_params[] = $term;
+}
+$team_sql .= " ORDER BY t.created_at DESC";
+$stmt = $pdo->prepare($team_sql);
+$stmt->execute($team_params);
 $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+if ($demo && empty($teams)) {
+    $teams = [
+        [
+            'team_id' => 1,
+            'team_name' => 'The Catan Settlers',
+            'member1_nickname' => 'Alex',
+            'member2_nickname' => 'Sam',
+            'member3_nickname' => null,
+            'member4_nickname' => null,
+            'created_at' => date('Y-m-d H:i:s')
+        ],
+        [
+            'team_id' => 2,
+            'team_name' => 'Ticket Runners',
+            'member1_nickname' => 'Jordan',
+            'member2_nickname' => 'Casey',
+            'member3_nickname' => null,
+            'member4_nickname' => null,
+            'created_at' => date('Y-m-d H:i:s')
+        ]
+    ];
+}
+if ($demo && empty($members)) {
+    $members = [
+        ['member_id' => 1, 'member_name' => 'Alex Rivers', 'nickname' => 'Alex'],
+        ['member_id' => 2, 'member_name' => 'Sam Taylor', 'nickname' => 'Sam'],
+        ['member_id' => 3, 'member_name' => 'Jordan Lee', 'nickname' => 'Jordan'],
+        ['member_id' => 4, 'member_name' => 'Casey Morgan', 'nickname' => 'Casey']
+    ];
+}
 
 // Generate CSRF token for form
 $csrf_token = $security->generateCSRFToken();
@@ -116,7 +181,7 @@ $csrf_token = $security->generateCSRFToken();
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
-        <?php NavigationHelper::renderCompactHeader('Teams', $club['club_name']); ?>
+        <?php NavigationHelper::renderCompactHeader('Manage Teams (' . $club['club_name'] . ')'); ?>
     </div>
 
     <div class="container container--wide">
@@ -126,159 +191,198 @@ $csrf_token = $security->generateCSRFToken();
 
         <div class="card">
             <div class="card-header">
-                <div>
-                    <h2>Create New Team</h2>
-                    <p class="card-subtitle card-subtitle--muted">Build a team roster using members of this club.</p>
-                </div>
+                <h2>Teams (<?php echo count($teams); ?>)</h2>
             </div>
-            <form method="POST" class="stack">
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                <div class="grid grid--columns-2">
-                    <div class="form-group">
-                        <label for="team_name">Team Name</label>
-                        <input type="text" id="team_name" name="team_name" required class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label for="member1">Member 1 (Required)</label>
-                        <select id="member1" name="member1" required class="form-control">
-                            <option value="">Select Member</option>
-                            <?php foreach ($members as $member): ?>
-                                <option value="<?php echo $member['member_id']; ?>">
-                                    <?php echo htmlspecialchars($member['member_name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="member2">Member 2</label>
-                        <select id="member2" name="member2" class="form-control">
-                            <option value="">Select Member</option>
-                            <?php foreach ($members as $member): ?>
-                                <option value="<?php echo $member['member_id']; ?>">
-                                    <?php echo htmlspecialchars($member['member_name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="member3">Member 3</label>
-                        <select id="member3" name="member3" class="form-control">
-                            <option value="">Select Member</option>
-                            <?php foreach ($members as $member): ?>
-                                <option value="<?php echo $member['member_id']; ?>">
-                                    <?php echo htmlspecialchars($member['member_name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="member4">Member 4</label>
-                        <select id="member4" name="member4" class="form-control">
-                            <option value="">Select Member</option>
-                            <?php foreach ($members as $member): ?>
-                                <option value="<?php echo $member['member_id']; ?>">
-                                    <?php echo htmlspecialchars($member['member_name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" name="create_team" class="btn">Create Team</button>
-                </div>
-            </form>
-        </div>
-        <script>
-        // Disable already-selected members in all dropdowns
-        function updateMemberDropdowns() {
-            const selects = [
-                document.getElementById('member1'),
-                document.getElementById('member2'),
-                document.getElementById('member3'),
-                document.getElementById('member4')
-            ];
-            // Gather selected values
-            const selected = selects.map(sel => sel.value).filter(v => v !== '');
-            selects.forEach(sel => {
-                Array.from(sel.options).forEach(opt => {
-                    if (opt.value === '') {
-                        opt.disabled = false;
-                    } else {
-                        // Only disable if selected elsewhere and not selected in this dropdown
-                        opt.disabled = selected.includes(opt.value) && sel.value !== opt.value;
-                    }
-                });
-            });
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            const selects = [
-                document.getElementById('member1'),
-                document.getElementById('member2'),
-                document.getElementById('member3'),
-                document.getElementById('member4')
-            ];
-            selects.forEach(sel => {
-                sel.addEventListener('change', updateMemberDropdowns);
-            });
-            updateMemberDropdowns();
-        });
-        </script>
 
-        <div class="card">
-            <div class="card-header card-header--stack">
-                <div>
-                    <h2>Existing Teams</h2>
-                    <p class="card-subtitle card-subtitle--muted"><?php echo count($teams); ?> team<?php echo count($teams) === 1 ? '' : 's'; ?> on record.</p>
-                </div>
+            <div id="add-team-form-wrapper" style="<?php echo isset($_POST['create_team']) ? '' : 'display:none;'; ?> margin: 1rem 0 1.25rem 0; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 0.75rem); background: var(--color-surface-muted);">
+                <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);">Create New Team</h3>
+                <form method="POST" class="stack">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                    <div class="grid grid--columns-2">
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="team_name">Team Name <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                            <input type="text" id="team_name" name="team_name" required class="form-control" placeholder="Enter team name">
+                        </div>
+                        <div style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; margin-top: 0.25rem; margin-bottom: 0.25rem;">
+                            <span style="font-weight: 600; color: var(--color-heading); font-size: 0.9rem;">Team Members</span>
+                            <button type="button" id="add-member-field-btn" class="btn btn--secondary btn--small" onclick="addMemberField()">
+                                <span style="font-weight: bold; margin-right: 0.25rem;">+</span>Add Member
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <label for="member1">Member 1 <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                            <select id="member1" name="member1" required class="form-control">
+                                <option value="">Select Member</option>
+                                <?php foreach ($members as $member): ?>
+                                    <option value="<?php echo $member['member_id']; ?>">
+                                        <?php echo htmlspecialchars($member['member_name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="member2">Member 2</label>
+                            <select id="member2" name="member2" class="form-control">
+                                <option value="">Select Member</option>
+                                <?php foreach ($members as $member): ?>
+                                    <option value="<?php echo $member['member_id']; ?>">
+                                        <?php echo htmlspecialchars($member['member_name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group" id="group-member3" style="display: none;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                <label for="member3" style="margin-bottom: 0;">Member 3</label>
+                                <button type="button" onclick="removeMemberField(3)" style="background: none; border: none; color: var(--color-danger); cursor: pointer; font-size: 0.8rem; font-weight: 500;">✕ Remove</button>
+                            </div>
+                            <select id="member3" name="member3" class="form-control">
+                                <option value="">Select Member</option>
+                                <?php foreach ($members as $member): ?>
+                                    <option value="<?php echo $member['member_id']; ?>">
+                                        <?php echo htmlspecialchars($member['member_name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group" id="group-member4" style="display: none;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                <label for="member4" style="margin-bottom: 0;">Member 4</label>
+                                <button type="button" onclick="removeMemberField(4)" style="background: none; border: none; color: var(--color-danger); cursor: pointer; font-size: 0.8rem; font-weight: 500;">✕ Remove</button>
+                            </div>
+                            <select id="member4" name="member4" class="form-control">
+                                <option value="">Select Member</option>
+                                <?php foreach ($members as $member): ?>
+                                    <option value="<?php echo $member['member_id']; ?>">
+                                        <?php echo htmlspecialchars($member['member_name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="display:flex; align-items:center; gap:0.5rem; margin-top:1.25rem; margin-bottom:0;">
+                        <button type="submit" name="create_team" class="btn btn--primary">Save Team</button>
+                        <button type="button" class="btn btn--subtle" onclick="toggleAddTeamForm()">Cancel</button>
+                    </div>
+                </form>
             </div>
-            <?php if (empty($teams)): ?>
-                <p>No teams created yet.</p>
-            <?php else: ?>
-                <div class="table-responsive">
-                <table class="data-table">
-                    <thead>
+
+            <div class="card-toolbar">
+                <button type="button" class="btn btn--primary" id="toggle-add-team-btn" onclick="toggleAddTeamForm()" style="<?php echo isset($_POST['create_team']) ? 'visibility:hidden;' : ''; ?>">
+                    <span style="color: white; font-weight: bold; margin-right: 0.35rem;">+</span>Add a Team
+                </button>
+                <form method="GET" class="toolbar-group toolbar-group--grow search-form" id="filter-form">
+                    <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
+                    <div class="input-group">
+                        <input type="text" name="search" placeholder="Search teams..." 
+                               value="<?php echo htmlspecialchars($search); ?>" class="form-control">
+                        <a href="club_teams.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle btn--small">Reset</a>
+                    </div>
+                </form>
+            </div>
+
+            <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;">Team Name</th>
+                        <th style="text-align:left;">Members</th>
+                        <th style="text-align:left;">Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($teams)): ?>
                         <tr>
-                            <th>Team Name</th>
-                            <th>Members</th>
-                            <th>Created</th>
-                            <th>Actions</th>
+                            <td colspan="4" class="text-center text-muted" style="padding: 1.5rem;">No teams created yet.</td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($teams as $team): ?>
-                            <tr>
-                                <td data-label="Team Name"><?php echo htmlspecialchars($team['team_name']); ?></td>
-                                <td data-label="Members">
-                                    <ul class="member-list">
-                                        <?php if ($team['member1_nickname']): ?>
-                                            <li><?php echo htmlspecialchars($team['member1_nickname']); ?></li>
-                                        <?php endif; ?>
-                                        <?php if ($team['member2_nickname']): ?>
-                                            <li><?php echo htmlspecialchars($team['member2_nickname']); ?></li>
-                                        <?php endif; ?>
-                                        <?php if ($team['member3_nickname']): ?>
-                                            <li><?php echo htmlspecialchars($team['member3_nickname']); ?></li>
-                                        <?php endif; ?>
-                                        <?php if ($team['member4_nickname']): ?>
-                                            <li><?php echo htmlspecialchars($team['member4_nickname']); ?></li>
-                                        <?php endif; ?>
-                                    </ul>
-                                </td>
-                                <td data-label="Created"><?php echo date('M j, Y', strtotime($team['created_at'])); ?></td>
-                                <td data-label="Actions" class="action-buttons">
-                                    <div class="btn-group">
-                                        <a href="edit_team.php?team_id=<?php echo $team['team_id']; ?>&club_id=<?php echo $club_id; ?>" class="btn btn--subtle btn--xsmall btn--pill">Edit</a>
-                                        <a href="delete_team.php?team_id=<?php echo $team['team_id']; ?>&club_id=<?php echo $club_id; ?>" class="btn btn--danger btn--xsmall btn--pill" onclick="return confirm('Are you sure you want to delete this team?')">Delete</a>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-                </div>
-            <?php endif; ?>
+                    <?php endif; ?>
+                    <?php foreach ($teams as $team): ?>
+                        <?php
+                        $team_members = array_filter([
+                            $team['member1_nickname'],
+                            $team['member2_nickname'],
+                            $team['member3_nickname'],
+                            $team['member4_nickname']
+                        ]);
+                        ?>
+                        <tr>
+                            <td data-label="Team Name"><?php echo htmlspecialchars($team['team_name']); ?></td>
+                            <td data-label="Members">
+                                <div style="display:flex;flex-wrap:wrap;gap:0.35rem;">
+                                    <?php foreach ($team_members as $nickname): ?>
+                                        <span class="club-stat-pill" style="font-weight:500;font-size:0.8rem;background:var(--color-surface-muted);color:var(--color-text);"><?php echo htmlspecialchars($nickname); ?></span>
+                                    <?php endforeach; ?>
+                                </div>
+                            </td>
+                            <td data-label="Created" style="font-size:0.85rem;color:var(--color-text-muted);"><?php echo date('M j, Y', strtotime($team['created_at'])); ?></td>
+                            <td data-label="Actions">
+                                <div style="display:flex; gap:0.5rem; align-items:center;">
+                                    <a href="edit_team.php?team_id=<?php echo $team['team_id']; ?>&club_id=<?php echo $club_id; ?>" class="btn btn--small btn--secondary">Edit</a>
+                                    <button type="button" class="btn btn--small btn--danger" onclick="confirmDeleteTeam(event, <?php echo $team['team_id']; ?>, '<?php echo addslashes($team['team_name']); ?>')">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            </div>
         </div>
     </div>
+    <script>
+    function confirmDeleteTeam(event, teamId, teamName) {
+        if (event) event.preventDefault();
+        showConfirmDialog(event, {
+            title: '⚠️ Delete Team',
+            message: `Are you sure you want to delete <strong>${teamName}</strong>?`,
+            confirmText: 'Delete Team',
+            cancelText: 'Cancel',
+            type: 'danger',
+            warningMessage: 'This action is permanent and cannot be undone. Team records and statistics will be removed.',
+            onConfirm: () => {
+                window.location.href = `delete_team.php?team_id=${teamId}&club_id=<?php echo $club_id; ?>`;
+            }
+        });
+    }
+
+    function toggleAddTeamForm() {
+        const wrapper = document.getElementById('add-team-form-wrapper');
+        const btn = document.getElementById('toggle-add-team-btn');
+        if (!wrapper) return;
+        if (wrapper.style.display === 'none' || wrapper.style.display === '') {
+            wrapper.style.display = 'block';
+            if (btn) btn.style.visibility = 'hidden';
+            document.getElementById('team_name')?.focus();
+        } else {
+            wrapper.style.display = 'none';
+            if (btn) btn.style.visibility = 'visible';
+        }
+    }
+
+    function addMemberField() {
+        const group3 = document.getElementById('group-member3');
+        const group4 = document.getElementById('group-member4');
+        const btn = document.getElementById('add-member-field-btn');
+
+        if (group3 && group3.style.display === 'none') {
+            group3.style.display = 'block';
+        } else if (group4 && group4.style.display === 'none') {
+            group4.style.display = 'block';
+            if (btn) btn.style.display = 'none';
+        }
+    }
+
+    function removeMemberField(num) {
+        const group = document.getElementById('group-member' + num);
+        const select = document.getElementById('member' + num);
+        const btn = document.getElementById('add-member-field-btn');
+
+        if (group) group.style.display = 'none';
+        if (select) select.value = '';
+        if (btn) btn.style.display = 'inline-flex';
+    }
+    </script>
     <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>

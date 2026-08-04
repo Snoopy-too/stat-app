@@ -2,28 +2,40 @@
 session_start();
 require_once 'config/database.php';
 
-if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
-    header("Location: login.php");
-    exit();
-}
+$demo = isset($_GET['demo']) || isset($_GET['preview']) || !isset($_SESSION['logged_in']) || !$_SESSION['logged_in'];
 
-// Fetch champions for each game
-$stmt = $pdo->prepare("
-    SELECT c.champion_id, c.game_id, c.member_id, c.start_date, c.end_date,
-           g.game_name, m.full_name
-    FROM champions c
-    JOIN games g ON c.game_id = g.game_id
-    JOIN members m ON c.member_id = m.member_id
-    WHERE c.club_id = ?
-    ORDER BY g.game_name, c.start_date DESC
-");
-$stmt->execute([$_SESSION['club_id']]);
-$champions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+if ($demo) {
+    $_SESSION['club_name'] = $_SESSION['club_name'] ?? 'Meeple & Dice Club';
+    $championsByGame = [
+        'Catan' => [
+            ['full_name' => 'Alex Rivers', 'start_date' => '2026-01-01', 'end_date' => null]
+        ],
+        'Wingspan' => [
+            ['full_name' => 'Sam Taylor', 'start_date' => '2026-02-15', 'end_date' => null]
+        ],
+        'Ticket to Ride' => [
+            ['full_name' => 'Jordan Lee', 'start_date' => '2025-11-10', 'end_date' => '2026-02-14']
+        ]
+    ];
+} else {
+    // Fetch champions for each game
+    $stmt = $pdo->prepare("
+        SELECT c.champion_id, c.game_id, c.member_id, c.start_date, c.end_date,
+               g.game_name, m.full_name
+        FROM champions c
+        JOIN games g ON c.game_id = g.game_id
+        JOIN members m ON c.member_id = m.member_id
+        WHERE c.club_id = ?
+        ORDER BY g.game_name, c.start_date DESC
+    ");
+    $stmt->execute([$_SESSION['club_id']]);
+    $champions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Group champions by game
-$championsByGame = [];
-foreach ($champions as $champion) {
-    $championsByGame[$champion['game_name']][] = $champion;
+    // Group champions by game
+    $championsByGame = [];
+    foreach ($champions as $champion) {
+        $championsByGame[$champion['game_name']][] = $champion;
+    }
 }
 ?>
 

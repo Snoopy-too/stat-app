@@ -2,6 +2,7 @@
 session_start();
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
+ensure_game_image_column_exists($pdo);
 require_once '../includes/SecurityUtils.php';
 require_once '../includes/NavigationHelper.php';
 
@@ -87,6 +88,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             }
         }
 
+        // Handle image URL link (if no file uploaded)
+        if (empty($uploadError) && !empty($_POST['image_url'])) {
+            $imageUrl = trim($_POST['image_url']);
+            if (filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+                if ($game_image && !preg_match('~^https?://~i', $game_image) && file_exists($uploadDir . $game_image)) {
+                    @unlink($uploadDir . $game_image);
+                }
+                $game_image = $imageUrl;
+            } else {
+                $uploadError = "Invalid image URL format. Please enter a valid HTTP or HTTPS URL.";
+            }
+        }
+
         if ($uploadError) {
             $_SESSION['error'] = $uploadError;
             header("Location: edit_game.php?club_id=$club_id&game_id=$game_id");
@@ -105,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $_SESSION['success'] = "Game updated successfully!";
         header("Location: manage_games.php?club_id=" . $club_id);
         exit();
-    } catch (PDOException $e) {
+    } catch (Throwable $e) {
         $_SESSION['error'] = "Failed to update game: " . $e->getMessage();
     }
 }
@@ -238,7 +252,7 @@ $csrf_token = $security->generateCSRFToken();
                         <div class="form-group">
                             <label class="form-label">Current Image</label>
                             <div style="display: flex; flex-direction: column; align-items: flex-start; gap: var(--spacing-2);">
-                                <img src="../images/game_images/<?php echo htmlspecialchars($game['game_image']); ?>" alt="Game Image" class="current-image-preview" loading="lazy">
+                                <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'], '../')); ?>" alt="Game Image" class="current-image-preview" loading="lazy">
                                 <label class="form-check">
                                     <input type="checkbox" name="remove_image" value="1" class="form-check-input">
                                     <span class="form-check-label">Remove current image</span>
@@ -255,12 +269,7 @@ $csrf_token = $security->generateCSRFToken();
                     <div class="form-grid-2">
                         <div class="form-group">
                             <label for="min_players" class="form-label">Min Players</label>
-                            <select name="min_players" id="min_players" class="form-control" required>
-                                <option value="">Select...</option>
-                                <?php for ($i = 1; $i <= 20; $i++): ?>
-                                    <option value="<?php echo $i; ?>" <?php echo ($game['min_players'] == $i) ? 'selected' : ''; ?>><?php echo $i; ?></option>
-                                <?php endfor; ?>
-                            </select>
+                            <input type="number" name="min_players" id="min_players" placeholder="Min Players" value="<?php echo htmlspecialchars($game['min_players']); ?>" required min="1" class="form-control">
                         </div>
                         <div class="form-group">
                             <label for="max_players" class="form-label">Max Players</label>
@@ -272,16 +281,22 @@ $csrf_token = $security->generateCSRFToken();
                         <label class="form-label">Update Image (Optional)</label>
                         <div class="upload-zone" id="upload-zone">
                             <span class="upload-zone__icon">🔄</span>
-                            <span class="upload-zone__text">Click to replace or drag & drop</span>
+                            <span class="upload-zone__text">Click to replace or drag & drop file</span>
                             <span class="upload-zone__hint">JPG, PNG, GIF (Max 1MB, 600px recommended)</span>
                             <input type="file" name="game_image" id="game_image" accept="image/jpeg,image/png,image/gif">
                         </div>
                     </div>
 
-                    <div style="margin-top: var(--spacing-6); display: flex; justify-content: flex-end; gap: var(--spacing-3);">
-                        <a href="manage_games.php?club_id=<?php echo $club_id; ?>" class="btn btn--secondary btn--large">Cancel</a>
+                    <div class="form-group">
+                        <label for="image_url" class="form-label">Or Image Link / URL</label>
+                        <input type="url" name="image_url" id="image_url" placeholder="https://example.com/image.jpg" class="form-control">
+                        <small style="color: var(--color-text-muted); font-size: var(--font-size-xs);">Paste a direct web link to an image file</small>
+                    </div>
+
+                    <div style="margin-top: var(--spacing-6); display: flex; justify-content: flex-start; gap: var(--spacing-3);">
                         <input type="hidden" name="action" value="update">
-                        <button type="submit" class="btn btn--primary btn--large">Save</button>
+                        <button type="submit" class="btn btn--primary">Save</button>
+                        <a href="manage_games.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle">Cancel</a>
                     </div>
                 </form>
             </div>

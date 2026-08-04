@@ -92,39 +92,24 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
             grid-template-columns: repeat(3, 1fr);
             gap: 20px;
             margin-top: 20px;
-        }
         .stat-card {
-            background-color: var(--bg-secondary);
+            background-color: var(--color-surface-muted);
             padding: 15px;
-            border-radius: 4px;
+            border-radius: var(--radius-md);
             text-align: center;
-        }
         }
         .stat-number {
             font-size: 24px;
             font-weight: bold;
-            color: #2c3e50;
+            color: var(--color-heading);
         }
         .recent-games, .top-games {
             background-color: var(--color-surface);
-            border-radius: 8px;
+            border-radius: var(--radius-md);
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .button {
-            background-color: #3498db;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            margin: 5px;
-        }
-        .delete-button {
-            background-color: #e74c3c;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--color-border);
         }
     </style>
     <script src="../js/dark-mode.js"></script>
@@ -191,9 +176,11 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <?php endif; ?>
         </div>
 
-        <div>
-            <a href="edit_club.php?id=<?php echo $club_id; ?>" class="btn">Edit Club</a>
-            <a href="dashboard.php" class="btn">Back to Dashboard</a>
+        <div class="form-actions" style="margin-top: 1.5rem; display: flex; gap: 0.5rem;">
+            <?php if ($club['admin_role'] === 'owner'): ?>
+                <a href="edit_club.php?id=<?php echo $club_id; ?>" class="btn btn--primary">Edit Club</a>
+            <?php endif; ?>
+            <a href="dashboard.php" class="btn btn--subtle">Back to Dashboard</a>
         </div>
     </div>
     <script src="../js/sidebar.js"></script>

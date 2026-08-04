@@ -7,7 +7,7 @@ require_once '../includes/SecurityUtils.php';
 require_once '../includes/helpers.php';
 
 if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
-    header("Location: dashboard.php");
+    header("Location: new_result.php");
     exit();
 }
 
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         error_log('Attempting login for username: ' . $username);
         try {
-            $stmt = $pdo->prepare("SELECT admin_id, username, password_hash, is_deactivated, admin_type FROM admin_users WHERE username = ?");
+            $stmt = $pdo->prepare("SELECT admin_id, username, password_hash, is_deactivated, admin_type, default_club_id FROM admin_users WHERE username = ?");
             $stmt->execute([$username]);
             $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -51,6 +51,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['admin_type'] = $admin['admin_type'] ?? 'multi_club';
                         $_SESSION['login_time'] = time();
 
+                        // Set active club if default club is configured
+                        $hasDefaultClub = false;
+                        if (!empty($admin['default_club_id'])) {
+                            $defClubId = (int)$admin['default_club_id'];
+                            $chkDef = $pdo->prepare("SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?");
+                            $chkDef->execute([$defClubId, $admin['admin_id']]);
+                            if ($chkDef->fetch()) {
+                                $_SESSION['current_club_id'] = $defClubId;
+                                $_SESSION['club_id'] = $defClubId;
+                                $hasDefaultClub = true;
+                            }
+                        }
+
                         error_log("Login successful for user: " . $username);
 
                         // Check if single_club admin needs to create their first club
@@ -63,7 +76,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             }
                         }
 
-                        header("Location: dashboard.php");
+                        // For users without a default club, check club count
+                        if (!$hasDefaultClub) {
+                            $userClubsStmt = $pdo->prepare("SELECT c.club_id FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ?");
+                            $userClubsStmt->execute([$admin['admin_id']]);
+                            $userClubs = $userClubsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+                            if (count($userClubs) > 1) {
+                                header("Location: select_club.php");
+                                exit();
+                            } elseif (count($userClubs) === 1) {
+                                $_SESSION['current_club_id'] = (int)$userClubs[0];
+                                $_SESSION['club_id'] = (int)$userClubs[0];
+                            }
+                        }
+
+                        header("Location: new_result.php");
                         exit();
                     }
                     // Log failed password verification
@@ -85,16 +113,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login - Board Game Club StatApp</title>
-    <link rel="stylesheet" href="../css/styles.css?v=2">
-    <script src="../js/dark-mode.js"></script>
-</head>
-<body>
+<?php
+$pageTitle = 'Admin Login - Board Game Club StatApp';
+$htmlAttributes = 'data-club-theme="light" data-theme="light" data-theme-locked="true"';
+require_once '../includes/templates/header.php';
+?>
     <div class="header">
         <div class="header-title-group">
             <h1>Board Game Club StatApp</h1>
@@ -119,19 +142,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div style="display: flex; justify-content: center; margin-bottom: 1rem;">
                     <a href="forgot_password.php" style="font-size: 0.9rem; color: var(--color-primary); text-decoration: none;">Forgot Password?</a>
                 </div>
-                <button type="submit" class="btn btn--block">Login</button>
+                <div style="display: flex; gap: 0.75rem; width: 100%; margin-top: 0.5rem;">
+                    <button type="submit" class="btn btn--primary" style="flex: 1; text-align: center;">Login</button>
+                    <a href="../register.php" class="btn btn--secondary" style="flex: 1; text-align: center; display: inline-flex; align-items: center; justify-content: center;">Register</a>
+                </div>
             </form>
-            <div class="text-center mt-3">
-                <a href="../register.php" class="btn btn--link">Register your club</a>
-            </div>
+        </div>
         </div>
     </div>
-    <script src="../js/mobile-menu.js"></script>
-    <script src="../js/form-loading.js"></script>
-    <script src="../js/confirmations.js"></script>
-    <script src="../js/form-validation.js"></script>
-    <script src="../js/empty-states.js"></script>
-    <script src="../js/multi-step-form.js"></script>
-    <script src="../js/breadcrumbs.js"></script>
-</body>
-</html>
+<?php
+$extraScripts = '<script src="../js/form-loading.js"></script><script src="../js/form-validation.js"></script>';
+require_once '../includes/templates/footer.php';
+?>

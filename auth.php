@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['logged_in'] = true;
             $_SESSION['login_time'] = time();
 
-            header("Location: dashboard.php");
+            header("Location: admin/new_result.php");
             exit();
         } else {
             // Log failed login attempt

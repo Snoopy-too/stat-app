@@ -94,6 +94,27 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+
+    // Auto-dismiss top-level banner alert messages (.message, .success, .error) after 3.5s
+    const banners = document.querySelectorAll('.message, .success, .error, .warning, .info, [class*="message--"], [class*="alert"]');
+    banners.forEach(banner => {
+        if (banner.closest('.modal') || banner.closest('.form-group') || banner.dataset.dismissing === 'true') return;
+        banner.dataset.dismissing = 'true';
+        setTimeout(() => {
+            banner.style.transition = 'opacity 0.4s ease, transform 0.4s ease, max-height 0.4s ease, margin 0.4s ease, padding 0.4s ease';
+            banner.style.opacity = '0';
+            banner.style.transform = 'translateY(-6px)';
+            banner.style.maxHeight = '0';
+            banner.style.marginTop = '0';
+            banner.style.marginBottom = '0';
+            banner.style.paddingTop = '0';
+            banner.style.paddingBottom = '0';
+            banner.style.overflow = 'hidden';
+            setTimeout(() => {
+                if (banner.parentNode) banner.parentNode.removeChild(banner);
+            }, 450);
+        }, 3500);
+    });
 });
 
 /**

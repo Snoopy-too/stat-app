@@ -102,7 +102,7 @@ if ($game_id > 0) {
             <div class="game-hero">
                 <div class="game-hero__image-container">
                     <?php if ($game['game_image']): ?>
-                        <img src="images/game_images/<?php echo htmlspecialchars($game['game_image']); ?>" alt="<?php echo htmlspecialchars($game['game_name']); ?>" class="game-hero__image">
+                        <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'])); ?>" alt="<?php echo htmlspecialchars($game['game_name']); ?>" class="game-hero__image">
                     <?php else: ?>
                         <div class="game-hero__image-placeholder">No Image Uploaded</div>
                     <?php endif; ?>

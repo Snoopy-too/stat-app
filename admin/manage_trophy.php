@@ -143,7 +143,7 @@ $csrf_token = $security->generateCSRFToken();
                 <span class="field-hint">Allowed formats: JPG, PNG, GIF. Max size 5MB.</span>
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn">Update Trophy Image</button>
+                <button type="submit" class="btn btn--primary">Update Trophy Image</button>
                 <a href="dashboard.php" class="btn btn--subtle">Cancel</a>
             </div>
         </form>

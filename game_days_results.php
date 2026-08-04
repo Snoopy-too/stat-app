@@ -148,7 +148,7 @@ try {
                         <tr>
                             <td class="col-image">
                                 <?php if ($result['game_image']): ?>
-                                    <img src="images/game_images/<?php echo htmlspecialchars($result['game_image']); ?>" alt="" class="game-thumbnail" loading="lazy">
+                                    <img src="<?php echo htmlspecialchars(get_game_image_url($result['game_image'])); ?>" alt="" class="game-thumbnail" loading="lazy">
                                 <?php else: ?>
                                     <div class="game-thumbnail game-thumbnail--skeleton" title="No image uploaded"></div>
                                 <?php endif; ?>
@@ -185,7 +185,7 @@ try {
                         <tr>
                             <td class="col-image">
                                 <?php if ($result['game_image']): ?>
-                                    <img src="images/game_images/<?php echo htmlspecialchars($result['game_image']); ?>" alt="" class="game-thumbnail" loading="lazy">
+                                    <img src="<?php echo htmlspecialchars(get_game_image_url($result['game_image'])); ?>" alt="" class="game-thumbnail" loading="lazy">
                                 <?php else: ?>
                                     <div class="game-thumbnail game-thumbnail--skeleton" title="No image uploaded"></div>
                                 <?php endif; ?>

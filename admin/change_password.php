@@ -23,7 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $new_password = $_POST['new_password'];
     $confirm_password = $_POST['confirm_password'];
 
-    if ($new_password !== $confirm_password) {
+    if (strlen($new_password) < 8) {
+        $_SESSION['error'] = "New password must be at least 8 characters long";
+    } elseif ($new_password !== $confirm_password) {
         $_SESSION['error'] = "New passwords do not match";
     } else {
         $stmt = $pdo->prepare("SELECT password_hash FROM admin_users WHERE admin_id = ?");
@@ -66,27 +68,39 @@ $csrf_token = $security->generateCSRFToken();
         </div>
         <a href="dashboard.php" class="btn btn--secondary">Back to Dashboard</a>
     </div>
-    <div class="container">
+    <div class="container container--narrow">
         <div class="card">
+            <div class="card-header">
+                <h2>Change Password</h2>
+                <p class="card-subtitle">Ensure your account stays secure</p>
+            </div>
 
+            <?php display_session_message('success'); ?>
             <?php display_session_message('error'); ?>
             
             <form method="POST" class="stack">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                
                 <div class="form-group">
-                    <label for="current_password">Current Password:</label>
+                    <label for="current_password" class="form-label">Current Password</label>
                     <input type="password" id="current_password" name="current_password" class="form-control" required>
                 </div>
+                
                 <div class="form-group">
-                    <label for="new_password">New Password:</label>
-                    <input type="password" id="new_password" name="new_password" class="form-control" required>
+                    <label for="new_password" class="form-label">New Password</label>
+                    <input type="password" id="new_password" name="new_password" class="form-control" required minlength="8">
+                    <small style="color: var(--color-text-muted); font-size: var(--font-size-xs);">
+                        Minimum 8 characters
+                    </small>
                 </div>
+                
                 <div class="form-group">
-                    <label for="confirm_password">Confirm New Password:</label>
-                    <input type="password" id="confirm_password" name="confirm_password" class="form-control" required>
+                    <label for="confirm_password" class="form-label">Confirm New Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" class="form-control" required minlength="8">
                 </div>
+                
                 <div class="form-actions">
-                    <button type="submit" class="btn">Change Password</button>
+                    <button type="submit" class="btn btn--primary">Change Password</button>
                     <a href="dashboard.php" class="btn btn--subtle">Cancel</a>
                 </div>
             </form>

@@ -160,7 +160,7 @@ $csrf_token = $security->generateCSRFToken();
                     <input type="file" name="logo" id="logo" class="form-control" accept="image/jpeg,image/png,image/gif" required>
                     <span class="field-hint">Maximum file size: 1MB. Allowed formats: JPG, PNG, GIF.</span>
                 </div>
-                <button type="submit" class="btn">Upload Logo</button>
+                <button type="submit" class="btn btn--primary">Upload Logo</button>
             </form>
         </div>
     </div>

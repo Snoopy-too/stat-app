@@ -453,6 +453,36 @@
 }
 
 /* ==================== */
+/* ACCOUNT & LOGOUT HOVER EFFECTS */
+/* ==================== */
+.sidebar__link[href*="account.php"],
+a[href*="account.php"].sidebar__link,
+.sidebar__logo[href*="account.php"] {
+    transition: all 0.2s ease !important;
+}
+
+.sidebar__link[href*="account.php"]:hover,
+a[href*="account.php"].sidebar__link:hover {
+    color: var(--color-heading);
+    background: var(--color-surface-muted);
+}
+
+.sidebar__link--logout,
+a[href*="logout.php"],
+.logout-link {
+    transition: all 0.2s ease !important;
+}
+
+.sidebar__link--logout:hover,
+a[href*="logout.php"]:hover,
+.logout-link:hover {
+    color: #ffffff !important;
+    background: #ef4444 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4) !important;
+}
+
+/* ==================== */
 /* PRINT STYLES         */
 /* ==================== */
 @media print {

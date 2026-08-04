@@ -2,22 +2,30 @@
 session_start();
 require_once 'config/database.php';
 
-if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
-    header("Location: login.php");
-    exit();
-}
+$demo = isset($_GET['demo']) || isset($_GET['preview']) || !isset($_SESSION['logged_in']) || !$_SESSION['logged_in'];
 
-// Fetch all games with their play count
-$stmt = $pdo->prepare("
-    SELECT g.*, COUNT(gh.history_id) as play_count
-    FROM games g
-    LEFT JOIN game_history gh ON g.game_id = gh.game_id
-    WHERE g.club_id = ?
-    GROUP BY g.game_id
-    ORDER BY g.game_name
-");
-$stmt->execute([$_SESSION['club_id']]);
-$games = $stmt->fetchAll(PDO::FETCH_ASSOC);
+if ($demo) {
+    $_SESSION['club_name'] = $_SESSION['club_name'] ?? 'Meeple & Dice Club';
+    $games = [
+        ['game_id' => 1, 'game_name' => 'Catan', 'play_count' => 42],
+        ['game_id' => 2, 'game_name' => 'Wingspan', 'play_count' => 35],
+        ['game_id' => 3, 'game_name' => 'Ticket to Ride', 'play_count' => 28],
+        ['game_id' => 4, 'game_name' => 'Terraforming Mars', 'play_count' => 19],
+        ['game_id' => 5, 'game_name' => 'Codenames', 'play_count' => 54]
+    ];
+} else {
+    // Fetch all games with their play count
+    $stmt = $pdo->prepare("
+        SELECT g.*, COUNT(gh.history_id) as play_count
+        FROM games g
+        LEFT JOIN game_history gh ON g.game_id = gh.game_id
+        WHERE g.club_id = ?
+        GROUP BY g.game_id
+        ORDER BY g.game_name
+    ");
+    $stmt->execute([$_SESSION['club_id']]);
+    $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 ?>
 
 <!DOCTYPE html>

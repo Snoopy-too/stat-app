@@ -8,15 +8,15 @@
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: var(--spacing-4);
-    padding: 0 clamp(1.5rem, 4vw, 3rem);
+    gap: var(--spacing-3);
+    padding: 0 clamp(1rem, 3vw, 2rem);
     height: var(--header-height);
 
     /* Glassmorphism */
     background: var(--color-header-bg);
     backdrop-filter: blur(var(--header-backdrop-blur));
     -webkit-backdrop-filter: blur(var(--header-backdrop-blur));
-    border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+    border-bottom: 1px solid var(--color-border);
     /* Subtle border */
 
     position: sticky;
@@ -33,44 +33,23 @@
 
 .header h1 {
     margin: 0;
-    font-size: clamp(1.25rem, 2vw, 1.5rem);
+    font-size: clamp(1.125rem, 1.5vw, 1.35rem);
     font-weight: var(--font-weight-bold);
     color: var(--color-header-text);
     letter-spacing: -0.02em;
 }
 
-.header h2,
-.header-subtitle {
-    margin: 0;
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-muted);
-}
-
-.header-title-group {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
 .header-actions,
-.auth-links {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: var(--spacing-3);
+.header-subtitle,
+.compact-header__subtitle,
+.compact-header__actions {
+    display: none !important;
 }
 
 .container {
-    width: min(var(--container-max), 100% - var(--spacing-6));
-    margin: var(--spacing-8) auto;
-    padding: var(--spacing-6);
-
-    /* Modern Card-like Container */
-    background: var(--color-surface);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--color-border);
+    width: min(var(--container-max), 100% - var(--spacing-4));
+    margin: var(--spacing-4) auto;
+    padding: var(--spacing-4);
 
     /* Prevent overflow on Safari Private Mode */
     max-width: 100%;
@@ -78,19 +57,19 @@
 }
 
 .container--narrow {
-    width: min(48rem, 100% - var(--spacing-4));
+    width: min(42rem, 100% - var(--spacing-4));
 }
 
 .container--wide {
-    width: min(var(--container-wide), 100% - var(--spacing-6));
+    width: min(var(--container-wide), 100% - var(--spacing-4));
 }
 
 .container--flush {
-    padding: var(--spacing-4);
+    padding: var(--spacing-2);
 }
 
 .page-section {
-    margin-bottom: var(--spacing-10);
+    margin-bottom: var(--spacing-5);
 }
 
 .page-section:last-child {
@@ -99,40 +78,40 @@
 
 .grid {
     display: grid;
-    gap: var(--spacing-6);
+    gap: var(--spacing-4);
 }
 
 .grid--columns-2 {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
 }
 
 .grid--columns-3 {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
 }
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-    gap: var(--spacing-4);
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: var(--spacing-3);
 }
 
 .sales-pitch ul {
-    margin-top: var(--spacing-3);
-    margin-bottom: var(--spacing-3);
+    margin-top: var(--spacing-2);
+    margin-bottom: var(--spacing-2);
 }
 
 .page-actions {
     display: flex;
-    gap: var(--spacing-3);
+    gap: var(--spacing-2);
     flex-wrap: wrap;
     align-items: center;
-    margin-bottom: var(--spacing-6);
+    margin-bottom: var(--spacing-4);
 }
 
 /* Responsive Adjustments */
 @media (max-width: 62rem) {
     .container {
-        margin: var(--spacing-6) auto;
+        margin: var(--spacing-3) auto;
     }
 }
 
@@ -231,22 +210,26 @@
         flex-wrap: wrap;
     }
 
-    /* Keep header-actions visible on compact headers (sidebar pages) */
-    .header--compact .header-actions {
-        max-height: none;
-        overflow: visible;
-        opacity: 1;
-        order: 0;
-        width: auto;
-        flex-direction: row;
-        padding: 0;
-        border: none;
-        margin: 0;
-        margin-left: auto;
+    /* Keep header-actions visible on compact headers & theme toggle headers */
+    .header--compact .header-actions,
+    .landing-header .header-actions,
+    .header-actions:has([data-theme-toggle]),
+    .header-actions:has(.theme-toggle) {
+        max-height: none !important;
+        overflow: visible !important;
+        opacity: 1 !important;
+        order: 0 !important;
+        width: auto !important;
+        flex-direction: row !important;
+        padding: 0 !important;
+        border: none !important;
+        margin: 0 !important;
+        margin-left: auto !important;
     }
 
-    .header--compact .header-actions .btn {
-        width: auto;
+    .header--compact .header-actions .btn,
+    .landing-header .header-actions .btn {
+        width: auto !important;
     }
 }
 
@@ -268,10 +251,23 @@
 }
 
 .has-sidebar .container {
-    margin-left: 260px !important;
-    margin-left: var(--sidebar-width, 260px) !important;
-    max-width: calc(100% - 260px - 2rem);
-    transition: margin-left 300ms ease;
+    margin-left: calc(260px + max(1rem, (100% - 260px - var(--container-max, 75rem)) / 2)) !important;
+    margin-right: max(1rem, (100% - 260px - var(--container-max, 75rem)) / 2) !important;
+    width: auto !important;
+    max-width: calc(100% - 260px - 2rem) !important;
+    transition: margin-left 300ms ease, margin-right 300ms ease;
+}
+
+.has-sidebar .container--narrow {
+    margin-left: calc(260px + max(1rem, (100% - 260px - 42rem) / 2)) !important;
+    margin-right: max(1rem, (100% - 260px - 42rem) / 2) !important;
+    width: auto !important;
+}
+
+.has-sidebar .container--wide {
+    margin-left: calc(260px + max(1rem, (100% - 260px - var(--container-wide, 85rem)) / 2)) !important;
+    margin-right: max(1rem, (100% - 260px - var(--container-wide, 85rem)) / 2) !important;
+    width: auto !important;
 }
 
 /* Compact header style for sidebar pages */

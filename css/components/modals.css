@@ -5,8 +5,10 @@
     align-items: center;
     justify-content: center;
     padding: var(--spacing-4);
-    background: rgba(15, 23, 42, 0.45);
-    z-index: 40;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 999999;
 }
 
 .modal.is-open {
@@ -18,9 +20,10 @@
     border-radius: var(--radius-md);
     width: min(32rem, 100%);
     padding: clamp(1.2rem, 3vw, 1.8rem);
-    box-shadow: var(--shadow-md);
-    border: 1px solid rgba(17, 24, 39, 0.08);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--color-border);
+    border: 1px solid var(--color-border);
     position: relative;
+    z-index: 1000000;
 }
 
 .modal__close {
@@ -37,13 +40,16 @@
     align-items: center;
     justify-content: center;
     padding: var(--spacing-4);
-    z-index: 1000;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 999999;
 }
 
 .confirm-modal__overlay {
     position: absolute;
     inset: 0;
-    background: rgba(15, 23, 42, 0.5);
+    background: rgba(0, 0, 0, 0.75);
     cursor: pointer;
 }
 
@@ -52,10 +58,10 @@
     background: var(--color-surface);
     border-radius: var(--radius-md);
     width: min(400px, 100%);
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--color-border);
     border: 1px solid var(--color-border);
     animation: slideDown 0.3s ease-out;
-    z-index: 1001;
+    z-index: 1000000;
 }
 
 .confirm-modal__content {
@@ -78,15 +84,15 @@
 .confirm-modal__actions {
     display: flex;
     gap: var(--spacing-3);
-    justify-content: flex-end;
+    justify-content: flex-start;
 }
 
 .confirm-modal__confirm {
-    order: 2;
+    order: 1;
 }
 
 .confirm-modal__cancel {
-    order: 1;
+    order: 2;
 }
 
 @keyframes slideDown {

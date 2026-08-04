@@ -99,7 +99,7 @@ if ($minutes > 0 || $hours == 0) {
         <?php NavigationHelper::renderSidebarToggle(); ?>
         <?php NavigationHelper::renderCompactHeader('Cooperative Result Details', htmlspecialchars($result['game_name'])); ?>
         <div class="header-actions">
-            <a href="edit_cooperative_result.php?result_id=<?php echo $result_id; ?>" class="btn btn--small">Edit</a>
+            <a href="edit_cooperative_result.php?result_id=<?php echo $result_id; ?>" class="btn btn--small btn--secondary">Edit</a>
             <button type="button" class="btn btn--danger btn--small" onclick="confirmDeletion(event, <?php echo $result_id; ?>)">Delete</button>
         </div>
     </div>

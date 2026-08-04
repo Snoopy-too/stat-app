@@ -4,26 +4,38 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle all delete links and buttons
+    // Handle all delete links and buttons automatically with theme-consistent modal
     const deleteElements = document.querySelectorAll('[data-confirm], .delete-btn, a[href*="delete"], a[href*="remove"]');
 
     deleteElements.forEach(element => {
-        // Skip if already has confirmation
         if (element.getAttribute('data-confirm') === 'false') return;
+        if (element.getAttribute('data-has-custom-modal') === 'true') return;
 
         element.addEventListener('click', function(e) {
-            // Get confirmation message from data attribute or use default
+            e.preventDefault();
+            const href = this.getAttribute('href');
+            const form = this.closest('form');
             const message = this.getAttribute('data-confirm-message') ||
-                          this.getAttribute('data-confirm') ||
-                          'Are you sure you want to delete this?';
+                          (this.getAttribute('data-confirm') && this.getAttribute('data-confirm') !== 'true' ? this.getAttribute('data-confirm') : null) ||
+                          'Are you sure you want to delete this item?';
 
             const itemName = this.getAttribute('data-item-name');
-            const fullMessage = itemName ? `${message}\n\nItem: ${itemName}` : message;
+            const fullMessage = itemName ? `${message} (<strong>${itemName}</strong>)` : message;
 
-            if (!confirm(fullMessage)) {
-                e.preventDefault();
-                return false;
-            }
+            showConfirmDialog(e, {
+                title: '⚠️ Confirm Action',
+                message: fullMessage,
+                confirmText: 'Delete',
+                cancelText: 'Cancel',
+                type: 'danger',
+                onConfirm: () => {
+                    if (href && href !== '#' && !href.startsWith('javascript:')) {
+                        window.location.href = href;
+                    } else if (form) {
+                        form.submit();
+                    }
+                }
+            });
         });
     });
 });
@@ -68,25 +80,24 @@ function showConfirmDialog(event, options) {
 
     const btnClass = settings.type === 'danger' ? 'btn--danger' : (settings.type === 'primary' ? 'btn--primary' : 'btn--warning');
     
-    // Icon for the dialog
-    const icon = settings.type === 'danger' ? 
-        `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-error-text);"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>` :
-        `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-primary);"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+    const rawTitle = settings.title || 'Confirm Action';
+    const cleanTitle = rawTitle.replace(/^⚠️\s*/, '');
+    const displayTitle = (settings.type === 'danger' || settings.type === 'warning') ? `⚠️ ${cleanTitle}` : cleanTitle;
 
     dialog.innerHTML = `
         <div class="confirm-modal__content">
-            <div style="display: flex; align-items: flex-start; gap: var(--spacing-4);">
-                <div style="background: ${settings.type === 'danger' ? 'var(--color-error-bg)' : 'var(--color-primary-soft)'}; padding: var(--spacing-2); border-radius: var(--radius-md); flex-shrink: 0;">
-                    ${icon}
-                </div>
-                <div>
-                    <h2 class="confirm-modal__title" style="margin-top: 2px;">${settings.title}</h2>
-                    <p class="confirm-modal__message">${settings.message}</p>
-                </div>
+            <div style="margin-bottom: var(--spacing-3);">
+                <h2 class="confirm-modal__title" style="margin: 0; color: var(--color-heading); font-size: 1.25rem; font-weight: 600;">${displayTitle}</h2>
             </div>
-            <div class="confirm-modal__actions" style="margin-top: var(--spacing-6);">
-                <button class="btn btn--subtle confirm-modal__cancel">${settings.cancelText}</button>
+            <p class="confirm-modal__message" style="margin-top: 0.5rem; margin-bottom: 0;">${settings.message}</p>
+            ${settings.type === 'danger' ? `
+                <div class="message message--error" style="margin-top: 1.25rem; margin-bottom: 0;">
+                    <strong>Warning:</strong> ${settings.warningMessage || 'This action is permanent and cannot be undone.'}
+                </div>
+            ` : ''}
+            <div class="confirm-modal__actions" style="margin-top: var(--spacing-6); display: flex; gap: var(--spacing-3); justify-content: flex-start;">
                 <button class="btn ${btnClass} confirm-modal__confirm">${settings.confirmText}</button>
+                <button class="btn btn--subtle confirm-modal__cancel">${settings.cancelText}</button>
             </div>
         </div>
     `;

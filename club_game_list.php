@@ -3,6 +3,8 @@ declare(strict_types=1);
 session_start();
 require_once 'config/database.php';
 require_once 'includes/NavigationHelper.php';
+require_once 'includes/services/ClubService.php';
+require_once 'includes/services/GameService.php';
 
 // Get club ID or Slug from URL parameter
 $club_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -15,64 +17,18 @@ if (!in_array($sort, $allowed_sorts)) {
     $sort = 'alphabetical';
 }
 
-// Fetch club and game details
-$club = null;
+$clubService = new ClubService($pdo);
+$gameService = new GameService($pdo);
+
+$club = $clubService->getClubDetails($club_id, $slug);
 $games = [];
 $error = '';
 
-if ($club_id > 0 || !empty($slug)) {
-    // First fetch club details to ensure it exists
-    $sql = "SELECT club_id, club_name, slug FROM clubs WHERE ";
-    $params = [];
-    
-    if ($club_id > 0) {
-        $sql .= "club_id = ?";
-        $params[] = $club_id;
-    } else {
-        $sql .= "slug = ?";
-        $params[] = $slug;
-    }
-    
-    $club_stmt = $pdo->prepare($sql);
-    $club_stmt->execute($params);
-    $club = $club_stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($club) {
-        $club_id = (int)$club['club_id']; // Ensure club_id is set
-        
-        // Construct ORDER BY clause
-        $order_by = "g.game_name ASC";
-        if ($sort === 'most_played') {
-            $order_by = "plays DESC, g.game_name ASC";
-        } elseif ($sort === 'recently_played') {
-            $order_by = "last_played DESC, g.game_name ASC";
-        }
-
-        // Fetch all games associated with this club along with play count and last played date
-        $games_stmt = $pdo->prepare("SELECT g.*, 
-            (
-                COALESCE((SELECT COUNT(DISTINCT session_id) FROM game_results WHERE game_id = g.game_id), 0) +
-                COALESCE((SELECT COUNT(DISTINCT session_id) FROM team_game_results WHERE game_id = g.game_id), 0) +
-                COALESCE((SELECT COUNT(DISTINCT session_id) FROM cooperative_game_results WHERE game_id = g.game_id), 0)
-            ) AS plays,
-            NULLIF(
-                GREATEST(
-                    COALESCE((SELECT MAX(played_at) FROM game_results WHERE game_id = g.game_id), '1970-01-01 00:00:00'),
-                    COALESCE((SELECT MAX(played_at) FROM team_game_results WHERE game_id = g.game_id), '1970-01-01 00:00:00'),
-                    COALESCE((SELECT MAX(played_at) FROM cooperative_game_results WHERE game_id = g.game_id), '1970-01-01 00:00:00')
-                ),
-                '1970-01-01 00:00:00'
-            ) AS last_played
-            FROM games g 
-            WHERE g.club_id = ? 
-            ORDER BY $order_by");
-        $games_stmt->execute([$club_id]);
-        $games = $games_stmt->fetchAll(PDO::FETCH_ASSOC);
-    } else {
-        $error = 'Club not found';
-    }
+if ($club) {
+    $club_id = (int)$club['club_id'];
+    $games = $gameService->getGamesByClub($club_id, $sort === 'most_played' ? 'plays' : ($sort === 'recently_played' ? 'recent' : 'name'));
 } else {
-    $error = 'Invalid club ID';
+    $error = "Club not found.";
 }
 ?>
 <!DOCTYPE html>
@@ -134,7 +90,7 @@ if ($club_id > 0 || !empty($slug)) {
                             <a href="game_details.php?id=<?php echo (int)$game['game_id']; ?>" class="game-link-wrapper">
                                 <div class="game-card__image-container">
                                     <?php if ($game['game_image']): ?>
-                                        <img src="images/game_images/<?php echo htmlspecialchars($game['game_image']); ?>" 
+                                        <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'])); ?>" 
                                              alt="<?php echo htmlspecialchars($game['game_name']); ?>" 
                                              class="game-card__image" loading="lazy">
                                     <?php else: ?>

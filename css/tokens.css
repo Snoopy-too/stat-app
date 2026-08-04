@@ -100,20 +100,20 @@
     --spacing-2: 0.5rem;
     --spacing-3: 0.75rem;
     --spacing-4: 1rem;
-    --spacing-5: 1.5rem;
-    --spacing-6: 2rem;
-    --spacing-8: 3rem;
-    --spacing-10: 4rem;
-    --spacing-12: 6rem;
+    --spacing-5: 1.25rem;
+    --spacing-6: 1.5rem;
+    --spacing-8: 2rem;
+    --spacing-10: 2.5rem;
+    --spacing-12: 3rem;
 
     /* Layout */
-    --container-max: 80rem;    /* 1280px */
-    --container-wide: 90rem;   /* 1440px */
-    --header-height: 4.5rem;
+    --container-max: 75rem;    /* 1200px */
+    --container-wide: 85rem;   /* 1360px */
+    --header-height: 3.5rem;
 }
 
 @media (min-width: 90rem) {
     :root {
-        --container-max: 85rem;
+        --container-max: 80rem;
     }
 }

@@ -30,7 +30,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         // Validate and sanitize input
         $played_at = $_POST['played_at'];
-        $duration = (int)$_POST['duration'];
+        // Parse duration from hours and minutes selects
+        $duration_hours = isset($_POST['duration_hours']) ? (int)$_POST['duration_hours'] : 2;
+        $duration_minutes = isset($_POST['duration_minutes']) ? (int)$_POST['duration_minutes'] : 0;
+        $duration = ($duration_hours * 60) + $duration_minutes;
         $notes = trim($_POST['notes']);
         $winner = (int)$_POST['winner'];
         $place_2 = !empty($_POST['place_2']) ? (int)$_POST['place_2'] : null;
@@ -114,22 +117,46 @@ $csrf_token = $security->generateCSRFToken();
         <form method="POST" class="form-card">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
             <div class="form-group">
-                <label for="played_at">Date Played:</label>
+                <label for="played_at" class="form-label">Date Played:</label>
                 <input type="date" id="played_at" name="played_at" class="form-control" value="<?php echo date('Y-m-d', strtotime($result['played_at'])); ?>" required>
             </div>
 
+            <?php 
+                $durMins = isset($result['duration']) ? (int)$result['duration'] : 120;
+                $durH = (int)floor($durMins / 60);
+                if ($durH > 12) $durH = 12;
+                $durM = (int)round(($durMins % 60) / 10) * 10;
+                if ($durM > 50) $durM = 50;
+            ?>
             <div class="form-group">
-                <label for="duration">Duration (minutes):</label>
-                <input type="number" id="duration" name="duration" class="form-control" value="<?php echo $result['duration']; ?>" required min="1">
+                <label class="form-label">Duration: <span class="required-marker">*</span></label>
+                <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <div style="flex: 1; display: flex; align-items: center; gap: 0.35rem;">
+                        <select name="duration_hours" id="duration_hours" class="form-control" style="flex: 1;">
+                            <?php for ($h = 0; $h <= 12; $h++): ?>
+                                <option value="<?php echo $h; ?>" <?php echo ($h === $durH) ? 'selected' : ''; ?>><?php echo $h; ?></option>
+                            <?php endfor; ?>
+                        </select>
+                        <span style="font-size: 0.875rem; color: var(--color-text-muted);">hrs</span>
+                    </div>
+                    <div style="flex: 1; display: flex; align-items: center; gap: 0.35rem;">
+                        <select name="duration_minutes" id="duration_minutes" class="form-control" style="flex: 1;">
+                            <?php for ($m = 0; $m <= 50; $m += 10): ?>
+                                <option value="<?php echo $m; ?>" <?php echo ($m === $durM) ? 'selected' : ''; ?>><?php echo $m; ?></option>
+                            <?php endfor; ?>
+                        </select>
+                        <span style="font-size: 0.875rem; color: var(--color-text-muted);">mins</span>
+                    </div>
+                </div>
             </div>
 
             <div class="form-group">
-                <label for="notes">Notes:</label>
+                <label for="notes" class="form-label">Notes:</label>
                 <textarea id="notes" name="notes" class="form-control" rows="3"><?php echo htmlspecialchars($result['notes']); ?></textarea>
             </div>
 
             <div class="form-group">
-                <label for="winner">Winner (1st Place):</label>
+                <label for="winner" class="form-label">Winner (1st Place):</label>
                 <select id="winner" name="winner" class="form-control" required>
                     <option value="">Select Winner Team</option>
                     <?php foreach ($teams as $team): ?>

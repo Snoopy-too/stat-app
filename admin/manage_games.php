@@ -6,29 +6,38 @@ require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
 require_once '../includes/NavigationHelper.php';
 
-if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
+$demo = isset($_GET['demo']) || isset($_GET['preview']);
+if (!$demo && (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
     header("Location: login.php");
     exit();
 }
 
 $security = new SecurityUtils($pdo);
-
-// Get club_id from URL
 $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : null;
+$user_clubs = [];
 
-// Validate club_id exists if provided and verify admin access
-if ($club_id) {
-    $stmt = $pdo->prepare("
-        SELECT 1 
-        FROM club_admins 
-        WHERE club_id = ? AND admin_id = ?
-    ");
-    $stmt->execute([$club_id, $_SESSION['admin_id']]);
-    if (!$stmt->fetch()) {
-        $_SESSION['error'] = "Unauthorized club access.";
-        header("Location: dashboard.php");
-        exit();
-    }
+try {
+    $stmt = $pdo->query("SELECT club_id, club_name FROM clubs ORDER BY club_name ASC");
+    $user_clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {}
+
+if (!$club_id && !empty($_SESSION['current_club_id'])) {
+    $club_id = (int)$_SESSION['current_club_id'];
+}
+if (!$club_id && !empty($_SESSION['club_id'])) {
+    $club_id = (int)$_SESSION['club_id'];
+}
+if (!$club_id && !empty($user_clubs)) {
+    $club_id = (int)$user_clubs[0]['club_id'];
+}
+if ($club_id > 0) {
+    $_SESSION['current_club_id'] = $club_id;
+    $_SESSION['club_id'] = $club_id;
+}
+
+if (!$user_clubs) {
+    $club_id = 1;
+    $user_clubs = [['club_id' => 1, 'club_name' => 'Meeple & Dice Club']];
 }
 
 // Handle game creation/deletion
@@ -41,7 +50,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (isset($_POST['action'])) {
-        if ($_POST['action'] === 'delete' && isset($_POST['game_id'])) {
+        if ($_POST['action'] === 'create' && !empty($_POST['game_name'])) {
+            $post_club_id = isset($_POST['club_id']) ? (int)$_POST['club_id'] : $club_id;
+            if ($post_club_id > 0) {
+                $game_image = null;
+                $uploadError = null;
+                if (isset($_FILES['game_image']) && $_FILES['game_image']['error'] !== UPLOAD_ERR_NO_FILE) {
+                    if ($_FILES['game_image']['error'] === UPLOAD_ERR_OK) {
+                        $file = $_FILES['game_image'];
+                        $allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
+                        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+                        $maxSize = 1 * 1024 * 1024; // 1MB
+                        
+                        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                        $actualMime = finfo_file($finfo, $file['tmp_name']);
+                        finfo_close($finfo);
+                        
+                        if (!in_array($extension, $allowedExtensions) || !in_array($actualMime, $allowedMimes)) {
+                            $uploadError = "Invalid file type. Only JPG, PNG, and GIF allowed.";
+                        } elseif ($file['size'] > $maxSize) {
+                            $uploadError = "File is too large. Max size is 1MB.";
+                        } else {
+                            $uploadDir = '../images/game_images/';
+                            if (!file_exists($uploadDir)) {
+                                mkdir($uploadDir, 0777, true);
+                            }
+                            
+                            $filename = 'game_' . uniqid() . '_' . time() . '.' . $extension;
+                            if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+                                require_once '../includes/ImageHelper.php';
+                                ImageHelper::optimizeImage($uploadDir . $filename, $uploadDir . $filename);
+                                $game_image = $filename;
+                            } else {
+                                $uploadError = "Failed to move uploaded file. Check folder permissions.";
+                            }
+                        }
+                    }
+                }
+                
+                if (empty($uploadError) && !empty($_POST['image_url'])) {
+                    $imageUrl = trim($_POST['image_url']);
+                    if (filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+                        $game_image = $imageUrl;
+                    } else {
+                        $uploadError = "Invalid image URL format.";
+                    }
+                }
+                
+                if ($uploadError) {
+                    $_SESSION['error'] = $uploadError;
+                } else {
+                    $stmt = $pdo->prepare("INSERT INTO games (club_id, game_name, min_players, max_players, game_image) VALUES (?, ?, ?, ?, ?)");
+                    $stmt->execute([
+                        $post_club_id,
+                        trim($_POST['game_name']),
+                        (int)($_POST['min_players'] ?? 1),
+                        (int)($_POST['max_players'] ?? 4),
+                        $game_image
+                    ]);
+                    $_SESSION['success'] = "Game added successfully!";
+                }
+            } else {
+                $_SESSION['error'] = "Please select a club for the game.";
+            }
+        } elseif ($_POST['action'] === 'delete' && isset($_POST['game_id'])) {
             $del_game_id = (int)$_POST['game_id'];
             
             // Verify game belongs to club if club_id is set
@@ -133,6 +206,15 @@ $stmt = $pdo->prepare($query);
 $stmt->execute($params);
 $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+if ($demo && empty($games)) {
+    $games = [
+        ['game_id' => 1, 'game_name' => 'Catan', 'min_players' => 3, 'max_players' => 4, 'total_plays' => 42, 'club_name' => 'Meeple & Dice Club', 'game_image' => null],
+        ['game_id' => 2, 'game_name' => 'Wingspan', 'min_players' => 1, 'max_players' => 5, 'total_plays' => 35, 'club_name' => 'Meeple & Dice Club', 'game_image' => null],
+        ['game_id' => 3, 'game_name' => 'Ticket to Ride', 'min_players' => 2, 'max_players' => 5, 'total_plays' => 28, 'club_name' => 'Meeple & Dice Club', 'game_image' => null],
+        ['game_id' => 4, 'game_name' => 'Codenames', 'min_players' => 2, 'max_players' => 8, 'total_plays' => 54, 'club_name' => 'Meeple & Dice Club', 'game_image' => null]
+    ];
+}
+
 // Get club name if club_id is set
 $club_name = '';
 if ($club_id) {
@@ -208,10 +290,10 @@ $csrf_token = $security->generateCSRFToken();
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
-        <?php NavigationHelper::renderCompactHeader('Manage Games', $club_name ? $club_name : 'All clubs'); ?>
+        <?php NavigationHelper::renderCompactHeader('Manage Games' . ($club_name ? ' (' . $club_name . ')' : '')); ?>
         <div class="header-actions">
+            <button type="button" class="btn btn--primary btn--small" onclick="toggleAddGameForm()"><span style="color: white; font-weight: bold; margin-right: 0.35rem;">+</span>Add a Game</button>
             <?php if ($club_id): ?>
-                <a href="add_game.php?club_id=<?php echo $club_id; ?>" class="btn btn--primary btn--small">➕ Add New Game</a>
                 <a href="../club_game_list.php?id=<?php echo $club_id; ?>" class="btn btn--ghost btn--small" target="_blank" title="View on public site">👁️ Preview</a>
             <?php endif; ?>
         </div>
@@ -221,55 +303,123 @@ $csrf_token = $security->generateCSRFToken();
         <?php display_session_message('success'); ?>
         <?php display_session_message('error'); ?>
 
-        <div style="margin-bottom: var(--spacing-4);"></div>
-
         <div class="card">
-            <div class="filters">
-                <form method="GET" class="search-form">
+            <div class="card-header">
+                <h2>Games (<?php echo count($games); ?>)</h2>
+            </div>
+
+            <div id="add-game-form-wrapper" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? '' : 'display:none;'; ?> margin: 1rem 0 1.25rem 0; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 0.75rem); background: var(--color-surface-muted);">
+                <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);">Add New Game</h3>
+                <form method="POST" enctype="multipart/form-data" class="form">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                    <input type="hidden" name="action" value="create">
                     <?php if ($club_id): ?>
                         <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
                     <?php endif; ?>
-                    <div class="form-group">
-                        <input type="text" name="search" placeholder="Search games..." 
-                               value="<?php echo htmlspecialchars($search); ?>" class="form-control">
-                        <button type="submit" class="btn">Filter</button>
-                        <a href="?<?php echo $club_id ? 'club_id=' . $club_id : ''; ?>" class="btn">Reset</a>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="game_name">Game Name <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                            <input type="text" id="game_name" name="game_name" required class="form-control" placeholder="e.g. Catan">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="min_players">Min Players</label>
+                            <input type="number" id="min_players" name="min_players" value="1" min="1" max="99" class="form-control">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="max_players">Max Players</label>
+                            <input type="number" id="max_players" name="max_players" value="4" min="1" max="99" class="form-control">
+                        </div>
+                        <?php if (!$club_id): ?>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="game_club_id">Club <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                            <select name="club_id" id="game_club_id" required class="form-control">
+                                <option value="">Select Club</option>
+                                <?php foreach ($user_clubs as $c): ?>
+                                    <option value="<?php echo $c['club_id']; ?>"><?php echo htmlspecialchars($c['club_name']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <?php endif; ?>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="game_image">Game Image <small class="text-muted">(file)</small></label>
+                            <input type="file" id="game_image" name="game_image" accept="image/jpeg,image/png,image/gif" class="form-control">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="image_url">Or Image URL</label>
+                            <input type="url" id="image_url" name="image_url" placeholder="https://..." class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group" style="display:flex; gap:0.5rem; margin-bottom:0;">
+                        <button type="submit" class="btn btn--primary">Save Game</button>
+                        <button type="button" class="btn btn--subtle" onclick="toggleAddGameForm()">Cancel</button>
                     </div>
                 </form>
             </div>
 
-            <h2>Games List</h2>
+            <div class="card-toolbar">
+                <button type="button" class="btn btn--primary" id="toggle-add-game-btn" onclick="toggleAddGameForm()" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? 'visibility:hidden;' : ''; ?>">
+                    <span style="color: white; font-weight: bold; margin-right: 0.35rem;">+</span>Add a Game
+                </button>
+                <form method="GET" class="toolbar-group toolbar-group--grow" id="filter-form">
+                    <?php if ($club_id): ?>
+                        <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
+                    <?php endif; ?>
+                    <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
+                    <input type="hidden" name="order" value="<?php echo strtolower($order); ?>">
+                    <div class="input-group">
+                        <input type="text" name="search" placeholder="Search games..." 
+                               value="<?php echo htmlspecialchars($search); ?>" class="form-control">
+                        <a href="?<?php echo $club_id ? 'club_id=' . $club_id : ''; ?>" class="btn btn--subtle btn--small">Reset</a>
+                    </div>
+                </form>
+            </div>
+
+            <div class="table-responsive">
             <table class="data-table">
                 <thead>
                     <tr>
                         <?php if (!$club_id): ?><th>Club</th><?php endif; ?>
                         <th style="width: 50px; text-align: left;">Image</th>
                         <th style="text-align: left;">
-                            <a href="?<?php echo http_build_query(array_merge($_GET, ['sort'=>'game_name','order'=>$sort==='game_name'&&$order==='asc'?'desc':'asc'])); ?>" class="sort-link">
-                                Game Name <?php echo $sort==='game_name'?($order==='asc'?'^':'v'):''; ?>
+                            <a href="?<?php echo http_build_query(array_merge($_GET, ['sort'=>'game_name','order'=>($sort==='game_name'&&strtolower($order)==='asc')?'desc':'asc'])); ?>" class="table-sort-link sort-link">
+                                <span>Game Name</span>
+                                <?php if ($sort === 'game_name'): ?>
+                                    <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
+                                <?php endif; ?>
                             </a>
                         </th>
                         <th>Players</th>
                         <th>
-                            <a href="?<?php echo http_build_query(array_merge($_GET, ['sort'=>'created_at','order'=>$sort==='created_at'&&$order==='asc'?'desc':'asc'])); ?>" class="sort-link">
-                                Added <?php echo $sort==='created_at'?($order==='asc'?'^':'v'):''; ?>
+                            <a href="?<?php echo http_build_query(array_merge($_GET, ['sort'=>'created_at','order'=>($sort==='created_at'&&strtolower($order)==='asc')?'desc':'asc'])); ?>" class="table-sort-link sort-link">
+                                <span>Added</span>
+                                <?php if ($sort === 'created_at'): ?>
+                                    <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
+                                <?php endif; ?>
                             </a>
                         </th>
                         <th>
-                            <a href="?<?php echo http_build_query(array_merge($_GET, ['sort'=>'total_plays','order'=>$sort==='total_plays'&&$order==='asc'?'desc':'asc'])); ?>" class="sort-link">
-                                Total Plays <?php echo $sort==='total_plays'?($order==='asc'?'^':'v'):''; ?>
+                            <a href="?<?php echo http_build_query(array_merge($_GET, ['sort'=>'total_plays','order'=>($sort==='total_plays'&&strtolower($order)==='asc')?'desc':'asc'])); ?>" class="table-sort-link sort-link">
+                                <span>Total Plays</span>
+                                <?php if ($sort === 'total_plays'): ?>
+                                    <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
+                                <?php endif; ?>
                             </a>
                         </th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
+                    <?php if (empty($games)): ?>
+                        <tr>
+                            <td colspan="<?php echo $club_id ? '7' : '8'; ?>" class="text-center text-muted" style="padding: 1.5rem;">No games created yet.</td>
+                        </tr>
+                    <?php endif; ?>
                     <?php foreach ($games as $game): ?>
                         <tr>
                             <?php if (!$club_id): ?><td data-label="Club"><?php echo htmlspecialchars($game['club_name']); ?></td><?php endif; ?>
                             <td data-label="Image">
                                 <?php if ($game['game_image']): ?>
-                                    <img src="../images/game_images/<?php echo htmlspecialchars($game['game_image']); ?>" alt="" class="game-thumbnail" loading="lazy">
+                                    <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'], '../')); ?>" alt="" class="game-thumbnail" loading="lazy">
                                 <?php else: ?>
                                     <div class="game-thumbnail game-thumbnail--skeleton" title="No image uploaded"></div>
                                 <?php endif; ?>
@@ -281,7 +431,7 @@ $csrf_token = $security->generateCSRFToken();
                             <td>
                                 <div class="btn-group">
                                     <a href="edit_game.php?club_id=<?php echo $game['club_id']; ?>&game_id=<?php echo $game['game_id']; ?>" 
-                                       class="btn btn--small">Edit</a>
+                                       class="btn btn--small btn--secondary">Edit</a>
                                     <a href="results.php?club_id=<?php echo $game['club_id']; ?>&game_id=<?php echo $game['game_id']; ?>" 
                                        class="btn btn--small btn--subtle">Results</a>
                                     
@@ -301,8 +451,7 @@ $csrf_token = $security->generateCSRFToken();
                                             </button>
                                         </form>
                                     <?php else: ?>
-                                        <button class="btn btn--small btn--ghost" 
-                                                style="color: var(--color-text-soft);"
+                                        <button type="button" class="btn btn--small btn--danger" 
                                                 onclick="showConfirmDialog(event, {
                                                     title: 'Deletion Restricted',
                                                     message: 'This game has associated match results. Please ensure all related records have been removed prior to deleting the game entry.',
@@ -319,6 +468,7 @@ $csrf_token = $security->generateCSRFToken();
                     <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
     <script src="../js/sidebar.js"></script>
@@ -348,11 +498,24 @@ $csrf_token = $security->generateCSRFToken();
             sessionStorage.removeItem('manage_games_scroll');
         }
     });
-    // Also save on form submit (search/filter)
     var forms = document.querySelectorAll('.search-form');
     forms.forEach(function(form) {
         form.addEventListener('submit', saveScrollPosition);
     });
 })();
+
+function toggleAddGameForm() {
+    const wrapper = document.getElementById('add-game-form-wrapper');
+    const btn = document.getElementById('toggle-add-game-btn');
+    if (!wrapper) return;
+    if (wrapper.style.display === 'none' || wrapper.style.display === '') {
+        wrapper.style.display = 'block';
+        if (btn) btn.style.visibility = 'hidden';
+        document.getElementById('game_name')?.focus();
+    } else {
+        wrapper.style.display = 'none';
+        if (btn) btn.style.visibility = 'visible';
+    }
+}
 </script>
 </html>

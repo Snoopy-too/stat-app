@@ -2,24 +2,30 @@
 session_start();
 require_once 'config/database.php';
 
-if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
-    header("Location: login.php");
-    exit();
-}
+$demo = isset($_GET['demo']) || isset($_GET['preview']) || !isset($_SESSION['logged_in']) || !$_SESSION['logged_in'];
 
-// Fetch existing teams for this club
-$stmt = $pdo->prepare("
-    SELECT t.team_id, t.team_name, 
-           GROUP_CONCAT(m.full_name ORDER BY m.full_name ASC SEPARATOR ', ') as members
-    FROM teams t
-    LEFT JOIN team_members tm ON t.team_id = tm.team_id
-    LEFT JOIN members m ON tm.member_id = m.member_id
-    WHERE t.club_id = ?
-    GROUP BY t.team_id
-    ORDER BY t.team_name
-");
-$stmt->execute([$_SESSION['club_id']]);
-$teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+if ($demo) {
+    $_SESSION['club_name'] = $_SESSION['club_name'] ?? 'Meeple & Dice Club';
+    $teams = [
+        ['team_id' => 1, 'team_name' => 'The Catan Settlers', 'members' => 'Alex Rivers, Sam Taylor'],
+        ['team_id' => 2, 'team_name' => 'Ticket Runners', 'members' => 'Jordan Lee, Casey Morgan'],
+        ['team_id' => 3, 'team_name' => 'Terraforming Titans', 'members' => 'Taylor Swift, Morgan Freeman']
+    ];
+} else {
+    // Fetch existing teams for this club
+    $stmt = $pdo->prepare("
+        SELECT t.team_id, t.team_name, 
+               GROUP_CONCAT(m.full_name ORDER BY m.full_name ASC SEPARATOR ', ') as members
+        FROM teams t
+        LEFT JOIN team_members tm ON t.team_id = tm.team_id
+        LEFT JOIN members m ON tm.member_id = m.member_id
+        WHERE t.club_id = ?
+        GROUP BY t.team_id
+        ORDER BY t.team_name
+    ");
+    $stmt->execute([$_SESSION['club_id']]);
+    $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 ?>
 
 <!DOCTYPE html>

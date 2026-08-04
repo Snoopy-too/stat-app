@@ -70,7 +70,7 @@ if ($minutes > 0 || $hours == 0) {
         <?php NavigationHelper::renderSidebarToggle(); ?>
         <?php NavigationHelper::renderCompactHeader('Team Game Result Details', htmlspecialchars($result['game_name'])); ?>
         <div class="header-actions">
-            <a href="edit_team_result.php?result_id=<?php echo $result_id; ?>" class="btn btn--small">Edit</a>
+            <a href="edit_team_result.php?result_id=<?php echo $result_id; ?>" class="btn btn--small btn--secondary">Edit</a>
             <button type="button" class="btn btn--danger btn--small" onclick="confirmTeamResultDeletion(event, <?php echo $result_id; ?>)">Delete</button>
         </div>
     </div>

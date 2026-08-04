@@ -5,7 +5,7 @@ require_once '../config/database.php';
 require_once '../includes/SecurityUtils.php';
 require_once '../includes/NavigationHelper.php';
 
-// Ensure game_result_losers table exists
+// Ensure game_result_losers and cooperative tables exist
 try {
     $pdo->query("SELECT 1 FROM game_result_losers LIMIT 1");
 } catch (PDOException $e) {
@@ -17,9 +17,40 @@ try {
             FOREIGN KEY (result_id) REFERENCES game_results(result_id) ON DELETE CASCADE,
             FOREIGN KEY (member_id) REFERENCES members(member_id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
-    } catch (PDOException $e2) {
-        // Ignore error if table creation fails, might be permissions
-    }
+    } catch (PDOException $e2) {}
+}
+
+try {
+    $pdo->query("SELECT 1 FROM cooperative_game_results LIMIT 1");
+} catch (PDOException $e) {
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS cooperative_game_results (
+            result_id INT AUTO_INCREMENT PRIMARY KEY,
+            game_id INT NOT NULL,
+            session_id VARCHAR(255) NOT NULL,
+            outcome ENUM('win','loss') NOT NULL,
+            score INT DEFAULT NULL,
+            difficulty VARCHAR(100) DEFAULT NULL,
+            scenario VARCHAR(255) DEFAULT NULL,
+            num_participants INT DEFAULT NULL,
+            played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            duration INT DEFAULT NULL,
+            notes TEXT DEFAULT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (game_id) REFERENCES games(game_id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS cooperative_result_participants (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            result_id INT NOT NULL,
+            participant_type ENUM('member','team') NOT NULL,
+            member_id INT DEFAULT NULL,
+            team_id INT DEFAULT NULL,
+            FOREIGN KEY (result_id) REFERENCES cooperative_game_results(result_id) ON DELETE CASCADE,
+            FOREIGN KEY (member_id) REFERENCES members(member_id) ON DELETE CASCADE,
+            FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+    } catch (PDOException $e2) {}
 }
 
 // Clear any existing success messages
@@ -47,6 +78,8 @@ if (!$game) {
     exit();
 }
 
+$club_name = NavigationHelper::getClubName($pdo, $club_id);
+
 // Fetch active members for the dropdown
 $stmt = $pdo->prepare('SELECT m.member_id as id, m.nickname as name
     FROM members m
@@ -54,6 +87,14 @@ $stmt = $pdo->prepare('SELECT m.member_id as id, m.nickname as name
     ORDER BY m.nickname ASC');
 $stmt->execute([$club_id]);
 $members = $stmt->fetchAll();
+
+// Fetch active teams for team game type
+$stmt = $pdo->prepare('SELECT t.team_id as id, t.team_name as name
+    FROM teams t
+    WHERE t.club_id = ?
+    ORDER BY t.team_name ASC');
+$stmt->execute([$club_id]);
+$teams = $stmt->fetchAll();
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -65,38 +106,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $error = null; // Initialize error variable
-    $game_type = $_POST['game_type'] ?? 'ranked';
+    $game_type = $_POST['game_type'] ?? 'winner_losers';
     $winner_id = $_POST['winner_id'] ?? null;
     $second_place_id = $_POST['second_place_id'] ?? null;
-    $duration = $_POST['duration'] ?? null;
     $notes = $_POST['notes'] ?? '';
     $played_at = $_POST['played_at'] ?? null;
-    $additional_places = isset($_POST['additional_places']) ? array_filter($_POST['additional_places']) : []; // Filter out empty values
+    $additional_places = isset($_POST['additional_places']) ? array_filter($_POST['additional_places']) : [];
     $losers = isset($_POST['losers']) ? array_filter($_POST['losers']) : [];
+    $coop_outcome = $_POST['coop_outcome'] ?? 'win';
+    $coop_players = isset($_POST['coop_players']) ? array_filter($_POST['coop_players']) : [];
+    $team_winner_id = $_POST['team_winner_id'] ?? null;
+    $team_losers = isset($_POST['team_losers']) ? array_filter($_POST['team_losers']) : [];
 
-    file_put_contents('../debug_log.txt', "Validating inputs... Game Type: $game_type\n", FILE_APPEND);
+    // Parse duration from hours and minutes selects (default 2h 0m = 120 mins)
+    $duration_hours = isset($_POST['duration_hours']) ? (int)$_POST['duration_hours'] : 2;
+    $duration_minutes = isset($_POST['duration_minutes']) ? (int)$_POST['duration_minutes'] : 0;
+    $duration = ($duration_hours * 60) + $duration_minutes;
 
-    // Requirement 1: Check if second place is selected (only for ranked games)
-    if ($game_type === 'ranked' && empty($second_place_id)) {
-        $error = 'Please select a member for second place. If playing solo, create a member named "none" in the Manage Members page.';
-    } elseif ($game_type === 'winner_losers' && empty($losers)) {
-        $error = 'Please select at least one loser.';
-    } else {
-        // Requirement 2: Check for unique entries across all places
-        if ($game_type === 'ranked') {
+    // Requirement validations
+    if ($game_type === 'ranked') {
+        if (empty($second_place_id)) {
+            $error = 'Please select a member for second place.';
+        } else {
             $all_selected_members = array_filter(array_merge([$winner_id, $second_place_id], $additional_places));
+            if (count($all_selected_members) !== count(array_unique($all_selected_members))) {
+                $error = 'Duplicate members selected. Each member can only occupy one place.';
+            }
+        }
+    } elseif ($game_type === 'winner_losers') {
+        if (empty($winner_id)) {
+            $error = 'Please select a winner.';
+        } elseif (empty($losers)) {
+            $error = 'Please select at least one loser.';
         } else {
             $all_selected_members = array_filter(array_merge([$winner_id], $losers));
+            if (count($all_selected_members) !== count(array_unique($all_selected_members))) {
+                $error = 'Duplicate members selected. The winner cannot also be a loser.';
+            }
         }
-        
-        if (count($all_selected_members) !== count(array_unique($all_selected_members))) {
-            $error = 'Duplicate members selected. Each member can only occupy one place.';
+    } elseif ($game_type === 'cooperative') {
+        if (empty($_POST['coop_outcome'])) {
+            $error = 'Please select a cooperative outcome (Victory or Defeat).';
+        } elseif (empty($coop_players)) {
+            $error = 'Please select at least one player for the cooperative game.';
+        }
+    } elseif ($game_type === 'teams') {
+        if (empty($team_winner_id)) {
+            $error = 'Please select a winning team.';
+        } elseif (empty($team_losers)) {
+            $error = 'Please select at least one losing team.';
+        } else {
+            if (in_array($team_winner_id, $team_losers)) {
+                $error = 'The winning team cannot also be a losing team.';
+            }
         }
     }
 
-    // Requirement 3: Check if duration is provided
-    if ($error === null && empty($duration)) {
-        $error = 'Please enter the duration of the game.';
+    if ($error === null && $duration <= 0) {
+        $error = 'Please enter a valid duration for the game.';
     }
     
     // Proceed only if there are no errors
@@ -105,65 +172,105 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $pdo->beginTransaction();
             
-            // Generate a unique session ID for this game result
             $session_id = uniqid('game_', true);
-            
-            // Insert a single game result record
-            $stmt = $pdo->prepare('INSERT INTO game_results (game_id, session_id, member_id, position, played_at, duration, notes, num_players, winner, place_2, place_3, place_4, place_5, place_6, place_7, place_8) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-            
-            // Calculate total number of players
-            $num_players = 1; // Winner
-            if ($game_type === 'ranked') {
-                $num_players += 1; // Second place
-                $num_players += count(array_filter($additional_places));
-            } else {
-                $num_players += count($losers);
-            }
-            
-            // Initialize places array with nulls
-            $places = array_fill(0, 7, null);
-            if ($game_type === 'ranked') {
-                if ($second_place_id) $places[0] = $second_place_id;
-                
-                // Fill in additional places
-                $place_index = 1; // Start at index 1 since index 0 is for second place
-                foreach ($additional_places as $member_id) {
-                    if ($member_id && $place_index < 7) { // Ensure we don't exceed place_8
-                        $places[$place_index] = $member_id;
-                        $place_index++;
-                    }
-                }
-            }
-            
-            // Fix date format
             $formatted_played_at = str_replace('T', ' ', $played_at);
             if (strlen($formatted_played_at) == 16) $formatted_played_at .= ':00';
-            
-            // Insert single record with all places
-            $stmt->execute([
-                $game_id,
-                $session_id,
-                $winner_id,
-                1, // position
-                $formatted_played_at,
-                $duration,
-                $notes,
-                $num_players,
-                $winner_id, // winner
-                $places[0], // place_2
-                $places[1], // place_3
-                $places[2], // place_4
-                $places[3], // place_5
-                $places[4], // place_6
-                $places[5], // place_7
-                $places[6]  // place_8
-            ]);
-            
-            $result_id = $pdo->lastInsertId();
-            
-            // Insert losers if applicable
-            if ($game_type === 'winner_losers') {
-                if (!empty($losers)) {
+
+            if ($game_type === 'cooperative') {
+                // Insert into cooperative_game_results
+                $stmt = $pdo->prepare('INSERT INTO cooperative_game_results (game_id, session_id, outcome, num_participants, played_at, duration, notes) VALUES (?, ?, ?, ?, ?, ?, ?)');
+                $stmt->execute([
+                    $game_id,
+                    $session_id,
+                    $coop_outcome,
+                    count($coop_players),
+                    $formatted_played_at,
+                    $duration,
+                    $notes
+                ]);
+                $result_id = $pdo->lastInsertId();
+
+                // Insert cooperative participants
+                $part_stmt = $pdo->prepare('INSERT INTO cooperative_result_participants (result_id, participant_type, member_id) VALUES (?, "member", ?)');
+                foreach ($coop_players as $m_id) {
+                    $part_stmt->execute([$result_id, $m_id]);
+                }
+            } elseif ($game_type === 'teams') {
+                // Insert into team_game_results
+                $num_teams = 1 + count($team_losers);
+                $places = array_fill(0, 7, null);
+                $t_index = 0;
+                foreach ($team_losers as $t_id) {
+                    if ($t_index < 7) {
+                        $places[$t_index] = $t_id;
+                        $t_index++;
+                    }
+                }
+
+                $stmt = $pdo->prepare('INSERT INTO team_game_results (game_id, session_id, team_id, position, played_at, duration, notes, num_teams, winner, place_2, place_3, place_4, place_5, place_6, place_7, place_8) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                $stmt->execute([
+                    $game_id,
+                    $session_id,
+                    $team_winner_id,
+                    1,
+                    $formatted_played_at,
+                    $duration,
+                    $notes,
+                    $num_teams,
+                    $team_winner_id,
+                    $places[0],
+                    $places[1],
+                    $places[2],
+                    $places[3],
+                    $places[4],
+                    $places[5],
+                    $places[6]
+                ]);
+            } else {
+                // Insert into game_results (ranked / winner_losers)
+                $stmt = $pdo->prepare('INSERT INTO game_results (game_id, session_id, member_id, position, played_at, duration, notes, num_players, winner, place_2, place_3, place_4, place_5, place_6, place_7, place_8) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                
+                $num_players = 1;
+                if ($game_type === 'ranked') {
+                    $num_players += 1 + count(array_filter($additional_places));
+                } else {
+                    $num_players += count($losers);
+                }
+                
+                $places = array_fill(0, 7, null);
+                if ($game_type === 'ranked') {
+                    if ($second_place_id) $places[0] = $second_place_id;
+                    $place_index = 1;
+                    foreach ($additional_places as $member_id) {
+                        if ($member_id && $place_index < 7) {
+                            $places[$place_index] = $member_id;
+                            $place_index++;
+                        }
+                    }
+                }
+                
+                $stmt->execute([
+                    $game_id,
+                    $session_id,
+                    $winner_id,
+                    1,
+                    $formatted_played_at,
+                    $duration,
+                    $notes,
+                    $num_players,
+                    $winner_id,
+                    $places[0],
+                    $places[1],
+                    $places[2],
+                    $places[3],
+                    $places[4],
+                    $places[5],
+                    $places[6]
+                ]);
+                
+                $result_id = $pdo->lastInsertId();
+                
+                if ($game_type === 'winner_losers' && !empty($losers)) {
                     $loser_stmt = $pdo->prepare("INSERT INTO game_result_losers (result_id, member_id) VALUES (?, ?)");
                     foreach ($losers as $loser_id) {
                         $loser_stmt->execute([$result_id, $loser_id]);
@@ -175,7 +282,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['success_message'] = 'Game result has been successfully saved.';
             header('Location: results.php?game_id=' . $game_id . '&club_id=' . $club_id . '&success=1');
             exit();
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $pdo->rollBack();
             $error = 'Error saving result: ' . $e->getMessage();
         }
@@ -199,11 +306,11 @@ $csrf_token = $security->generateCSRFToken();
     </style>
 </head>
 <body class="has-sidebar">
-    <?php NavigationHelper::renderAdminSidebar('games', $club_id); ?>
+    <?php NavigationHelper::renderAdminSidebar('new_result', $club_id, $club_name); ?>
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
-        <?php NavigationHelper::renderCompactHeader('Add Game Result', htmlspecialchars($game['game_name'])); ?>
+        <?php NavigationHelper::renderCompactHeader('Add Game Result (' . $club_name . ')', htmlspecialchars($game['game_name'])); ?>
     </div>
     
     <style>
@@ -211,8 +318,6 @@ $csrf_token = $security->generateCSRFToken();
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
         gap: var(--spacing-3);
-        max-height: 300px;
-        overflow-y: auto;
         padding: var(--spacing-3);
         border: 1px solid var(--color-border);
         border-radius: var(--radius-md);
@@ -226,6 +331,8 @@ $csrf_token = $security->generateCSRFToken();
         padding: var(--spacing-2);
         border-radius: var(--radius-sm);
         transition: background-color var(--transition-fast);
+        cursor: pointer;
+        user-select: none;
     }
     
     .checkbox-item:hover {
@@ -252,24 +359,52 @@ $csrf_token = $security->generateCSRFToken();
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <div id="validation-errors" class="message message--error" style="display: none;"></div>
                 <div class="form-group">
-                    <label for="played_at">Date Played: <span class="required-marker">*</span></label>
+                    <label for="played_at" class="form-label">Date Played: <span class="required-marker">*</span></label>
                     <input type="datetime-local" id="played_at" name="played_at" class="form-control">
                 </div>
                 
                 <div class="form-group">
-                    <label>Game Type:</label>
+                    <label class="form-label">Duration: <span class="required-marker">*</span></label>
+                    <div style="display: flex; gap: 0.75rem; align-items: center;">
+                        <div style="flex: 1; display: flex; align-items: center; gap: 0.35rem;">
+                            <select name="duration_hours" id="duration_hours" class="form-control" style="flex: 1;">
+                                <?php for ($h = 0; $h <= 12; $h++): ?>
+                                    <option value="<?php echo $h; ?>" <?php echo ($h === 2) ? 'selected' : ''; ?>><?php echo $h; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                            <span style="font-size: 0.875rem; color: var(--color-text-muted);">hrs</span>
+                        </div>
+                        <div style="flex: 1; display: flex; align-items: center; gap: 0.35rem;">
+                            <select name="duration_minutes" id="duration_minutes" class="form-control" style="flex: 1;">
+                                <?php for ($m = 0; $m <= 50; $m += 10): ?>
+                                    <option value="<?php echo $m; ?>" <?php echo ($m === 0) ? 'selected' : ''; ?>><?php echo $m; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                            <span style="font-size: 0.875rem; color: var(--color-text-muted);">mins</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Game Type:</label>
                     <div class="radio-group">
-                        <label class="radio-label">
-                            <input type="radio" name="game_type" value="ranked" checked onchange="toggleGameType()"> Ranked (1st, 2nd, 3rd...)
+                        <label class="radio-label" style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                            <input type="radio" name="game_type" value="winner_losers" class="form-check-input" checked onchange="toggleGameType()"> Winner vs. Losers
                         </label>
-                        <label class="radio-label">
-                            <input type="radio" name="game_type" value="winner_losers" onchange="toggleGameType()"> Winner vs Losers
+                        <label class="radio-label" style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                            <input type="radio" name="game_type" value="ranked" class="form-check-input" onchange="toggleGameType()"> Ranked (1st, 2nd, 3rd...)
+                        </label>
+                        <label class="radio-label" style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                            <input type="radio" name="game_type" value="teams" class="form-check-input" onchange="toggleGameType()"> Teams
+                        </label>
+                        <label class="radio-label" style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                            <input type="radio" name="game_type" value="cooperative" class="form-check-input" onchange="toggleGameType()"> Cooperative
                         </label>
                     </div>
                 </div>
                 
-                <div class="form-group">
-                    <label for="winner_id">Winner: <span class="required-marker">*</span></label>
+                <div class="form-group" id="winner-section">
+                    <label for="winner_id" class="form-label">Winner: <span class="required-marker">*</span></label>
                     <select id="winner_id" name="winner_id" class="form-control">
                         <option value="">Select Winner</option>
                         <?php foreach ($members as $member): ?>
@@ -280,9 +415,9 @@ $csrf_token = $security->generateCSRFToken();
                     </select>
                 </div>
                 
-                <div id="ranked-section">
+                <div id="ranked-section" style="display: none;">
                     <div class="form-group">
-                        <label for="second_place_id">Second Place: <span class="required-marker">*</span></label>
+                        <label for="second_place_id" class="form-label">Second Place: <span class="required-marker">*</span></label>
                         <select id="second_place_id" name="second_place_id" class="form-control">
                             <option value="">Select Second Place</option>
                             <?php foreach ($members as $member): ?>
@@ -300,32 +435,87 @@ $csrf_token = $security->generateCSRFToken();
                     </div>
                 </div>
 
-                <div id="losers-section" style="display: none;">
-                    <label class="form-label">Select Losers:</label>
+                <div id="losers-section">
+                    <label class="form-label">Select Losers: <span class="required-marker">*</span></label>
                     <div id="losers-checkbox-list" class="checkbox-grid">
                         <?php foreach ($members as $member): ?>
-                            <div class="form-check checkbox-item">
-                                <input type="checkbox" name="losers[]" id="loser_<?php echo $member['id']; ?>" value="<?php echo $member['id']; ?>" class="form-check-input loser-checkbox">
-                                <label for="loser_<?php echo $member['id']; ?>" class="form-check-label"><?php echo htmlspecialchars($member['name']); ?></label>
-                            </div>
+                            <label for="loser_<?php echo $member['id']; ?>" class="form-check checkbox-item">
+                                <input type="checkbox" name="losers[]" id="loser_<?php echo $member['id']; ?>" value="<?php echo $member['id']; ?>" class="form-check-input loser-checkbox" checked>
+                                <span class="form-check-label"><?php echo htmlspecialchars($member['name']); ?></span>
+                            </label>
                         <?php endforeach; ?>
                     </div>
-                    <div class="help-text mt-2">Select all members who lost this game. The winner cannot be selected as a loser.</div>
+                    <div class="help-text mt-2">Select all members who lost this game.</div>
+                </div>
+
+                <div id="cooperative-section" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Outcome: <span class="required-marker">*</span></label>
+                        <div class="radio-group">
+                            <label class="radio-label" style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                                <input type="radio" name="coop_outcome" value="win" class="form-check-input"> Victory
+                            </label>
+                            <label class="radio-label" style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                                <input type="radio" name="coop_outcome" value="loss" class="form-check-input"> Defeat
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Select Players: <span class="required-marker">*</span></label>
+                        <div id="coop-checkbox-list" class="checkbox-grid">
+                            <?php foreach ($members as $member): ?>
+                                <label for="coop_player_<?php echo $member['id']; ?>" class="form-check checkbox-item">
+                                    <input type="checkbox" name="coop_players[]" id="coop_player_<?php echo $member['id']; ?>" value="<?php echo $member['id']; ?>" class="form-check-input coop-checkbox" checked>
+                                    <span class="form-check-label"><?php echo htmlspecialchars($member['name']); ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                        <div class="help-text mt-2">Select all members who played in this cooperative game.</div>
+                    </div>
+                </div>
+
+                <div id="teams-section" style="display: none;">
+                    <?php if (empty($teams)): ?>
+                        <div class="message message--warning" style="margin-bottom: 1rem;">
+                            No teams found for this club. Please <a href="club_teams.php?club_id=<?php echo $club_id; ?>">create teams</a> first.
+                        </div>
+                    <?php else: ?>
+                        <div class="form-group">
+                            <label for="team_winner_id" class="form-label">Winning Team: <span class="required-marker">*</span></label>
+                            <select id="team_winner_id" name="team_winner_id" class="form-control">
+                                <option value="">Select Winning Team</option>
+                                <?php foreach ($teams as $team): ?>
+                                    <option value="<?php echo $team['id']; ?>">
+                                        <?php echo htmlspecialchars($team['name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Select Losing Team(s): <span class="required-marker">*</span></label>
+                            <div id="team-losers-checkbox-list" class="checkbox-grid">
+                                <?php foreach ($teams as $team): ?>
+                                    <label for="team_loser_<?php echo $team['id']; ?>" class="form-check checkbox-item">
+                                        <input type="checkbox" name="team_losers[]" id="team_loser_<?php echo $team['id']; ?>" value="<?php echo $team['id']; ?>" class="form-check-input team-loser-checkbox">
+                                        <span class="form-check-label"><?php echo htmlspecialchars($team['name']); ?></span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                            <div class="help-text mt-2">Select all teams that lost this game.</div>
+                        </div>
+                    <?php endif; ?>
                 </div>
                 
                 <div class="form-group">
-                    <label for="duration">Duration (minutes): <span class="required-marker">*</span></label>
-                    <input type="number" id="duration" name="duration" min="1" class="form-control">
-                </div>
-                
-                <div class="form-group">
-                    <label for="notes">Notes:</label>
+                    <label for="notes" class="form-label">Notes:</label>
                     <textarea id="notes" name="notes" class="form-control" rows="4"></textarea>
                 </div>
                 
                 <div class="form-actions">
                     <button type="submit" class="btn">Save Result</button>
-                    <a href="results.php?game_id=<?php echo $game_id; ?>&club_id=<?php echo $club_id; ?>" 
+                    <a href="club_new_results.php?club_id=<?php echo $club_id; ?>" 
                        class="btn btn--subtle">Cancel</a>
                 </div>
             </form>
@@ -341,30 +531,72 @@ $csrf_token = $security->generateCSRFToken();
 
     function toggleGameType() {
         const gameType = document.querySelector('input[name="game_type"]:checked').value;
+        const winnerSection = document.getElementById('winner-section');
         const rankedSection = document.getElementById('ranked-section');
         const losersSection = document.getElementById('losers-section');
+        const coopSection = document.getElementById('cooperative-section');
+        const teamsSection = document.getElementById('teams-section');
         
         if (gameType === 'ranked') {
+            winnerSection.style.display = 'block';
             rankedSection.style.display = 'block';
             losersSection.style.display = 'none';
-        } else {
+            coopSection.style.display = 'none';
+            if (teamsSection) teamsSection.style.display = 'none';
+        } else if (gameType === 'cooperative') {
+            winnerSection.style.display = 'none';
+            rankedSection.style.display = 'none';
+            losersSection.style.display = 'none';
+            coopSection.style.display = 'block';
+            if (teamsSection) teamsSection.style.display = 'none';
+        } else if (gameType === 'teams') {
+            winnerSection.style.display = 'none';
+            rankedSection.style.display = 'none';
+            losersSection.style.display = 'none';
+            coopSection.style.display = 'none';
+            if (teamsSection) teamsSection.style.display = 'block';
+        } else { // winner_losers
+            winnerSection.style.display = 'block';
             rankedSection.style.display = 'none';
             losersSection.style.display = 'block';
+            coopSection.style.display = 'none';
+            if (teamsSection) teamsSection.style.display = 'none';
             
             // Clear ranked inputs
             document.getElementById('second_place_id').value = '';
             document.getElementById('additional-places').innerHTML = '';
             placeCount = 2;
         }
-        updateDisabledOptions();
+        updatePlayerSelections();
+        updateTeamSelections();
+    }
+
+    function updateTeamSelections() {
+        const teamWinnerSelect = document.getElementById('team_winner_id');
+        if (!teamWinnerSelect) return;
+        const teamWinnerId = teamWinnerSelect.value;
+        const teamLoserCheckboxes = document.querySelectorAll('.team-loser-checkbox');
+        teamLoserCheckboxes.forEach(checkbox => {
+            const parentItem = checkbox.closest('.checkbox-item');
+            if (teamWinnerId && checkbox.value === teamWinnerId) {
+                checkbox.checked = false;
+                if (parentItem) parentItem.style.display = 'none';
+            } else {
+                if (parentItem) parentItem.style.display = 'flex';
+            }
+        });
     }
 
     // Add change event listeners to all dropdowns
-    document.getElementById('winner_id').addEventListener('change', updateDisabledOptions);
-    document.getElementById('second_place_id').addEventListener('change', updateDisabledOptions);
+    document.getElementById('winner_id').addEventListener('change', updatePlayerSelections);
+    document.getElementById('second_place_id').addEventListener('change', updatePlayerSelections);
+    if (document.getElementById('team_winner_id')) {
+        document.getElementById('team_winner_id').addEventListener('change', updateTeamSelections);
+    }
     
     // Initialize the disabled state
-    updateDisabledOptions();
+    updatePlayerSelections();
+    updateTeamSelections();
     
     // Set default date to user's current local time
     const now = new Date();
@@ -402,24 +634,18 @@ $csrf_token = $security->generateCSRFToken();
         
         container.appendChild(placeDiv);
         
-        // Add change event listener to the new select
-        placeDiv.querySelector('select').addEventListener('change', updateDisabledOptions);
-        updateDisabledOptions();
+        placeDiv.querySelector('select').addEventListener('change', updatePlayerSelections);
+        updatePlayerSelections();
         
         placeDiv.querySelector('.remove-place').addEventListener('click', function() {
             placeDiv.remove();
             placeCount--;
-            updateDisabledOptions();
+            updatePlayerSelections();
         });
     });
 
-    // Loser fields are now handled by checkboxes
-
-    // add-loser button is removed
-    
     function getOrdinalSuffix(i) {
-        const j = i % 10,
-              k = i % 100;
+        const j = i % 10, k = i % 100;
         if (j == 1 && k != 11) return 'st';
         if (j == 2 && k != 12) return 'nd';
         if (j == 3 && k != 13) return 'rd';
@@ -431,13 +657,11 @@ $csrf_token = $security->generateCSRFToken();
         const secondPlaceId = document.getElementById('second_place_id').value;
         const additionalPlacesSelects = document.querySelectorAll('select[name^="additional_places"]');
         
-        // Get all selected member IDs from the ranked section
         const selectedRankedIds = [winnerId, secondPlaceId];
         additionalPlacesSelects.forEach(select => {
             if (select.value) selectedRankedIds.push(select.value);
         });
         
-        // Update ranked dropdowns to disable already selected members
         const allRankedSelects = [
             document.getElementById('winner_id'),
             document.getElementById('second_place_id'),
@@ -452,21 +676,17 @@ $csrf_token = $security->generateCSRFToken();
             });
         });
 
-        // Update loser checkboxes
         const loserCheckboxes = document.querySelectorAll('.loser-checkbox');
         loserCheckboxes.forEach(checkbox => {
+            const parentItem = checkbox.closest('.checkbox-item');
             if (winnerId && checkbox.value === winnerId) {
-                checkbox.disabled = true;
                 checkbox.checked = false;
+                if (parentItem) parentItem.style.display = 'none';
             } else {
-                checkbox.disabled = false;
+                if (parentItem) parentItem.style.display = 'flex';
             }
         });
     }
-    
-    // Add event listeners for existing dropdowns
-    document.getElementById('winner_id').addEventListener('change', updatePlayerSelections);
-    document.getElementById('second_place_id').addEventListener('change', updatePlayerSelections);
 
     // Form validation
     document.getElementById('result-form').addEventListener('submit', function(e) {
@@ -479,27 +699,30 @@ $csrf_token = $security->generateCSRFToken();
             missingFields.push('Date Played');
         }
 
-        // Check Winner
-        if (!document.getElementById('winner_id').value) {
-            missingFields.push('Winner');
-        }
-
-        // Check ranked fields
+        // Check game type specific fields
         if (gameType === 'ranked') {
-            if (!document.getElementById('second_place_id').value) {
-                missingFields.push('Second Place');
-            }
-        } else {
-            // Check losers
+            if (!document.getElementById('winner_id').value) missingFields.push('Winner');
+            if (!document.getElementById('second_place_id').value) missingFields.push('Second Place');
+        } else if (gameType === 'cooperative') {
+            const coopOutcome = document.querySelector('input[name="coop_outcome"]:checked');
+            if (!coopOutcome) missingFields.push('Outcome (Victory or Defeat)');
+            const coopCheckboxes = document.querySelectorAll('.coop-checkbox:checked');
+            if (coopCheckboxes.length === 0) missingFields.push('At least one Player');
+        } else if (gameType === 'teams') {
+            if (!document.getElementById('team_winner_id') || !document.getElementById('team_winner_id').value) missingFields.push('Winning Team');
+            const teamLoserCheckboxes = document.querySelectorAll('.team-loser-checkbox:checked');
+            if (teamLoserCheckboxes.length === 0) missingFields.push('At least one Losing Team');
+        } else { // winner_losers
+            if (!document.getElementById('winner_id').value) missingFields.push('Winner');
             const loserCheckboxes = document.querySelectorAll('.loser-checkbox:checked');
-            if (loserCheckboxes.length === 0) {
-                missingFields.push('At least one Loser');
-            }
+            if (loserCheckboxes.length === 0) missingFields.push('At least one Loser');
         }
 
         // Check Duration
-        if (!document.getElementById('duration').value) {
-            missingFields.push('Duration');
+        const durH = parseInt(document.getElementById('duration_hours').value || '0', 10);
+        const durM = parseInt(document.getElementById('duration_minutes').value || '0', 10);
+        if (durH === 0 && durM === 0) {
+            missingFields.push('Duration (must be > 0)');
         }
 
         // Show errors or submit

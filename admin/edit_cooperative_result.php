@@ -93,7 +93,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $difficulty = !empty($_POST['difficulty']) ? $_POST['difficulty'] : null;
     $custom_difficulty = !empty($_POST['custom_difficulty']) ? $_POST['custom_difficulty'] : null;
     $scenario = !empty($_POST['scenario']) ? $_POST['scenario'] : null;
-    $duration = $_POST['duration'] ?? null;
+    // Parse duration from hours and minutes selects
+    $duration_hours = isset($_POST['duration_hours']) ? (int)$_POST['duration_hours'] : 2;
+    $duration_minutes = isset($_POST['duration_minutes']) ? (int)$_POST['duration_minutes'] : 0;
+    $duration = ($duration_hours * 60) + $duration_minutes;
     $notes = $_POST['notes'] ?? '';
     $played_at = $_POST['played_at'] ?? null;
     $new_participant_type = $_POST['participant_type'] ?? 'members';
@@ -221,29 +224,58 @@ $played_at_value = date('Y-m-d\TH:i', strtotime($result['played_at']));
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
 
                 <div class="form-group">
-                    <label for="played_at">Date Played:</label>
+                    <label for="played_at" class="form-label">Date Played:</label>
                     <input type="datetime-local" id="played_at" name="played_at" required class="form-control" value="<?php echo $played_at_value; ?>">
                 </div>
 
+                <?php 
+                    $durMins = isset($result['duration']) ? (int)$result['duration'] : 120;
+                    $durH = (int)floor($durMins / 60);
+                    if ($durH > 12) $durH = 12;
+                    $durM = (int)round(($durMins % 60) / 10) * 10;
+                    if ($durM > 50) $durM = 50;
+                ?>
                 <div class="form-group">
-                    <label>Outcome:</label>
+                    <label class="form-label">Duration: <span class="required-marker">*</span></label>
+                    <div style="display: flex; gap: 0.75rem; align-items: center;">
+                        <div style="flex: 1; display: flex; align-items: center; gap: 0.35rem;">
+                            <select name="duration_hours" id="duration_hours" class="form-control" style="flex: 1;">
+                                <?php for ($h = 0; $h <= 12; $h++): ?>
+                                    <option value="<?php echo $h; ?>" <?php echo ($h === $durH) ? 'selected' : ''; ?>><?php echo $h; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                            <span style="font-size: 0.875rem; color: var(--color-text-muted);">hrs</span>
+                        </div>
+                        <div style="flex: 1; display: flex; align-items: center; gap: 0.35rem;">
+                            <select name="duration_minutes" id="duration_minutes" class="form-control" style="flex: 1;">
+                                <?php for ($m = 0; $m <= 50; $m += 10): ?>
+                                    <option value="<?php echo $m; ?>" <?php echo ($m === $durM) ? 'selected' : ''; ?>><?php echo $m; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                            <span style="font-size: 0.875rem; color: var(--color-text-muted);">mins</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Outcome:</label>
                     <div class="radio-group">
-                        <label class="radio-label">
-                            <input type="radio" name="outcome" value="win" required <?php echo $result['outcome'] === 'win' ? 'checked' : ''; ?>> Win
+                        <label class="radio-label" style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                            <input type="radio" name="outcome" value="win" class="form-check-input" required <?php echo $result['outcome'] === 'win' ? 'checked' : ''; ?>> Win
                         </label>
-                        <label class="radio-label">
-                            <input type="radio" name="outcome" value="loss" <?php echo $result['outcome'] === 'loss' ? 'checked' : ''; ?>> Loss
+                        <label class="radio-label" style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                            <input type="radio" name="outcome" value="loss" class="form-check-input" <?php echo $result['outcome'] === 'loss' ? 'checked' : ''; ?>> Loss
                         </label>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="score">Score (optional):</label>
+                    <label for="score" class="form-label">Score (optional):</label>
                     <input type="number" id="score" name="score" min="0" class="form-control" value="<?php echo $result['score'] !== null ? htmlspecialchars($result['score']) : ''; ?>" placeholder="Enter score if applicable">
                 </div>
 
                 <div class="form-group">
-                    <label for="difficulty">Difficulty (optional):</label>
+                    <label for="difficulty" class="form-label">Difficulty (optional):</label>
                     <select id="difficulty" name="difficulty" class="form-control" onchange="toggleCustomDifficulty()">
                         <option value="">-- Select Difficulty --</option>
                         <option value="Easy" <?php echo $result['difficulty'] === 'Easy' ? 'selected' : ''; ?>>Easy</option>
@@ -257,29 +289,29 @@ $played_at_value = date('Y-m-d\TH:i', strtotime($result['played_at']));
                 </div>
 
                 <div class="form-group" id="custom-difficulty-group" style="display: <?php echo $is_custom_difficulty ? 'block' : 'none'; ?>;">
-                    <label for="custom_difficulty">Custom Difficulty:</label>
+                    <label for="custom_difficulty" class="form-label">Custom Difficulty:</label>
                     <input type="text" id="custom_difficulty" name="custom_difficulty" class="form-control" value="<?php echo $is_custom_difficulty ? htmlspecialchars($result['difficulty']) : ''; ?>" placeholder="Enter custom difficulty">
                 </div>
 
                 <div class="form-group">
-                    <label for="scenario">Scenario/Mission (optional):</label>
+                    <label for="scenario" class="form-label">Scenario/Mission (optional):</label>
                     <input type="text" id="scenario" name="scenario" class="form-control" value="<?php echo htmlspecialchars($result['scenario'] ?? ''); ?>" placeholder="Enter scenario or mission name">
                 </div>
 
                 <div class="form-group">
-                    <label>Participant Type:</label>
+                    <label class="form-label">Participant Type:</label>
                     <div class="radio-group">
-                        <label class="radio-label">
-                            <input type="radio" name="participant_type" value="members" <?php echo $participant_type === 'members' ? 'checked' : ''; ?> onchange="toggleParticipantType()"> Individual Members
+                        <label class="radio-label" style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                            <input type="radio" name="participant_type" value="members" class="form-check-input" <?php echo $participant_type === 'members' ? 'checked' : ''; ?> onchange="toggleParticipantType()"> Individual Members
                         </label>
-                        <label class="radio-label">
-                            <input type="radio" name="participant_type" value="team" <?php echo $participant_type === 'team' ? 'checked' : ''; ?> onchange="toggleParticipantType()"> Team
+                        <label class="radio-label" style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                            <input type="radio" name="participant_type" value="team" class="form-check-input" <?php echo $participant_type === 'team' ? 'checked' : ''; ?> onchange="toggleParticipantType()"> Team
                         </label>
                     </div>
                 </div>
 
                 <div id="members-section" style="display: <?php echo $participant_type === 'members' ? 'block' : 'none'; ?>;">
-                    <label>Participants:</label>
+                    <label class="form-label">Participants:</label>
                     <div id="participants-container"></div>
                     <div class="form-group">
                         <button type="button" id="add-participant" class="btn">Add Participant</button>
@@ -288,7 +320,7 @@ $played_at_value = date('Y-m-d\TH:i', strtotime($result['played_at']));
 
                 <div id="team-section" style="display: <?php echo $participant_type === 'team' ? 'block' : 'none'; ?>;">
                     <div class="form-group">
-                        <label for="team_id">Team:</label>
+                        <label for="team_id" class="form-label">Team:</label>
                         <select id="team_id" name="team_id" class="form-control">
                             <option value="">Select Team</option>
                             <?php foreach ($teams as $team): ?>
@@ -301,12 +333,7 @@ $played_at_value = date('Y-m-d\TH:i', strtotime($result['played_at']));
                 </div>
 
                 <div class="form-group">
-                    <label for="duration">Duration (minutes):</label>
-                    <input type="number" id="duration" name="duration" min="1" class="form-control" required value="<?php echo htmlspecialchars($result['duration']); ?>">
-                </div>
-
-                <div class="form-group">
-                    <label for="notes">Notes:</label>
+                    <label for="notes" class="form-label">Notes:</label>
                     <textarea id="notes" name="notes" class="form-control" rows="4"><?php echo htmlspecialchars($result['notes'] ?? ''); ?></textarea>
                 </div>
 

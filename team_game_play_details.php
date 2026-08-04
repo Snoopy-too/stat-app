@@ -149,7 +149,7 @@ if ($result_id > 0) {
             <div class="game-hero">
                 <div class="game-hero__image-container">
                     <?php if ($result['game_image']): ?>
-                        <img src="images/game_images/<?php echo htmlspecialchars($result['game_image']); ?>" alt="<?php echo htmlspecialchars($result['game_name']); ?>" class="game-hero__image">
+                        <img src="<?php echo htmlspecialchars(get_game_image_url($result['game_image'])); ?>" alt="<?php echo htmlspecialchars($result['game_name']); ?>" class="game-hero__image">
                     <?php else: ?>
                         <div class="game-hero__image-placeholder">No Image</div>
                     <?php endif; ?>

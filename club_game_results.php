@@ -5,6 +5,14 @@ require_once 'includes/NavigationHelper.php';
 $club_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $slug = isset($_GET['slug']) ? $_GET['slug'] : '';
 
+if ($club_id <= 0 && empty($slug)) {
+    $stmt = $pdo->query("SELECT club_id FROM clubs ORDER BY club_id ASC LIMIT 1");
+    $first = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($first) {
+        $club_id = (int)$first['club_id'];
+    }
+}
+
 // Get club details
 if ($club_id > 0 || !empty($slug)) {
     $sql = "SELECT club_id, club_name, slug FROM clubs WHERE ";
@@ -247,7 +255,7 @@ try {
                             <td data-label="Date Played"><?php echo date('F j, Y', strtotime($result['played_at'])); ?></td>
                             <td class="col-image">
                                 <?php if ($result['game_image']): ?>
-                                    <img src="images/game_images/<?php echo htmlspecialchars($result['game_image']); ?>" alt="" class="game-thumbnail" loading="lazy">
+                                    <img src="<?php echo htmlspecialchars(get_game_image_url($result['game_image'])); ?>" alt="" class="game-thumbnail" loading="lazy">
                                 <?php else: ?>
                                     <div class="game-thumbnail game-thumbnail--skeleton" title="No image uploaded"></div>
                                 <?php endif; ?>

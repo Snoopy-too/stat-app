@@ -15,14 +15,21 @@ if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSI
     exit();
 }
 
-// Get club_id from URL
-$club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : null;
+$club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
+if (!$club_id && !empty($_SESSION['current_club_id'])) {
+    $club_id = (int)$_SESSION['current_club_id'];
+}
+if (!$club_id && !empty($_SESSION['club_id'])) {
+    $club_id = (int)$_SESSION['club_id'];
+}
 
 if (!$club_id) {
-    $_SESSION['error'] = "No club selected.";
     header("Location: new_result.php");
     exit();
 }
+
+$_SESSION['current_club_id'] = $club_id;
+$_SESSION['club_id'] = $club_id;
 
 // Verify admin has access to this club
 $stmt = $pdo->prepare("
@@ -150,29 +157,17 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
-        <?php NavigationHelper::renderCompactHeader('Add Game Result', $club['club_name']); ?>
+        <?php NavigationHelper::renderCompactHeader('Add Game Result (' . $club['club_name'] . ')'); ?>
     </div>
 
     <div class="container">
         <?php display_session_message('error'); ?>
         <?php display_session_message('success'); ?>
 
-        <?php
-        // Check if admin has multiple clubs - show back link if so
-        $clubCountStmt = $pdo->prepare("SELECT COUNT(*) FROM club_admins WHERE admin_id = ?");
-        $clubCountStmt->execute([$_SESSION['admin_id']]);
-        $hasMultipleClubs = $clubCountStmt->fetchColumn() > 1;
-        ?>
-
-        <?php if ($hasMultipleClubs): ?>
-            <a href="club_list.php" class="back-link">
-                <span>←</span>
-                <span>Back to club selection</span>
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: var(--spacing-4);">
+            <a href="add_game.php?club_id=<?php echo $club_id; ?>" class="btn btn--primary">
+                <span style="color: white; font-weight: bold; margin-right: 0.35rem;">+</span>Add a Game
             </a>
-        <?php endif; ?>
-
-        <div class="page-intro">
-            <p>Select a game to record a new play result.</p>
         </div>
 
         <?php if (empty($games)): ?>
@@ -187,10 +182,10 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <?php else: ?>
             <div class="game-grid">
                 <?php foreach ($games as $game): ?>
-                    <a href="results.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game['game_id']; ?>" class="game-card">
+                    <a href="add_result.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game['game_id']; ?>" class="game-card">
                         <div class="game-card__image">
                             <?php if (!empty($game['game_image'])): ?>
-                                <img src="../images/game_images/<?php echo htmlspecialchars($game['game_image']); ?>" alt="<?php echo htmlspecialchars($game['game_name']); ?>" loading="lazy">
+                                <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'], '../')); ?>" alt="<?php echo htmlspecialchars($game['game_name']); ?>" loading="lazy">
                             <?php else: ?>
                                 <span class="game-card__placeholder">🎲</span>
                             <?php endif; ?>

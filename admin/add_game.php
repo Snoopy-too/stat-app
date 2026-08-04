@@ -3,6 +3,7 @@ declare(strict_types=1);
 session_start();
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
+ensure_game_image_column_exists($pdo);
 require_once '../includes/SecurityUtils.php';
 require_once '../includes/NavigationHelper.php';
 
@@ -13,106 +14,139 @@ if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSI
 
 $security = new SecurityUtils($pdo);
 
-// Get club_id from URL
+// Fetch clubs accessible to current admin
+$stmt = $pdo->prepare("
+    SELECT c.club_id, c.club_name 
+    FROM clubs c 
+    JOIN club_admins ca ON c.club_id = ca.club_id 
+    WHERE ca.admin_id = ?
+    ORDER BY c.club_name ASC
+");
+$stmt->execute([$_SESSION['admin_id']]);
+$user_clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+if (empty($user_clubs)) {
+    $_SESSION['error'] = "You must create a club before adding games.";
+    header("Location: manage_clubs.php");
+    exit();
+}
+
 $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : null;
 
+// Auto-select if only 1 club or validate requested club
 if (!$club_id) {
-    $_SESSION['error'] = "Club ID is required to add a game.";
-    header("Location: manage_games.php");
-    exit();
+    if (count($user_clubs) === 1) {
+        $club_id = (int)$user_clubs[0]['club_id'];
+    }
+} else {
+    // Verify admin access to requested club
+    $valid_ids = array_map('intval', array_column($user_clubs, 'club_id'));
+    if (!in_array($club_id, $valid_ids, true)) {
+        $_SESSION['error'] = "Unauthorized club access.";
+        header("Location: manage_clubs.php");
+        exit();
+    }
 }
 
-// Verify admin access to club
-$stmt = $pdo->prepare("
-    SELECT 1 
-    FROM club_admins 
-    WHERE club_id = ? AND admin_id = ?
-");
-$stmt->execute([$club_id, $_SESSION['admin_id']]);
-if (!$stmt->fetch()) {
-    $_SESSION['error'] = "Unauthorized club access.";
-    header("Location: dashboard.php");
-    exit();
+$club_name = '';
+if ($club_id) {
+    foreach ($user_clubs as $c) {
+        if ((int)$c['club_id'] === $club_id) {
+            $club_name = $c['club_name'];
+            break;
+        }
+    }
 }
-
-// Fetch club name
-$stmt = $pdo->prepare("SELECT club_name FROM clubs WHERE club_id = ?");
-$stmt->execute([$club_id]);
-$club = $stmt->fetch(PDO::FETCH_ASSOC);
-if (!$club) {
-    $_SESSION['error'] = "Club not found.";
-    header("Location: manage_games.php");
-    exit();
-}
-$club_name = $club['club_name'];
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate CSRF token
     if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
         $_SESSION['error'] = "Invalid security token. Please try again.";
-        header("Location: add_game.php?club_id=$club_id");
+        header("Location: add_game.php" . ($club_id ? "?club_id=$club_id" : ""));
         exit();
     }
 
-    if (!empty($_POST['game_name'])) {
-        $game_image = null;
-        
-        // Handle image upload
-        $uploadError = null;
-        if (isset($_FILES['game_image']) && $_FILES['game_image']['error'] !== UPLOAD_ERR_NO_FILE) {
-            if ($_FILES['game_image']['error'] === UPLOAD_ERR_OK) {
-                $file = $_FILES['game_image'];
-                $allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
-                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-                $maxSize = 1 * 1024 * 1024; // 1MB
-                
-                $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-                $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                $actualMime = finfo_file($finfo, $file['tmp_name']);
-                finfo_close($finfo);
-                
-                if (!in_array($extension, $allowedExtensions) || !in_array($actualMime, $allowedMimes)) {
-                    $uploadError = "Invalid file type. Only JPG, PNG, and GIF allowed.";
-                } elseif ($file['size'] > $maxSize) {
-                    $uploadError = "File is too large. Max size is 1MB.";
-                } else {
-                    $uploadDir = '../images/game_images/';
-                    if (!file_exists($uploadDir)) {
-                        mkdir($uploadDir, 0777, true);
-                    }
-                    
-                    $filename = 'game_' . uniqid() . '_' . time() . '.' . $extension;
-                    if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
-                        require_once '../includes/ImageHelper.php';
-                        ImageHelper::optimizeImage($uploadDir . $filename, $uploadDir . $filename);
-                        $game_image = $filename;
-                    } else {
-                        $uploadError = "Failed to move uploaded file. Check folder permissions.";
-                    }
-                }
-            } else {
-                $uploadError = "Upload error: " . $_FILES['game_image']['error'];
-            }
+    if (isset($_POST['club_id']) && (int)$_POST['club_id'] > 0) {
+        $post_club_id = (int)$_POST['club_id'];
+        $valid_ids = array_map('intval', array_column($user_clubs, 'club_id'));
+        if (in_array($post_club_id, $valid_ids, true)) {
+            $club_id = $post_club_id;
         }
+    }
 
-        if ($uploadError) {
-            $_SESSION['error'] = $uploadError;
+    try {
+        if (!empty($_POST['game_name'])) {
+            $game_image = null;
+            
+            // Handle image upload
+            $uploadError = null;
+            if (isset($_FILES['game_image']) && $_FILES['game_image']['error'] !== UPLOAD_ERR_NO_FILE) {
+                if ($_FILES['game_image']['error'] === UPLOAD_ERR_OK) {
+                    $file = $_FILES['game_image'];
+                    $allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
+                    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+                    $maxSize = 1 * 1024 * 1024; // 1MB
+                    
+                    $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    $actualMime = finfo_file($finfo, $file['tmp_name']);
+                    finfo_close($finfo);
+                    
+                    if (!in_array($extension, $allowedExtensions) || !in_array($actualMime, $allowedMimes)) {
+                        $uploadError = "Invalid file type. Only JPG, PNG, and GIF allowed.";
+                    } elseif ($file['size'] > $maxSize) {
+                        $uploadError = "File is too large. Max size is 1MB.";
+                    } else {
+                        $uploadDir = '../images/game_images/';
+                        if (!file_exists($uploadDir)) {
+                            mkdir($uploadDir, 0777, true);
+                        }
+                        
+                        $filename = 'game_' . uniqid() . '_' . time() . '.' . $extension;
+                        if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+                            require_once '../includes/ImageHelper.php';
+                            ImageHelper::optimizeImage($uploadDir . $filename, $uploadDir . $filename);
+                            $game_image = $filename;
+                        } else {
+                            $uploadError = "Failed to move uploaded file. Check folder permissions.";
+                        }
+                    }
+                } else {
+                    $uploadError = "Upload error: " . $_FILES['game_image']['error'];
+                }
+            }
+
+            // Handle image URL link (if no file uploaded)
+            if (empty($uploadError) && !empty($_POST['image_url'])) {
+                $imageUrl = trim($_POST['image_url']);
+                if (filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+                    $game_image = $imageUrl;
+                } else {
+                    $uploadError = "Invalid image URL format. Please enter a valid HTTP or HTTPS URL.";
+                }
+            }
+
+            if ($uploadError) {
+                $_SESSION['error'] = $uploadError;
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO games (club_id, game_name, min_players, max_players, game_image) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([
+                    $club_id,
+                    trim($_POST['game_name']),
+                    $_POST['min_players'],
+                    $_POST['max_players'],
+                    $game_image
+                ]);
+                $_SESSION['success'] = "Game added successfully!";
+                header("Location: manage_games.php?club_id=$club_id");
+                exit();
+            }
         } else {
-            $stmt = $pdo->prepare("INSERT INTO games (club_id, game_name, min_players, max_players, game_image) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([
-                $club_id,
-                trim($_POST['game_name']),
-                $_POST['min_players'],
-                $_POST['max_players'],
-                $game_image
-            ]);
-            $_SESSION['success'] = "Game added successfully!";
-            header("Location: manage_games.php?club_id=$club_id");
-            exit();
+            $_SESSION['error'] = "Game name is required.";
         }
-    } else {
-        $_SESSION['error'] = "Game name is required.";
+    } catch (Throwable $e) {
+        $_SESSION['error'] = "Failed to add game: " . $e->getMessage();
     }
 }
 
@@ -234,6 +268,21 @@ $csrf_token = $security->generateCSRFToken();
                 <form method="POST" class="form" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                     
+                    <?php if (count($user_clubs) > 1): ?>
+                        <div class="form-group">
+                            <label for="club_id" class="form-label">Select Club</label>
+                            <select name="club_id" id="club_id" required class="form-control">
+                                <?php foreach ($user_clubs as $c): ?>
+                                    <option value="<?php echo $c['club_id']; ?>" <?php echo ((int)$c['club_id'] === $club_id) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($c['club_name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    <?php else: ?>
+                        <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
+                    <?php endif; ?>
+
                     <div class="form-group">
                         <label for="game_name" class="form-label">Game Name</label>
                         <input type="text" name="game_name" id="game_name" placeholder="Enter game title..." required class="form-control">
@@ -254,10 +303,16 @@ $csrf_token = $security->generateCSRFToken();
                         <label class="form-label">Game Image</label>
                         <div class="upload-zone" id="upload-zone">
                             <span class="upload-zone__icon">🖼️</span>
-                            <span class="upload-zone__text">Click to upload or drag & drop</span>
+                            <span class="upload-zone__text">Click to upload or drag & drop file</span>
                             <span class="upload-zone__hint">JPG, PNG, GIF (Max 1MB, 600px recommended)</span>
                             <input type="file" name="game_image" id="game_image" accept="image/jpeg,image/png,image/gif">
                         </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="image_url" class="form-label">Or Image Link / URL</label>
+                        <input type="url" name="image_url" id="image_url" placeholder="https://example.com/image.jpg" class="form-control">
+                        <small style="color: var(--color-text-muted); font-size: var(--font-size-xs);">Paste a direct web link to an image file</small>
                     </div>
 
                     <div class="form-actions" style="margin-top: var(--spacing-6); display: flex; justify-content: flex-end; gap: var(--spacing-3);">

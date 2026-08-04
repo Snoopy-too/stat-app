@@ -68,7 +68,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $winner_id = $_POST['winner_id'] ?? null;
     $second_place_id = $_POST['second_place_id'] ?? null;
-    $duration = $_POST['duration'] ?? null;
+
+    // Parse duration from hours and minutes selects (default 2h 0m = 120 mins)
+    $duration_hours = isset($_POST['duration_hours']) ? (int)$_POST['duration_hours'] : 2;
+    $duration_minutes = isset($_POST['duration_minutes']) ? (int)$_POST['duration_minutes'] : 0;
+    $duration = ($duration_hours * 60) + $duration_minutes;
     $notes = $_POST['notes'] ?? '';
     $played_at = $_POST['played_at'] ?? null;
     $additional_places = isset($_POST['additional_places']) ? $_POST['additional_places'] : [];
@@ -156,7 +160,7 @@ $csrf_token = $security->generateCSRFToken();
     </style>
 </head>
 <body class="has-sidebar">
-    <?php NavigationHelper::renderAdminSidebar('games', $club_id); ?>
+    <?php NavigationHelper::renderAdminSidebar('new_result', $club_id); ?>
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
@@ -176,12 +180,34 @@ $csrf_token = $security->generateCSRFToken();
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <div id="validation-errors" class="message message--error" style="display: none;"></div>
                 <div class="form-group">
-                    <label for="played_at">Date Played: <span class="required-marker">*</span></label>
+                    <label for="played_at" class="form-label">Date Played: <span class="required-marker">*</span></label>
                     <input type="datetime-local" id="played_at" name="played_at" class="form-control">
                 </div>
                 
                 <div class="form-group">
-                    <label for="winner_id">Winner Team: <span class="required-marker">*</span></label>
+                    <label class="form-label">Duration: <span class="required-marker">*</span></label>
+                    <div style="display: flex; gap: 0.75rem; align-items: center;">
+                        <div style="flex: 1; display: flex; align-items: center; gap: 0.35rem;">
+                            <select name="duration_hours" id="duration_hours" class="form-control" style="flex: 1;">
+                                <?php for ($h = 0; $h <= 12; $h++): ?>
+                                    <option value="<?php echo $h; ?>" <?php echo ($h === 2) ? 'selected' : ''; ?>><?php echo $h; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                            <span style="font-size: 0.875rem; color: var(--color-text-muted);">hrs</span>
+                        </div>
+                        <div style="flex: 1; display: flex; align-items: center; gap: 0.35rem;">
+                            <select name="duration_minutes" id="duration_minutes" class="form-control" style="flex: 1;">
+                                <?php for ($m = 0; $m <= 50; $m += 10): ?>
+                                    <option value="<?php echo $m; ?>" <?php echo ($m === 0) ? 'selected' : ''; ?>><?php echo $m; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                            <span style="font-size: 0.875rem; color: var(--color-text-muted);">mins</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="winner_id" class="form-label">Winner Team: <span class="required-marker">*</span></label>
                     <select id="winner_id" name="winner_id" class="form-control">
                         <option value="">Select Winner Team</option>
                         <?php foreach ($teams as $team): ?>
@@ -193,7 +219,7 @@ $csrf_token = $security->generateCSRFToken();
                 </div>
                 
                 <div class="form-group">
-                    <label for="second_place_id">Second Place Team: <span class="required-marker">*</span></label>
+                    <label for="second_place_id" class="form-label">Second Place Team: <span class="required-marker">*</span></label>
                     <select id="second_place_id" name="second_place_id" class="form-control">
                         <option value="">Select Second Place Team</option>
                         <?php foreach ($teams as $team): ?>
@@ -211,18 +237,13 @@ $csrf_token = $security->generateCSRFToken();
                 </div>
                 
                 <div class="form-group">
-                    <label for="duration">Duration (minutes): <span class="required-marker">*</span></label>
-                    <input type="number" id="duration" name="duration" min="1" class="form-control">
-                </div>
-                
-                <div class="form-group">
-                    <label for="notes">Notes:</label>
+                    <label for="notes" class="form-label">Notes:</label>
                     <textarea id="notes" name="notes" class="form-control" rows="4"></textarea>
                 </div>
                 
                 <div class="form-actions">
                     <button type="submit" class="btn">Save Result</button>
-                    <a href="results.php?game_id=<?php echo $game_id; ?>&club_id=<?php echo $club_id; ?>" 
+                    <a href="club_new_results.php?club_id=<?php echo $club_id; ?>" 
                        class="btn btn--subtle">Cancel</a>
                 </div>
             </form>
@@ -338,8 +359,10 @@ $csrf_token = $security->generateCSRFToken();
         }
 
         // Check Duration
-        if (!document.getElementById('duration').value) {
-            missingFields.push('Duration');
+        const durH = parseInt(document.getElementById('duration_hours').value || '0', 10);
+        const durM = parseInt(document.getElementById('duration_minutes').value || '0', 10);
+        if (durH === 0 && durM === 0) {
+            missingFields.push('Duration (must be > 0)');
         }
 
         // Check for duplicate team selections

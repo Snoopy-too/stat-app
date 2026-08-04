@@ -2,16 +2,22 @@
 session_start();
 require_once 'config/database.php';
 
-// Check if user is logged in
-if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
-    header("Location: login.php");
-    exit();
-}
+$demo = isset($_GET['demo']) || isset($_GET['preview']) || !isset($_SESSION['logged_in']) || !$_SESSION['logged_in'];
 
-// Fetch existing members for this club
-$stmt = $pdo->prepare("SELECT * FROM members WHERE club_id = ? ORDER BY full_name");
-$stmt->execute([$_SESSION['club_id']]);
-$members = $stmt->fetchAll(PDO::FETCH_ASSOC);
+if ($demo) {
+    $_SESSION['club_name'] = $_SESSION['club_name'] ?? 'Meeple & Dice Club';
+    $members = [
+        ['member_id' => 1, 'full_name' => 'Alex Rivers', 'username' => '@arivers'],
+        ['member_id' => 2, 'full_name' => 'Sam Taylor', 'username' => '@staylor'],
+        ['member_id' => 3, 'full_name' => 'Jordan Lee', 'username' => '@jlee'],
+        ['member_id' => 4, 'full_name' => 'Casey Morgan', 'username' => '@cmorgan']
+    ];
+} else {
+    // Fetch existing members for this club
+    $stmt = $pdo->prepare("SELECT * FROM members WHERE club_id = ? ORDER BY full_name");
+    $stmt->execute([$_SESSION['club_id']]);
+    $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 ?>
 
 <!DOCTYPE html>

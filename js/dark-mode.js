@@ -46,6 +46,7 @@ class DarkModeHandler {
      * Apply theme on page load based on preference and system settings
      */
     applyInitialTheme() {
+        if (this.html.hasAttribute('data-theme-locked')) return;
         const savedTheme = this.getSavedTheme();
 
         if (savedTheme && savedTheme !== this.THEME_SYSTEM) {
@@ -269,5 +270,37 @@ class DarkModeHandler {
         document.addEventListener('DOMContentLoaded', initDarkMode);
     } else {
         initDarkMode();
+    }
+})();
+
+// Auto-dismiss top-level banner alert messages after 3.5s
+(function() {
+    function autoDismissBanners() {
+        const selectors = '.message, .success, .error, .warning, .info, [class*="message--"], [class*="alert"]';
+        const banners = document.querySelectorAll(selectors);
+        banners.forEach(banner => {
+            if (banner.closest('.modal') || banner.closest('.form-group') || banner.dataset.dismissing === 'true') return;
+            banner.dataset.dismissing = 'true';
+            setTimeout(() => {
+                banner.style.transition = 'opacity 0.4s ease, transform 0.4s ease, max-height 0.4s ease, margin 0.4s ease, padding 0.4s ease';
+                banner.style.opacity = '0';
+                banner.style.transform = 'translateY(-6px)';
+                banner.style.maxHeight = '0';
+                banner.style.marginTop = '0';
+                banner.style.marginBottom = '0';
+                banner.style.paddingTop = '0';
+                banner.style.paddingBottom = '0';
+                banner.style.overflow = 'hidden';
+                setTimeout(() => {
+                    if (banner.parentNode) banner.parentNode.removeChild(banner);
+                }, 450);
+            }, 3500);
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', autoDismissBanners);
+    } else {
+        autoDismissBanners();
     }
 })();

@@ -31,7 +31,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         // Validate and sanitize input
         $played_at = $_POST['played_at'];
-        $duration = (int)$_POST['duration'];
+        // Parse duration from hours and minutes selects
+        $duration_hours = isset($_POST['duration_hours']) ? (int)$_POST['duration_hours'] : 2;
+        $duration_minutes = isset($_POST['duration_minutes']) ? (int)$_POST['duration_minutes'] : 0;
+        $duration = ($duration_hours * 60) + $duration_minutes;
         $notes = trim($_POST['notes']);
         $member_id = (int)$_POST['member_id'];
         $game_type = $_POST['game_type'] ?? 'ranked';
@@ -177,8 +180,6 @@ $csrf_token = $security->generateCSRFToken();
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
         gap: var(--spacing-3);
-        max-height: 300px;
-        overflow-y: auto;
         padding: var(--spacing-3);
         border: 1px solid var(--color-border);
         border-radius: var(--radius-md);
@@ -192,6 +193,8 @@ $csrf_token = $security->generateCSRFToken();
         padding: var(--spacing-2);
         border-radius: var(--radius-sm);
         transition: background-color var(--transition-fast);
+        cursor: pointer;
+        user-select: none;
     }
     
     .checkbox-item:hover {
@@ -211,24 +214,48 @@ $csrf_token = $security->generateCSRFToken();
         <form method="POST" class="form-card">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
             <div class="form-group">
-                <label for="played_at">Date Played:</label>
+                <label for="played_at" class="form-label">Date Played:</label>
                 <input type="date" id="played_at" name="played_at" class="form-control" value="<?php echo date('Y-m-d', strtotime($result['played_at'])); ?>" required>
             </div>
 
+            <?php 
+                $durMins = isset($result['duration']) ? (int)$result['duration'] : 120;
+                $durH = (int)floor($durMins / 60);
+                if ($durH > 12) $durH = 12;
+                $durM = (int)round(($durMins % 60) / 10) * 10;
+                if ($durM > 50) $durM = 50;
+            ?>
             <div class="form-group">
-                <label for="duration">Duration (minutes):</label>
-                <input type="number" id="duration" name="duration" class="form-control" value="<?php echo $result['duration']; ?>" required min="1">
+                <label class="form-label">Duration: <span class="required-marker">*</span></label>
+                <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <div style="flex: 1; display: flex; align-items: center; gap: 0.35rem;">
+                        <select name="duration_hours" id="duration_hours" class="form-control" style="flex: 1;">
+                            <?php for ($h = 0; $h <= 12; $h++): ?>
+                                <option value="<?php echo $h; ?>" <?php echo ($h === $durH) ? 'selected' : ''; ?>><?php echo $h; ?></option>
+                            <?php endfor; ?>
+                        </select>
+                        <span style="font-size: 0.875rem; color: var(--color-text-muted);">hrs</span>
+                    </div>
+                    <div style="flex: 1; display: flex; align-items: center; gap: 0.35rem;">
+                        <select name="duration_minutes" id="duration_minutes" class="form-control" style="flex: 1;">
+                            <?php for ($m = 0; $m <= 50; $m += 10): ?>
+                                <option value="<?php echo $m; ?>" <?php echo ($m === $durM) ? 'selected' : ''; ?>><?php echo $m; ?></option>
+                            <?php endfor; ?>
+                        </select>
+                        <span style="font-size: 0.875rem; color: var(--color-text-muted);">mins</span>
+                    </div>
+                </div>
             </div>
 
             <div class="form-group">
-                <label for="notes">Notes:</label>
+                <label for="notes" class="form-label">Notes:</label>
                 <textarea id="notes" name="notes" class="form-control" rows="3"><?php echo htmlspecialchars($result['notes']); ?></textarea>
             </div>
 
             <input type="hidden" name="game_type" value="<?php echo $is_winner_losers ? 'winner_losers' : 'ranked'; ?>">
 
             <div class="form-group">
-                <label for="member_id">Winner:</label>
+                <label for="member_id" class="form-label">Winner:</label>
                 <select id="member_id" name="member_id" class="form-control" required>
                     <option value="">Select Winner</option>
                     <?php foreach ($members as $member): ?>
@@ -245,18 +272,18 @@ $csrf_token = $security->generateCSRFToken();
                     <label class="form-label">Select Losers:</label>
                     <div id="losers-checkbox-list" class="checkbox-grid">
                         <?php foreach ($members as $member): ?>
-                            <div class="form-check checkbox-item">
+                            <label for="loser_<?php echo $member['member_id']; ?>" class="form-check checkbox-item">
                                 <input type="checkbox" name="losers[]" id="loser_<?php echo $member['member_id']; ?>" 
                                        value="<?php echo $member['member_id']; ?>" 
                                        class="form-check-input loser-checkbox"
                                        <?php echo in_array($member['member_id'], $losers) ? 'checked' : ''; ?>>
-                                <label for="loser_<?php echo $member['member_id']; ?>" class="form-check-label">
+                                <span class="form-check-label">
                                     <?php echo htmlspecialchars($member['nickname']); ?>
-                                </label>
-                            </div>
+                                </span>
+                            </label>
                         <?php endforeach; ?>
                     </div>
-                    <div class="help-text mt-2">Select all members who lost this game. The winner cannot be selected as a loser.</div>
+                    <div class="help-text mt-2">Select all members who lost this game.</div>
                 </div>
             <?php else: ?>
                 <!-- Ranked format -->
@@ -285,9 +312,9 @@ $csrf_token = $security->generateCSRFToken();
                 <?php endfor; ?>
             <?php endif; ?>
 
-            <div class="form-group">
-                <button type="submit" class="btn">Update Result</button>
-                <a href="view_result.php?result_id=<?php echo $result_id; ?>" class="btn btn--secondary">Cancel</a>
+            <div class="form-group" style="display:flex; gap:0.5rem; align-items:center;">
+                <button type="submit" class="btn btn--primary">Update Result</button>
+                <a href="view_result.php?result_id=<?php echo $result_id; ?>" class="btn btn--subtle">Cancel</a>
             </div>
         </form>
     </div>
@@ -329,11 +356,12 @@ $csrf_token = $security->generateCSRFToken();
             // Update loser checkboxes
             const loserCheckboxes = document.querySelectorAll('.loser-checkbox');
             loserCheckboxes.forEach(checkbox => {
+                const parentItem = checkbox.closest('.checkbox-item');
                 if (winnerId && checkbox.value === winnerId) {
-                    checkbox.disabled = true;
                     checkbox.checked = false;
+                    if (parentItem) parentItem.style.display = 'none';
                 } else {
-                    checkbox.disabled = false;
+                    if (parentItem) parentItem.style.display = 'flex';
                 }
             });
         }

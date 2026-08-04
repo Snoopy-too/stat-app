@@ -44,3 +44,131 @@ function get_session_message($key) {
     }
     return null;
 }
+
+/**
+ * Get full image URL for a game image
+ *
+ * @param string|null $image Game image filename or full URL
+ * @param string $prefix Path prefix for local images (e.g., '' or '../')
+ * @return string
+ */
+function get_game_image_url($image, $prefix = '') {
+    if (empty($image)) {
+        return '';
+    }
+    if (preg_match('~^https?://~i', $image)) {
+        return $image;
+    }
+    return $prefix . 'images/game_images/' . $image;
+}
+
+/**
+ * Ensures the 'game_image' column exists in the 'games' table
+ *
+ * @param PDO $pdo
+ * @return void
+ */
+function ensure_game_image_column_exists($pdo) {
+    static $checked = false;
+    if ($checked || !$pdo) {
+        return;
+    }
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM games LIKE 'game_image'");
+        if ($stmt && $stmt->rowCount() === 0) {
+            $pdo->exec("ALTER TABLE games ADD COLUMN game_image VARCHAR(500) DEFAULT NULL");
+        }
+        $checked = true;
+    } catch (Throwable $e) {
+        // Silently fail if table issue or lacking permissions
+    }
+}
+
+/**
+ * Ensures all result-related tables exist in the database
+ *
+ * @param PDO $pdo
+ * @return void
+ */
+function ensure_results_tables_exist($pdo) {
+    static $checked = false;
+    if ($checked || !$pdo) {
+        return;
+    }
+    $checked = true;
+
+    try {
+        $pdo->query("SELECT 1 FROM game_result_losers LIMIT 1");
+    } catch (Throwable $e) {
+        try {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS game_result_losers (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                result_id INT NOT NULL,
+                member_id INT NOT NULL,
+                FOREIGN KEY (result_id) REFERENCES game_results(result_id) ON DELETE CASCADE,
+                FOREIGN KEY (member_id) REFERENCES members(member_id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+        } catch (Throwable $e2) {}
+    }
+
+    try {
+        $pdo->query("SELECT 1 FROM team_game_results LIMIT 1");
+    } catch (Throwable $e) {
+        try {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS team_game_results (
+                result_id INT AUTO_INCREMENT PRIMARY KEY,
+                game_id INT NOT NULL,
+                session_id VARCHAR(255) DEFAULT NULL,
+                team_id INT DEFAULT NULL,
+                position INT DEFAULT NULL,
+                played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                duration INT DEFAULT NULL,
+                notes TEXT DEFAULT NULL,
+                num_teams INT DEFAULT NULL,
+                winner INT DEFAULT NULL,
+                place_2 INT DEFAULT NULL,
+                place_3 INT DEFAULT NULL,
+                place_4 INT DEFAULT NULL,
+                place_5 INT DEFAULT NULL,
+                place_6 INT DEFAULT NULL,
+                place_7 INT DEFAULT NULL,
+                place_8 INT DEFAULT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (game_id) REFERENCES games(game_id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+        } catch (Throwable $e2) {}
+    }
+
+    try {
+        $pdo->query("SELECT 1 FROM cooperative_game_results LIMIT 1");
+    } catch (Throwable $e) {
+        try {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS cooperative_game_results (
+                result_id INT AUTO_INCREMENT PRIMARY KEY,
+                game_id INT NOT NULL,
+                session_id VARCHAR(255) NOT NULL,
+                outcome ENUM('win','loss') NOT NULL,
+                score INT DEFAULT NULL,
+                difficulty VARCHAR(100) DEFAULT NULL,
+                scenario VARCHAR(255) DEFAULT NULL,
+                num_participants INT DEFAULT NULL,
+                played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                duration INT DEFAULT NULL,
+                notes TEXT DEFAULT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (game_id) REFERENCES games(game_id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS cooperative_result_participants (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                result_id INT NOT NULL,
+                participant_type ENUM('member','team') NOT NULL,
+                member_id INT DEFAULT NULL,
+                team_id INT DEFAULT NULL,
+                FOREIGN KEY (result_id) REFERENCES cooperative_game_results(result_id) ON DELETE CASCADE,
+                FOREIGN KEY (member_id) REFERENCES members(member_id) ON DELETE CASCADE,
+                FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+        } catch (Throwable $e2) {}
+    }
+}

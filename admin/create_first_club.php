@@ -51,8 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->beginTransaction();
 
                 // Create the club
-                $stmt = $pdo->prepare("INSERT INTO clubs (club_name, slug) VALUES (?, ?)");
-                $stmt->execute([$club_name, $slug]);
+                $stmt = $pdo->prepare("INSERT INTO clubs (club_name, slug, admin_id) VALUES (?, ?, ?)");
+                $stmt->execute([$club_name, $slug, $_SESSION['admin_id']]);
                 $new_club_id = $pdo->lastInsertId();
 
                 // Assign the creator as the owner

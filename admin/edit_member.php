@@ -92,39 +92,55 @@ $csrf_token = $security->generateCSRFToken();
         </div>
     </div>
 
-    <div class="container">
+    <div class="container container--narrow">
         <?php display_session_message('error'); ?>
 
         <div class="card">
-            <form method="POST" class="form">
+            <div class="card-header">
+                <h2>Edit Member</h2>
+            </div>
+            <form method="POST" class="stack" style="padding: var(--spacing-6, 1.5rem);">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" name="member_name" value="<?php echo htmlspecialchars($member['member_name']); ?>" required class="form-control">
+                
+                <div class="grid grid--columns-2" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="member_name" class="form-label">Full Name <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                        <input type="text" id="member_name" name="member_name" value="<?php echo htmlspecialchars($member['member_name']); ?>" required class="form-control">
+                    </div>
                     
-                    <label>Nickname (for public display)</label>
-                    <input type="text" name="nickname" value="<?php echo htmlspecialchars($member['nickname']); ?>" required class="form-control">
-                    
-                    <label>Email Address</label>
-                    <input type="email" name="email" value="<?php echo htmlspecialchars($member['email']); ?>" required class="form-control">
-                    
-                    <label>Club</label>
-                    <select name="club_id" required class="form-control">
-                        <?php foreach ($admin_clubs as $club): ?>
-                            <option value="<?php echo $club['club_id']; ?>" <?php echo ($member['club_id'] == $club['club_id']) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($club['club_name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="nickname" class="form-label">Nickname (for public display) <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                        <input type="text" id="nickname" name="nickname" value="<?php echo htmlspecialchars($member['nickname']); ?>" required class="form-control">
+                    </div>
 
-                    <label>Status</label>
-                    <select name="status" class="form-control">
-                        <option value="active" <?php echo $member['status'] === 'active' ? 'selected' : ''; ?>>Active</option>
-                        <option value="inactive" <?php echo $member['status'] === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
-                    </select>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="email" class="form-label">Email Address <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                        <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($member['email']); ?>" required class="form-control">
+                    </div>
 
-                    <button type="submit" class="btn">Update Member</button>
-                    <a href="manage_members.php?club_id=<?php echo $club_id; ?>" class="btn">Cancel</a>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="club_id" class="form-label">Club <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                        <select id="club_id" name="club_id" required class="form-control">
+                            <?php foreach ($admin_clubs as $club_item): ?>
+                                <option value="<?php echo $club_item['club_id']; ?>" <?php echo ($member['club_id'] == $club_item['club_id']) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($club_item['club_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="status" class="form-label">Status</label>
+                        <select id="status" name="status" class="form-control">
+                            <option value="active" <?php echo $member['status'] === 'active' ? 'selected' : ''; ?>>Active</option>
+                            <option value="inactive" <?php echo $member['status'] === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-actions" style="margin-top: 1.5rem; display: flex; gap: 0.5rem; justify-content: flex-start;">
+                    <button type="submit" class="btn btn--primary">Update Member</button>
+                    <a href="manage_members.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle">Cancel</a>
                 </div>
             </form>
         </div>

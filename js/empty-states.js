@@ -152,7 +152,7 @@ const emptyStateConfigs = {
     noChampions: {
         type: 'no-champions',
         title: 'No Champions Yet',
-        description: 'Celebrate your winners! Record champion information and upload trophy photos.',
+        description: 'Celebrate your winners! Record champion information.',
         actions: [{text: 'Record Champion', url: '#add-champion'}]
     },
     searchNoResults: {

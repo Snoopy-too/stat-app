@@ -130,7 +130,8 @@ $csrf_token = $security->generateCSRFToken();
                         <label for="notes">Notes</label>
                         <textarea id="notes" name="notes" rows="4"><?php echo htmlspecialchars($member['notes'] ?? ''); ?></textarea>
                     </div>
-                    <button type="submit" name="update_profile" class="btn">Update Profile</button>
+                    <input type="hidden" name="update_profile" value="1">
+                    <button type="submit" class="btn">Update Profile</button>
                 </form>
             </div>
         </div>

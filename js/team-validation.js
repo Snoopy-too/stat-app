@@ -50,8 +50,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Add form submission validation
-    const form = document.querySelector('form');
+    // Add form submission validation — target the team creation form specifically
+    const form = document.querySelector('button[name="create_team"]')?.closest('form');
     if (form) {
         form.addEventListener('submit', function(e) {
             if (!validateTeamMembers()) {

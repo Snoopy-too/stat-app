@@ -73,6 +73,7 @@ try {
 
     // Store error message in session
     $_SESSION['registration_error'] = $e->getMessage();
+    $_SESSION['error'] = $e->getMessage();
     
     // Redirect back to registration page
     header('Location: register.php');

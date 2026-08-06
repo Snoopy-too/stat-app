@@ -41,9 +41,46 @@ if ($club_id) {
     } catch (Exception $e) {}
 }
 
-if (!$club) {
+if ($demo || !$club) {
     $club_id = 1;
     $club = ['club_id' => 1, 'club_name' => 'Meeple & Dice Club'];
+}
+
+// Handle bulk action
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_action']) && !empty($_POST['selected_teams'])) {
+    if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
+        $_SESSION['error'] = "Invalid security token. Please try again.";
+        header("Location: club_teams.php?club_id=" . $club_id);
+        exit();
+    }
+
+    $selected_teams = array_map('intval', $_POST['selected_teams']);
+    $bulk_action = $_POST['bulk_action'];
+
+    if ($bulk_action === 'bulk_delete') {
+        try {
+            $pdo->beginTransaction();
+            $placeholders = str_repeat('?,', count($selected_teams) - 1) . '?';
+            $stmt = $pdo->prepare("
+                DELETE t FROM teams t 
+                JOIN members m ON t.member1_id = m.member_id 
+                WHERE t.team_id IN ($placeholders) AND m.club_id = ?
+            ");
+            $params = array_merge($selected_teams, [$club_id]);
+            $stmt->execute($params);
+            $deletedCount = $stmt->rowCount();
+            $pdo->commit();
+
+            $_SESSION['success'] = "$deletedCount team(s) deleted successfully!";
+        } catch (PDOException $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            $_SESSION['error'] = "Error deleting teams: " . $e->getMessage();
+        }
+    }
+    header("Location: club_teams.php?club_id=" . $club_id);
+    exit();
 }
 
 // Handle team creation
@@ -117,21 +154,12 @@ $team_sql = "
     LEFT JOIN members m4 ON t.member4_id = m4.member_id
     WHERE m1.club_id = ?";
 $team_params = [$club_id];
-if ($search !== '') {
-    $team_sql .= " AND (t.team_name LIKE ? OR m1.nickname LIKE ? OR m2.nickname LIKE ? OR m3.nickname LIKE ? OR m4.nickname LIKE ?)";
-    $term = '%' . $search . '%';
-    $team_params[] = $term;
-    $team_params[] = $term;
-    $team_params[] = $term;
-    $team_params[] = $term;
-    $team_params[] = $term;
-}
 $team_sql .= " ORDER BY t.created_at DESC";
 $stmt = $pdo->prepare($team_sql);
 $stmt->execute($team_params);
 $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-if ($demo && empty($teams)) {
+if ($demo) {
     $teams = [
         [
             'team_id' => 1,
@@ -152,8 +180,6 @@ if ($demo && empty($teams)) {
             'created_at' => date('Y-m-d H:i:s')
         ]
     ];
-}
-if ($demo && empty($members)) {
     $members = [
         ['member_id' => 1, 'member_name' => 'Alex Rivers', 'nickname' => 'Alex'],
         ['member_id' => 2, 'member_name' => 'Sam Taylor', 'nickname' => 'Sam'],
@@ -166,8 +192,12 @@ if ($demo && empty($members)) {
 $csrf_token = $security->generateCSRFToken();
 ?>
 
+<?php
+$themeParam = $_GET['theme'] ?? $_GET['club_theme'] ?? ($demo ? 'arcade' : '');
+$htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themeParam) . '" data-theme="dark" data-theme-locked="true"' : '';
+?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" <?php echo $htmlThemeAttrs; ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -262,7 +292,8 @@ $csrf_token = $security->generateCSRFToken();
                     </div>
 
                     <div class="form-group" style="display:flex; align-items:center; gap:0.5rem; margin-top:1.25rem; margin-bottom:0;">
-                        <button type="submit" name="create_team" class="btn btn--primary">Save Team</button>
+                        <input type="hidden" name="create_team" value="1">
+                        <button type="submit" class="btn btn--primary">Save Team</button>
                         <button type="button" class="btn btn--subtle" onclick="toggleAddTeamForm()">Cancel</button>
                     </div>
                 </form>
@@ -280,12 +311,21 @@ $csrf_token = $security->generateCSRFToken();
                         <a href="club_teams.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle btn--small">Reset</a>
                     </div>
                 </form>
+                <form method="POST" class="toolbar-group" id="bulk-form">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                    <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
+                    <select name="bulk_action" id="bulk-action-select" class="form-control form-control--sm" onchange="executeBulkAction(this)">
+                        <option value="">Bulk Actions</option>
+                        <option value="bulk_delete">Delete Selected</option>
+                    </select>
+                </form>
             </div>
 
             <div class="table-responsive">
             <table class="data-table">
                 <thead>
                     <tr>
+                        <th><input type="checkbox" id="select-all" class="form-check-input"></th>
                         <th style="text-align:left;">Team Name</th>
                         <th style="text-align:left;">Members</th>
                         <th style="text-align:left;">Created</th>
@@ -293,9 +333,12 @@ $csrf_token = $security->generateCSRFToken();
                     </tr>
                 </thead>
                 <tbody>
+                    <tr id="noSearchMatch" style="display: none;">
+                        <td colspan="5" class="text-center text-muted" style="padding: 1.5rem;">No teams match your search.</td>
+                    </tr>
                     <?php if (empty($teams)): ?>
                         <tr>
-                            <td colspan="4" class="text-center text-muted" style="padding: 1.5rem;">No teams created yet.</td>
+                            <td colspan="5" class="text-center text-muted" style="padding: 1.5rem;">No teams created yet.</td>
                         </tr>
                     <?php endif; ?>
                     <?php foreach ($teams as $team): ?>
@@ -308,6 +351,10 @@ $csrf_token = $security->generateCSRFToken();
                         ]);
                         ?>
                         <tr>
+                            <td>
+                                <input type="checkbox" name="selected_teams[]" form="bulk-form"
+                                       value="<?php echo $team['team_id']; ?>" class="form-check-input team-checkbox">
+                            </td>
                             <td data-label="Team Name"><?php echo htmlspecialchars($team['team_name']); ?></td>
                             <td data-label="Members">
                                 <div style="display:flex;flex-wrap:wrap;gap:0.35rem;">
@@ -381,6 +428,69 @@ $csrf_token = $security->generateCSRFToken();
         if (group) group.style.display = 'none';
         if (select) select.value = '';
         if (btn) btn.style.display = 'inline-flex';
+    }
+
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        const filterTeams = () => {
+            const query = searchInput.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('.data-table tbody tr:not(#noSearchMatch)');
+            let visibleCount = 0;
+            let hasOriginalRows = false;
+            rows.forEach(row => {
+                if (row.querySelector('.text-muted') && rows.length === 1) return;
+                hasOriginalRows = true;
+                const text = row.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            const noMatch = document.getElementById('noSearchMatch');
+            if (noMatch) {
+                noMatch.style.display = (visibleCount === 0 && query !== '' && hasOriginalRows) ? '' : 'none';
+            }
+        };
+        searchInput.addEventListener('input', filterTeams);
+        if (searchInput.value) filterTeams();
+    }
+
+    document.getElementById('select-all')?.addEventListener('change', function() {
+        document.querySelectorAll('.team-checkbox').forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+    });
+
+    function executeBulkAction(selectEl) {
+        const action = selectEl.value;
+        if (!action) return;
+
+        const selectedCheckboxes = document.querySelectorAll('.team-checkbox:checked');
+
+        if (selectedCheckboxes.length === 0) {
+            alert('Please select at least one team.');
+            selectEl.value = '';
+            return;
+        }
+
+        if (action === 'bulk_delete') {
+            showConfirmDialog(null, {
+                title: '⚠️ Delete Selected Teams?',
+                message: `Are you sure you want to delete ${selectedCheckboxes.length} selected team(s)?`,
+                confirmText: 'Delete Teams',
+                cancelText: 'Cancel',
+                type: 'danger',
+                warningMessage: 'Selected teams will be permanently removed.',
+                onConfirm: () => {
+                    document.getElementById('bulk-form').submit();
+                },
+                onCancel: () => {
+                    selectEl.value = '';
+                }
+            });
+        }
     }
     </script>
     <script src="../js/sidebar.js"></script>

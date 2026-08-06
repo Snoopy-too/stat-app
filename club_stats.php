@@ -124,9 +124,7 @@ if ($club) {
                     <div class="champion-section">
                         <div class="champion-header">
                             <h3>Current Champion</h3>
-                            <?php if ($club['champ_image']): ?>
-                                <img src="<?php echo htmlspecialchars($club['champ_image']); ?>" alt="Championship Trophy" class="trophy-thumbnail" loading="lazy">
-                            <?php endif; ?>
+
                         </div>
                         <p class="champion-name"><?php echo htmlspecialchars($champion['nickname']); ?></p>
                         <p class="champion-date">Since: <?php echo date('F j, Y', strtotime($champion['date'])); ?></p>

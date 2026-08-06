@@ -62,16 +62,7 @@ if ($club) {
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/dark-mode.js"></script>
     <style>
-        .trophy-header {
-            text-align: center;
-            margin: 2rem 0;
-        }
-        .trophy-image {
-            max-width: 300px;
-            height: auto;
-            margin: 0 auto 1rem;
-            display: block;
-        }
+
         .champions-timeline {
             margin-top: 2rem;
         }
@@ -143,17 +134,7 @@ if ($club) {
             <div class="message message--error"><?php echo htmlspecialchars($error); ?></div>
         <?php elseif ($club): ?>
             <div class="card">
-                <?php if ($club['champ_image']): ?>
-                    <div class="trophy-header">
-                        <img src="<?php echo htmlspecialchars($club['champ_image']); ?>" alt="Championship Trophy" class="trophy-image">
-                        <h2><?php echo htmlspecialchars($club['club_name']); ?> Champions</h2>
-                    </div>
-                <?php else: ?>
-                    <div class="trophy-header">
-                        <div style="font-size: 4rem; margin-bottom: 1rem;">🏆</div>
-                        <h2><?php echo htmlspecialchars($club['club_name']); ?> Champions</h2>
-                    </div>
-                <?php endif; ?>
+                <h2><?php echo htmlspecialchars($club['club_name']); ?> Champions</h2>
 
                 <?php if (count($champions) > 0): ?>
                     <div class="champions-timeline">

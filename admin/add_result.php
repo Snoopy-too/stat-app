@@ -80,6 +80,11 @@ if (!$game) {
 
 $club_name = NavigationHelper::getClubName($pdo, $club_id);
 
+// Fetch all games for this club for game switcher
+$stmt = $pdo->prepare('SELECT game_id, game_name FROM games WHERE club_id = ? ORDER BY game_name ASC');
+$stmt->execute([$club_id]);
+$all_club_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 // Fetch active members for the dropdown
 $stmt = $pdo->prepare('SELECT m.member_id as id, m.nickname as name
     FROM members m
@@ -358,6 +363,18 @@ $csrf_token = $security->generateCSRFToken();
             <form method="POST" class="stack" id="result-form" novalidate>
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <div id="validation-errors" class="message message--error" style="display: none;"></div>
+                
+                <div class="form-group">
+                    <label for="game_id_select" class="form-label">Game: <span class="required-marker">*</span></label>
+                    <select id="game_id_select" class="form-control" onchange="if(this.value) window.location.href='add_result.php?club_id=<?php echo $club_id; ?>&game_id=' + this.value;">
+                        <?php foreach ($all_club_games as $cg): ?>
+                            <option value="<?php echo $cg['game_id']; ?>" <?php echo ($cg['game_id'] == $game_id) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($cg['game_name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
                 <div class="form-group">
                     <label for="played_at" class="form-label">Date Played: <span class="required-marker">*</span></label>
                     <input type="datetime-local" id="played_at" name="played_at" class="form-control">

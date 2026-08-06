@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const form = document.querySelector('form');
+    const form = document.getElementById('registrationForm') || document.querySelector('form');
     const password = document.getElementById('password');
     const confirmPassword = document.getElementById('confirm_password');
     const email = document.getElementById('email');

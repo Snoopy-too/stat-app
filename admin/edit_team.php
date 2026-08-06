@@ -185,7 +185,8 @@ $csrf_token = $security->generateCSRFToken();
                 </div>
 
                 <div class="form-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-start;">
-                    <button type="submit" name="update_team" class="btn btn--primary">Update Team</button>
+                    <input type="hidden" name="update_team" value="1">
+                    <button type="submit" class="btn btn--primary">Update Team</button>
                     <a href="club_teams.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle">Cancel</a>
                 </div>
             </form>

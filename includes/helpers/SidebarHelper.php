@@ -286,7 +286,7 @@ class SidebarHelper {
         }
 
         if ($clubTheme) {
-            echo '<script>document.documentElement.setAttribute("data-club-theme", ' . json_encode($clubTheme) . ');</script>';
+            echo '<script>if(!document.documentElement.hasAttribute("data-theme-locked")){document.documentElement.setAttribute("data-club-theme", ' . json_encode($clubTheme) . ');}</script>';
         }
 
         $memberCount = null;

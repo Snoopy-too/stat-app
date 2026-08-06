@@ -164,7 +164,12 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <?php display_session_message('error'); ?>
         <?php display_session_message('success'); ?>
 
-        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: var(--spacing-4);">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: var(--spacing-4);">
+            <?php if (!empty($games)): ?>
+                <div style="flex: 1; min-width: 200px; max-width: 350px;">
+                    <input type="text" id="gameSearchInput" class="form-control" placeholder="🔍 Search games..." aria-label="Search games">
+                </div>
+            <?php endif; ?>
             <a href="add_game.php?club_id=<?php echo $club_id; ?>" class="btn btn--primary">
                 <span style="color: white; font-weight: bold; margin-right: 0.35rem;">+</span>Add a Game
             </a>
@@ -180,7 +185,7 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
         <?php else: ?>
-            <div class="game-grid">
+            <div class="game-grid" id="gameGrid">
                 <?php foreach ($games as $game): ?>
                     <a href="add_result.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game['game_id']; ?>" class="game-card">
                         <div class="game-card__image">
@@ -202,9 +207,32 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </a>
                 <?php endforeach; ?>
             </div>
+            <div id="noSearchMatch" class="card" style="display: none; text-align: center; padding: 2rem; margin-top: 1rem;">
+                <p style="color: var(--text-secondary, #64748b); margin: 0;">No games match your search.</p>
+            </div>
         <?php endif; ?>
     </div>
 
     <script src="../js/sidebar.js"></script>
+    <script>
+        document.getElementById('gameSearchInput')?.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.game-card');
+            let visibleCount = 0;
+            cards.forEach(card => {
+                const name = (card.querySelector('.game-card__name')?.textContent || card.textContent).toLowerCase();
+                if (name.includes(query)) {
+                    card.style.display = '';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            const noMatch = document.getElementById('noSearchMatch');
+            if (noMatch) {
+                noMatch.style.display = (visibleCount === 0 && query !== '') ? 'block' : 'none';
+            }
+        });
+    </script>
 </body>
 </html>

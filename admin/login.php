@@ -115,42 +115,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <?php
 $pageTitle = 'Admin Login - Board Game Club StatApp';
-$htmlAttributes = 'data-club-theme="light" data-theme="light" data-theme-locked="true"';
+$htmlAttributes = 'data-club-theme="light" data-theme="light"';
 require_once '../includes/templates/header.php';
 ?>
-    <div class="header">
-        <div class="header-title-group">
-            <h1>Board Game Club StatApp</h1>
-            <p class="header-subtitle">Admin Login</p>
-        </div>
-        <a href="../index.php" class="btn btn--secondary">&larr; Back to Main Site</a>
-    </div>
 
-    <div class="container container--narrow auth-shell">
+<header class="landing-header">
+    <a href="../index.php" class="logo-brand">
+        <span>🎲</span> StatApp
+    </a>
+    <div class="header-actions">
+        <a href="../register.php" class="btn btn--secondary btn--sm">Register</a>
+    </div>
+</header>
+
+<div class="landing-hero">
+    <!-- Background Wave & Grid Contour Overlays -->
+    <div class="hero-contour-waves"></div>
+
+    <div class="landing-hero-content landing-hero-content--compact">
+        <h1>Admin <span class="highlight">Login</span></h1>
+
         <?php display_session_message('success'); ?>
         <?php display_session_message('error'); ?>
-        <div class="card auth-card">
+
+        <div class="landing-card landing-card--compact">
+            <!-- Corner Contour Brackets -->
+            <div class="card-corner-bracket card-corner-bracket--tl"></div>
+            <div class="card-corner-bracket card-corner-bracket--tr"></div>
+            <div class="card-corner-bracket card-corner-bracket--bl"></div>
+            <div class="card-corner-bracket card-corner-bracket--br"></div>
+
             <form action="login.php" method="POST" class="stack">
                 <div class="form-group">
-                    <label for="username">Admin Username:</label>
-                    <input type="text" id="username" name="username" required class="form-control" autofocus>
+                    <label for="username" class="form-label form-label--required">Admin Username</label>
+                    <div class="input-with-icon">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="username" name="username" required class="form-control" placeholder="Enter your username" autofocus autocomplete="username">
+                    </div>
                 </div>
+
                 <div class="form-group">
-                    <label for="password">Password:</label>
-                    <input type="password" id="password" name="password" required class="form-control">
+                    <label for="password" class="form-label form-label--required">Password</label>
+                    <div class="input-with-icon">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="password" name="password" required class="form-control" placeholder="Enter your password" autocomplete="current-password">
+                    </div>
                 </div>
-                <div style="display: flex; justify-content: center; margin-bottom: 1rem;">
-                    <a href="forgot_password.php" style="font-size: 0.9rem; color: var(--color-primary); text-decoration: none;">Forgot Password?</a>
+
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+                    <a href="forgot_password.php" style="font-size: 0.85rem; color: var(--color-primary); text-decoration: none; font-weight: 500;">Forgot Password?</a>
                 </div>
-                <div style="display: flex; gap: 0.75rem; width: 100%; margin-top: 0.5rem;">
-                    <button type="submit" class="btn btn--primary" style="flex: 1; text-align: center;">Login</button>
-                    <a href="../register.php" class="btn btn--secondary" style="flex: 1; text-align: center; display: inline-flex; align-items: center; justify-content: center;">Register</a>
+
+                <div style="display: flex; gap: 0.75rem; width: 100%; margin-top: 1rem;">
+                    <button type="submit" class="btn btn--primary" style="flex: 1; text-align: center; justify-content: center;">Sign In</button>
+                    <a href="../register.php" class="btn btn--secondary" style="flex: 1; text-align: center; display: inline-flex; align-items: center; justify-content: center;">Create Account</a>
                 </div>
             </form>
         </div>
-        </div>
     </div>
+</div>
+
 <?php
-$extraScripts = '<script src="../js/form-loading.js"></script><script src="../js/form-validation.js"></script>';
+$extraScripts = '<script src="../js/form-loading.js"></script>';
 require_once '../includes/templates/footer.php';
 ?>

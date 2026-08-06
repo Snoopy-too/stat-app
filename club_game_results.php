@@ -222,10 +222,13 @@ try {
 
     <div class="container container--wide">
         <div class="card">
-            <div class="card-header card-header--stack">
+            <div class="card-header card-header--stack" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
                 <div>
                     <h2>Game History</h2>
                     <p class="card-subtitle card-subtitle--muted">Sorted chronologically across individual and team results.</p>
+                </div>
+                <div style="min-width: 200px; max-width: 320px;">
+                    <input type="text" id="gameHistorySearch" class="form-control" placeholder="🔍 Search history..." aria-label="Search game history">
                 </div>
             </div>
 
@@ -243,6 +246,9 @@ try {
                         </tr>
                     </thead>
                     <tbody>
+                        <tr id="noSearchMatch" style="display: none;">
+                            <td colspan="6" class="text-center text-muted" style="padding: 1.5rem;">No results match your search.</td>
+                        </tr>
                         <?php foreach ($game_results as $result): ?>
                         <?php
                         $detail_url = match($result['game_type']) {
@@ -334,5 +340,24 @@ window.addEventListener('DOMContentLoaded', function() {
         window.scrollTo(0, parseInt(scrollPos));
         sessionStorage.removeItem('scrollPos');
     }
+
+    document.getElementById('gameHistorySearch')?.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('.data-table tbody tr:not(#noSearchMatch)');
+        let visibleCount = 0;
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            if (text.includes(query)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        const noMatch = document.getElementById('noSearchMatch');
+        if (noMatch) {
+            noMatch.style.display = (visibleCount === 0 && query !== '') ? '' : 'none';
+        }
+    });
 });
 </script>

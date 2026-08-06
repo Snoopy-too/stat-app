@@ -165,13 +165,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['error'] = "This slug is reserved and cannot be used.";
         } else {
             try {
+                $logo_image = $club['logo_image'] ?? null;
+                $uploadDir = '../images/club_logos/';
+
+                if (isset($_POST['remove_logo']) && $_POST['remove_logo'] === '1') {
+                    if ($logo_image && file_exists($uploadDir . $logo_image)) {
+                        @unlink($uploadDir . $logo_image);
+                    }
+                    $logo_image = null;
+                }
+
+                if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+                    $file = $_FILES['logo'];
+                    $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/pjpeg', 'image/x-png'];
+                    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+                    $maxSize = 1 * 1024 * 1024; // 1MB
+
+                    $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+                    $actualMime = null;
+                    if (function_exists('finfo_open')) {
+                        $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+                        if ($finfo) {
+                            $actualMime = @finfo_file($finfo, $file['tmp_name']);
+                            @finfo_close($finfo);
+                        }
+                    }
+                    if (!$actualMime && !empty($file['type'])) {
+                        $actualMime = $file['type'];
+                    }
+
+                    $isImage = function_exists('getimagesize') ? (@getimagesize($file['tmp_name']) !== false) : true;
+
+                    if ($file['size'] > $maxSize) {
+                        $_SESSION['error'] = "Logo file is too large. Maximum size is 1MB.";
+                        header("Location: edit_club.php?id=" . $club_id . $from_param);
+                        exit();
+                    } elseif (!in_array($extension, $allowedExtensions) || ($actualMime && !in_array($actualMime, $allowedMimes)) || !$isImage) {
+                        $_SESSION['error'] = "Invalid image file. Only JPG, PNG, and GIF allowed.";
+                        header("Location: edit_club.php?id=" . $club_id . $from_param);
+                        exit();
+                    } else {
+                        if (!file_exists($uploadDir)) {
+                            @mkdir($uploadDir, 0777, true);
+                        }
+
+                        if ($logo_image && file_exists($uploadDir . $logo_image)) {
+                            @unlink($uploadDir . $logo_image);
+                        }
+
+                        $filename = 'club_' . $club_id . '_' . time() . '.' . $extension;
+                        if (@move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+                            if (file_exists('../includes/ImageHelper.php')) {
+                                try {
+                                    require_once '../includes/ImageHelper.php';
+                                    if (class_exists('ImageHelper')) {
+                                        @ImageHelper::optimizeImage($uploadDir . $filename, $uploadDir . $filename);
+                                    }
+                                } catch (Throwable $e) {
+                                    // Ignore image optimization error if GD is missing/fails; file is already uploaded safely
+                                }
+                            }
+                            $logo_image = $filename;
+                        } else {
+                            $_SESSION['error'] = "Failed to save uploaded logo. Check folder permissions.";
+                            header("Location: edit_club.php?id=" . $club_id . $from_param);
+                            exit();
+                        }
+                    }
+                } elseif (isset($_FILES['logo']) && $_FILES['logo']['error'] !== UPLOAD_ERR_NO_FILE) {
+                    $_SESSION['error'] = "Upload error code: " . $_FILES['logo']['error'];
+                    header("Location: edit_club.php?id=" . $club_id . $from_param);
+                    exit();
+                }
+
                 $stmt = $pdo->prepare("
                     UPDATE clubs 
-                    SET club_name = ?, slug = ?, status = ?
+                    SET club_name = ?, slug = ?, status = ?, logo_image = ?
                     WHERE club_id = ? AND EXISTS (SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?)
                 ");
                 $stmt->execute([
-                    $club_name, $slug, $status, $club_id, $club_id, $_SESSION['admin_id']
+                    $club_name, $slug, $status, $logo_image, $club_id, $club_id, $_SESSION['admin_id']
                 ]);
                 
                 $_SESSION['success'] = "Club updated successfully!";
@@ -221,7 +295,7 @@ $csrf_token = $security->generateCSRFToken();
     <script src="../js/dark-mode.js"></script>
 </head>
 <body class="has-sidebar">
-    <?php NavigationHelper::renderAdminSidebar('clubs', $club_id, $club['club_name']); ?>
+    <?php NavigationHelper::renderAdminSidebar('clubs', $club_id, $club['club_name'], $club['logo_image'] ?? null); ?>
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
@@ -233,42 +307,81 @@ $csrf_token = $security->generateCSRFToken();
             <?php display_session_message('error'); ?>
             <?php display_session_message('success'); ?>
 
-            <form method="POST" class="stack">
+            <form method="POST" class="stack" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <input type="hidden" name="action" value="update">
 
                 <div class="form-group">
-                    <label for="club_name">Club Name:</label>
+                    <label for="club_name"><strong>Club Name:</strong></label>
                     <input type="text" id="club_name" name="club_name" class="form-control" required
                            value="<?php echo htmlspecialchars($club['club_name']); ?>">
                 </div>
+
                 <div class="form-group">
-                    <label for="slug">Club URL Slug (optional):</label>
+                    <label for="logo"><strong>Club Logo:</strong></label>
+                    <div id="logo-preview-container" style="display:<?php echo !empty($club['logo_image']) ? 'flex' : 'none'; ?>; align-items:center; gap:1rem; margin-bottom:0.75rem;">
+                        <img id="logo-preview-img" src="<?php echo !empty($club['logo_image']) ? '../images/club_logos/' . htmlspecialchars($club['logo_image']) : ''; ?>" alt="Club Logo" style="width:64px; height:64px; border-radius:0.5rem; object-fit:cover; border:1px solid var(--color-border);">
+                        <?php if (!empty($club['logo_image'])): ?>
+                            <label id="remove-logo-label" style="display:inline-flex; align-items:center; gap:0.5rem; cursor:pointer; font-weight:normal;">
+                                <input type="checkbox" name="remove_logo" value="1" id="remove_logo_checkbox">
+                                <span>Remove current logo</span>
+                            </label>
+                        <?php endif; ?>
+                    </div>
+                    <input type="file" id="logo" name="logo" class="form-control" accept="image/jpeg,image/png,image/gif" onchange="previewLogo(this)">
+                    <small style="color:var(--text-light); display:block; margin-top:0.25rem;">
+                        Maximum file size: 1MB. Allowed formats: JPG, PNG, GIF.
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label for="slug"><strong>Club URL Slug (optional):</strong>
+                    <small style="color:var(--text-light);">
+                        If set, club will be accessible at domain.com/slug
+                    </small></label>
                     <input type="text" id="slug" name="slug" class="form-control"
                            pattern="[a-zA-Z0-9\-]+" title="Only letters, numbers, and hyphens allowed"
                            value="<?php echo htmlspecialchars($club['slug'] ?? ''); ?>">
-                    <small style="display:block; margin-top:0.5rem; color:var(--text-light);">
-                        Leave empty to use ID-based URL. If set, club will be accessible at domain.com/slug
-                    </small>
                     <?php if (!empty($club['slug'])): ?>
-                        <div style="margin-top:1rem; padding:1rem; background:var(--bg-secondary); border-radius:0.5rem;">
-                            <strong style="display:block; margin-bottom:0.5rem;">Current Vanity URL:</strong>
+                        <div class="form-group" style="margin-top:1rem;">
+                            <label for="vanity-url"><strong>Current Vanity URL:</strong></label>
                             <div style="display:flex; gap:0.5rem; align-items:center;">
-                                <code id="vanity-url" style="flex:1; padding:0.5rem; background:var(--bg-primary); border-radius:0.25rem; font-size:0.9rem;">
+                                <code id="vanity-url" class="code-field" style="flex:1; word-break:break-all;">
                                     <?php
                                     $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
                                     $host = $_SERVER['HTTP_HOST'];
                                     $base_path = rtrim(dirname(dirname($_SERVER['PHP_SELF'])), '/');
-                                    echo htmlspecialchars($protocol . '://' . $host . $base_path . '/' . $club['slug']);
+                                    $base_url = $protocol . '://' . $host . $base_path;
+                                    echo htmlspecialchars($base_url . '/' . $club['slug']);
                                     ?>
                                 </code>
-                                <button type="button" class="btn btn--small btn--subtle" onclick="copyVanityUrl(this)">Copy</button>
+                                <button type="button" class="btn btn--small btn--subtle" onclick="copyUrlFromElement('vanity-url', this)">Copy</button>
                             </div>
                         </div>
                     <?php endif; ?>
+
+                    <div class="form-group" style="margin-top:1rem;">
+                        <label for="json-api-url"><strong>JSON URL:</strong>
+                        <small style="color:var(--text-light);">
+                            This link will return a JSON object of your club stats.
+                        </small></label>
+                        <div style="display:flex; gap:0.5rem; align-items:center;">
+                            <code id="json-api-url" class="code-field" style="flex:1; word-break:break-all;">
+                                <?php
+                                if (!isset($base_url)) {
+                                    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+                                    $host = $_SERVER['HTTP_HOST'];
+                                    $base_path = rtrim(dirname(dirname($_SERVER['PHP_SELF'])), '/');
+                                    $base_url = $protocol . '://' . $host . $base_path;
+                                }
+                                echo htmlspecialchars($base_url . '/club_json.php?id=' . $club['club_id']);
+                                ?>
+                            </code>
+                            <button type="button" class="btn btn--small btn--subtle" onclick="copyUrlFromElement('json-api-url', this)">Copy</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label for="status">Club Status:</label>
+                    <label for="status"><strong>Club Status:</strong></label>
                     <select id="status" name="status" class="form-control">
                         <?php foreach ($statuses as $status): ?>
                             <option value="<?php echo $status; ?>"
@@ -423,8 +536,8 @@ $csrf_token = $security->generateCSRFToken();
             document.getElementById('admin_password').value = '';
         }
 
-        function copyVanityUrl(btn) {
-            const urlElement = document.getElementById('vanity-url');
+        function copyUrlFromElement(elementId, btn) {
+            const urlElement = document.getElementById(elementId);
             if (!urlElement) return;
             const url = urlElement.textContent.trim();
 
@@ -440,6 +553,25 @@ $csrf_token = $security->generateCSRFToken();
             }).catch(err => {
                 alert('Failed to copy URL: ' + err);
             });
+        }
+        function copyVanityUrl(btn) {
+            copyUrlFromElement('vanity-url', btn);
+        }
+
+        function previewLogo(input) {
+            const container = document.getElementById('logo-preview-container');
+            const img = document.getElementById('logo-preview-img');
+            const removeCheckbox = document.getElementById('remove_logo_checkbox');
+
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (img) img.src = e.target.result;
+                    if (container) container.style.display = 'flex';
+                    if (removeCheckbox) removeCheckbox.checked = false;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
         }
     </script>
     <script src="../js/sidebar.js"></script>

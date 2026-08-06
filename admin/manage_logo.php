@@ -54,11 +54,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $uploadError = "Invalid file extension. Only JPG, PNG and GIF are allowed.";
             } else {
                 // Use finfo to get actual MIME type from file content (primary check)
-                $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                $actualMime = finfo_file($finfo, $file['tmp_name']);
-                finfo_close($finfo);
+                $actualMime = null;
+                if (function_exists('finfo_open')) {
+                    $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+                    if ($finfo) {
+                        $actualMime = @finfo_file($finfo, $file['tmp_name']);
+                        @finfo_close($finfo);
+                    }
+                }
+                if (!$actualMime && !empty($file['type'])) {
+                    $actualMime = $file['type'];
+                }
 
-                if (!in_array($actualMime, $allowedMimes)) {
+                if ($actualMime && !in_array($actualMime, $allowedMimes)) {
                     $uploadError = "Invalid file type detected. Only JPG, PNG and GIF images are allowed.";
                 } else {
                     // Additional validation: verify it's actually a valid image

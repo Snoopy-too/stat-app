@@ -35,7 +35,7 @@ if ($club_id > 0) {
     $_SESSION['club_id'] = $club_id;
 }
 
-if (!$user_clubs) {
+if ($demo || !$user_clubs) {
     $club_id = 1;
     $user_clubs = [['club_id' => 1, 'club_name' => 'Meeple & Dice Club']];
 }
@@ -45,6 +45,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate CSRF token
     if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
         $_SESSION['error'] = "Invalid security token. Please try again.";
+        header("Location: manage_games.php" . ($club_id ? "?club_id=$club_id" : ""));
+        exit();
+    }
+
+    if (isset($_POST['bulk_action']) && !empty($_POST['selected_games'])) {
+        $selected_games = array_map('intval', $_POST['selected_games']);
+        $bulk_action = $_POST['bulk_action'];
+
+        if ($bulk_action === 'bulk_delete') {
+            $deleted_count = 0;
+            $skipped_count = 0;
+
+            foreach ($selected_games as $del_game_id) {
+                if ($club_id) {
+                    $stmt = $pdo->prepare("SELECT 1 FROM games WHERE game_id = ? AND club_id = ?");
+                    $stmt->execute([$del_game_id, $club_id]);
+                    if (!$stmt->fetch()) {
+                        continue;
+                    }
+                }
+
+                $stmt = $pdo->prepare("
+                    SELECT 
+                    (SELECT COUNT(*) FROM game_results WHERE game_id = ?) + 
+                    (SELECT COUNT(*) FROM team_game_results WHERE game_id = ?) as total_plays
+                ");
+                $stmt->execute([$del_game_id, $del_game_id]);
+                $count = $stmt->fetchColumn();
+
+                if ($count > 0) {
+                    $skipped_count++;
+                } else {
+                    $stmt = $pdo->prepare("SELECT game_image FROM games WHERE game_id = ?");
+                    $stmt->execute([$del_game_id]);
+                    $old_image = $stmt->fetchColumn();
+
+                    $stmt = $pdo->prepare("DELETE FROM games WHERE game_id = ?");
+                    if ($stmt->execute([$del_game_id])) {
+                        if ($old_image) {
+                            $image_path = '../images/game_images/' . $old_image;
+                            if (file_exists($image_path)) {
+                                @unlink($image_path);
+                            }
+                        }
+                        $deleted_count++;
+                    }
+                }
+            }
+
+            if ($deleted_count > 0 && $skipped_count === 0) {
+                $_SESSION['success'] = "$deleted_count selected game(s) deleted successfully!";
+            } elseif ($deleted_count > 0 && $skipped_count > 0) {
+                $_SESSION['success'] = "$deleted_count game(s) deleted. $skipped_count game(s) skipped due to existing match results.";
+            } else {
+                $_SESSION['error'] = "Could not delete selected game(s) because they have associated match results.";
+            }
+        }
         header("Location: manage_games.php" . ($club_id ? "?club_id=$club_id" : ""));
         exit();
     }
@@ -192,10 +249,6 @@ if ($club_id) {
     $query .= " WHERE g.club_id = ?";
     $params[] = $club_id;
 }
-if ($search) {
-    $query .= ($club_id ? " AND" : " WHERE") . " g.game_name LIKE ?";
-    $params[] = "%$search%";
-}
 $query .= " GROUP BY g.game_id, c.club_id, c.club_name, g.game_name, g.min_players, g.max_players, g.created_at";
 if ($sort === 'total_plays') {
     $query .= " ORDER BY total_plays $order, g.game_name ASC";
@@ -206,18 +259,20 @@ $stmt = $pdo->prepare($query);
 $stmt->execute($params);
 $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-if ($demo && empty($games)) {
+if ($demo) {
     $games = [
-        ['game_id' => 1, 'game_name' => 'Catan', 'min_players' => 3, 'max_players' => 4, 'total_plays' => 42, 'club_name' => 'Meeple & Dice Club', 'game_image' => null],
-        ['game_id' => 2, 'game_name' => 'Wingspan', 'min_players' => 1, 'max_players' => 5, 'total_plays' => 35, 'club_name' => 'Meeple & Dice Club', 'game_image' => null],
-        ['game_id' => 3, 'game_name' => 'Ticket to Ride', 'min_players' => 2, 'max_players' => 5, 'total_plays' => 28, 'club_name' => 'Meeple & Dice Club', 'game_image' => null],
-        ['game_id' => 4, 'game_name' => 'Codenames', 'min_players' => 2, 'max_players' => 8, 'total_plays' => 54, 'club_name' => 'Meeple & Dice Club', 'game_image' => null]
+        ['game_id' => 1, 'game_name' => 'Catan', 'min_players' => 3, 'max_players' => 4, 'total_plays' => 42, 'club_name' => 'Meeple & Dice Club', 'created_at' => date('Y-m-d H:i:s'), 'game_image' => null],
+        ['game_id' => 2, 'game_name' => 'Wingspan', 'min_players' => 1, 'max_players' => 5, 'total_plays' => 35, 'club_name' => 'Meeple & Dice Club', 'created_at' => date('Y-m-d H:i:s'), 'game_image' => null],
+        ['game_id' => 3, 'game_name' => 'Ticket to Ride', 'min_players' => 2, 'max_players' => 5, 'total_plays' => 28, 'club_name' => 'Meeple & Dice Club', 'created_at' => date('Y-m-d H:i:s'), 'game_image' => null],
+        ['game_id' => 4, 'game_name' => 'Codenames', 'min_players' => 2, 'max_players' => 8, 'total_plays' => 54, 'club_name' => 'Meeple & Dice Club', 'created_at' => date('Y-m-d H:i:s'), 'game_image' => null]
     ];
 }
 
 // Get club name if club_id is set
 $club_name = '';
-if ($club_id) {
+if ($demo) {
+    $club_name = 'Meeple & Dice Club';
+} else if ($club_id) {
     $stmt = $pdo->prepare("SELECT club_name FROM clubs WHERE club_id = ?");
     $stmt->execute([$club_id]);
     $club = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -228,8 +283,12 @@ if ($club_id) {
 $csrf_token = $security->generateCSRFToken();
 ?>
 
+<?php
+$themeParam = $_GET['theme'] ?? $_GET['club_theme'] ?? ($demo ? 'arcade' : '');
+$htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themeParam) . '" data-theme="dark" data-theme-locked="true"' : '';
+?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" <?php echo $htmlThemeAttrs; ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -291,12 +350,6 @@ $csrf_token = $security->generateCSRFToken();
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
         <?php NavigationHelper::renderCompactHeader('Manage Games' . ($club_name ? ' (' . $club_name . ')' : '')); ?>
-        <div class="header-actions">
-            <button type="button" class="btn btn--primary btn--small" onclick="toggleAddGameForm()"><span style="color: white; font-weight: bold; margin-right: 0.35rem;">+</span>Add a Game</button>
-            <?php if ($club_id): ?>
-                <a href="../club_game_list.php?id=<?php echo $club_id; ?>" class="btn btn--ghost btn--small" target="_blank" title="View on public site">👁️ Preview</a>
-            <?php endif; ?>
-        </div>
     </div>
     
     <div class="container">
@@ -372,12 +425,23 @@ $csrf_token = $security->generateCSRFToken();
                         <a href="?<?php echo $club_id ? 'club_id=' . $club_id : ''; ?>" class="btn btn--subtle btn--small">Reset</a>
                     </div>
                 </form>
+                <form method="POST" class="toolbar-group" id="bulk-form">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                    <?php if ($club_id): ?>
+                        <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
+                    <?php endif; ?>
+                    <select name="bulk_action" id="bulk-action-select" class="form-control form-control--sm" onchange="executeBulkAction(this)">
+                        <option value="">Bulk Actions</option>
+                        <option value="bulk_delete">Delete Selected</option>
+                    </select>
+                </form>
             </div>
 
             <div class="table-responsive">
             <table class="data-table">
                 <thead>
                     <tr>
+                        <th><input type="checkbox" id="select-all" class="form-check-input"></th>
                         <?php if (!$club_id): ?><th>Club</th><?php endif; ?>
                         <th style="width: 50px; text-align: left;">Image</th>
                         <th style="text-align: left;">
@@ -409,6 +473,9 @@ $csrf_token = $security->generateCSRFToken();
                     </tr>
                 </thead>
                 <tbody>
+                    <tr id="noSearchMatch" style="display: none;">
+                        <td colspan="<?php echo $club_id ? '7' : '8'; ?>" class="text-center text-muted" style="padding: 1.5rem;">No games match your search.</td>
+                    </tr>
                     <?php if (empty($games)): ?>
                         <tr>
                             <td colspan="<?php echo $club_id ? '7' : '8'; ?>" class="text-center text-muted" style="padding: 1.5rem;">No games created yet.</td>
@@ -416,12 +483,17 @@ $csrf_token = $security->generateCSRFToken();
                     <?php endif; ?>
                     <?php foreach ($games as $game): ?>
                         <tr>
+                            <td>
+                                <input type="checkbox" name="selected_games[]" form="bulk-form"
+                                       value="<?php echo $game['game_id']; ?>" class="form-check-input game-checkbox">
+                            </td>
                             <?php if (!$club_id): ?><td data-label="Club"><?php echo htmlspecialchars($game['club_name']); ?></td><?php endif; ?>
                             <td data-label="Image">
-                                <?php if ($game['game_image']): ?>
-                                    <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'], '../')); ?>" alt="" class="game-thumbnail" loading="lazy">
+                                <?php if (!empty($game['game_image'])): ?>
+                                    <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'], '../')); ?>" alt="" class="game-thumbnail" loading="lazy" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
+                                    <div class="game-thumbnail game-thumbnail--skeleton" style="display:none;" title="No image uploaded">🎲</div>
                                 <?php else: ?>
-                                    <div class="game-thumbnail game-thumbnail--skeleton" title="No image uploaded"></div>
+                                    <div class="game-thumbnail game-thumbnail--skeleton" title="No image uploaded">🎲</div>
                                 <?php endif; ?>
                             </td>
                             <td data-label="Game Name" style="text-align: left;"><?php echo htmlspecialchars($game['game_name']); ?></td>
@@ -502,7 +574,70 @@ $csrf_token = $security->generateCSRFToken();
     forms.forEach(function(form) {
         form.addEventListener('submit', saveScrollPosition);
     });
+
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        const filterGames = () => {
+            const query = searchInput.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('.data-table tbody tr:not(#noSearchMatch)');
+            let visibleCount = 0;
+            let hasOriginalRows = false;
+            rows.forEach(row => {
+                if (row.querySelector('.text-muted') && rows.length === 1) return;
+                hasOriginalRows = true;
+                const text = row.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            const noMatch = document.getElementById('noSearchMatch');
+            if (noMatch) {
+                noMatch.style.display = (visibleCount === 0 && query !== '' && hasOriginalRows) ? '' : 'none';
+            }
+        };
+        searchInput.addEventListener('input', filterGames);
+        if (searchInput.value) filterGames();
+    }
+
+    document.getElementById('select-all')?.addEventListener('change', function() {
+        document.querySelectorAll('.game-checkbox').forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+    });
 })();
+
+function executeBulkAction(selectEl) {
+    const action = selectEl.value;
+    if (!action) return;
+
+    const selectedCheckboxes = document.querySelectorAll('.game-checkbox:checked');
+
+    if (selectedCheckboxes.length === 0) {
+        alert('Please select at least one game.');
+        selectEl.value = '';
+        return;
+    }
+
+    if (action === 'bulk_delete') {
+        showConfirmDialog(null, {
+            title: '⚠️ Delete Selected Games?',
+            message: `Are you sure you want to delete ${selectedCheckboxes.length} selected game(s)?`,
+            confirmText: 'Delete Games',
+            cancelText: 'Cancel',
+            type: 'danger',
+            warningMessage: 'Games with no recorded match results will be permanently removed.',
+            onConfirm: () => {
+                document.getElementById('bulk-form').submit();
+            },
+            onCancel: () => {
+                selectEl.value = '';
+            }
+        });
+    }
+}
 
 function toggleAddGameForm() {
     const wrapper = document.getElementById('add-game-form-wrapper');

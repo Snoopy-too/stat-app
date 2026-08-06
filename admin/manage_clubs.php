@@ -238,14 +238,6 @@ $csrf_token = $security->generateCSRFToken();
         <?php display_session_message('success'); ?>
         <?php display_session_message('error'); ?>
 
-        <?php if (isset($_SESSION['api_file'])): ?>
-            <div class="message message--success">
-                API File Created: <strong><?php echo htmlspecialchars($_SESSION['api_file']); ?></strong>
-                <br>
-                <a href="../<?php echo htmlspecialchars($_SESSION['api_file']); ?>" target="_blank" style="color: inherit; text-decoration: underline;">Open File</a>
-            </div>
-            <?php unset($_SESSION['api_file']); ?>
-        <?php endif; ?>
 
         <?php
         $hide_create_section = ($admin_type === 'single_club' && $total_clubs_unfiltered >= 1);
@@ -338,6 +330,7 @@ $csrf_token = $security->generateCSRFToken();
                                 </td>
                                 <td class="actions-cell" data-label="Actions" style="text-align:right;">
                                     <div style="display:flex;align-items:center;justify-content:flex-end;gap:0.5rem;">
+                                        <a href="../club_json.php?id=<?php echo $club['club_id']; ?>" target="_blank" class="btn btn--small btn--subtle" title="View Club JSON Data">JSON API</a>
                                         <?php if ($is_active): ?>
                                             <span class="badge badge--primary" style="font-weight:600;">Viewing</span>
                                         <?php else: ?>
@@ -375,26 +368,6 @@ $csrf_token = $security->generateCSRFToken();
         </div>
     </div>
 
-    <!-- API Generation Confirmation Modal -->
-    <div id="apiConfirmModal" class="modal">
-        <div class="modal__dialog">
-            <div class="modal__content">
-                <h3>Generate API File</h3>
-                <p>Are you sure you want to generate a new API file for <strong id="api_club_name"></strong>?</p>
-                <p class="text-sm text-muted">This will create a new JSON file with the latest club data. Any existing API file for this club will remain accessible.</p>
-                
-                <form id="apiConfirmForm" method="POST" action="generate_api.php">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                    <input type="hidden" name="club_id" id="api_club_id">
-                    
-                    <div class="form-group" style="margin-top: 1.5rem; display: flex; gap: 0.5rem; justify-content: flex-start;">
-                        <button type="submit" class="btn btn--primary">Generate API</button>
-                        <button type="button" class="btn btn--subtle" onclick="closeApiModal()">Cancel</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
     
     <!-- Leave Club Confirmation Modal -->
     <div id="leaveClubModal" class="modal">
@@ -465,19 +438,6 @@ $csrf_token = $security->generateCSRFToken();
         </div>
     </div>
     <script>
-        // API Modal Logic
-        const apiModal = document.getElementById('apiConfirmModal');
-        const apiModalDialog = apiModal.querySelector('.modal__dialog');
-
-        function confirmApiGeneration(clubId, clubName) {
-            document.getElementById('api_club_id').value = clubId;
-            document.getElementById('api_club_name').textContent = clubName;
-            apiModal.classList.add('is-open');
-        }
-
-        function closeApiModal() {
-            apiModal.classList.remove('is-open');
-        }
 
         // Leave Modal Logic
         const leaveModal = document.getElementById('leaveClubModal');
@@ -559,10 +519,7 @@ $csrf_token = $security->generateCSRFToken();
                 });
             }
 
-            // Close Modals
-            if (event.target === apiModal) {
-                closeApiModal();
-            }
+
             if (event.target === leaveModal) {
                 closeLeaveModal();
             }
@@ -572,7 +529,6 @@ $csrf_token = $security->generateCSRFToken();
         };
 
         // Prevent event propagation
-        apiModalDialog.addEventListener('click', e => e.stopPropagation());
         leaveModalDialog.addEventListener('click', e => e.stopPropagation());
         deleteModalDialog.addEventListener('click', e => e.stopPropagation());
 

@@ -89,19 +89,6 @@
     color: var(--color-text-muted);
 }
 
-.trophy-thumbnail {
-    width: clamp(70px, 13vw, 96px);
-    height: clamp(70px, 13vw, 96px);
-    object-fit: contain;
-}
-
-.trophy-image {
-    width: clamp(140px, 30vw, 200px);
-    height: auto;
-    object-fit: contain;
-    margin: var(--spacing-3) auto;
-}
-
 /* Leaderboard Section */
 .leaderboard-section {
     margin-top: var(--spacing-4);

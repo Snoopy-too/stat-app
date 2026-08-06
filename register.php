@@ -2,306 +2,119 @@
 session_start();
 require_once 'config/database.php';
 require_once 'includes/SecurityUtils.php';
+require_once 'includes/helpers.php';
 
-// Initialize SecurityUtils
 $security = new SecurityUtils($pdo);
-
-// Generate CSRF token
 $csrfToken = $security->generateCSRFToken();
-
-// Clean up expired tokens
 $security->cleanExpiredTokens();
+
+$pageTitle = 'Register Administrator - Board Game Club StatApp';
+$htmlAttributes = 'data-club-theme="light" data-theme="light"';
+require_once 'includes/templates/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Board Game Club StatApp</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="css/styles.css">
-    <script src="js/dark-mode.js"></script>
-</head>
-<body>
-    <div class="header">
-        <h1>Board Game Club StatApp</h1>
-        <h2>Register</h2>
+
+<header class="landing-header">
+    <a href="index.php" class="logo-brand">
+        <span>🎲</span> StatApp
+    </a>
+    <div class="header-actions">
+        <a href="admin/login.php" class="btn btn--secondary btn--sm">Admin Login</a>
     </div>
-    <div class="container container--narrow auth-shell">
-    <div class="card auth-card">
-        <form id="registrationForm" action="process_registration.php" method="POST" novalidate>
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+</header>
 
-            <div class="form-group">
-                <label for="username" class="form-field-required">Username</label>
-                <input type="text" id="username" name="username" required
-                       class="form-control"
-                       placeholder="Choose your unique username"
-                       minlength="2" maxlength="50">
-                <div class="field-help">Your unique identifier for the admin panel. Only letters, numbers, and underscores.</div>
-                <div class="username-requirements">
-                    <div class="requirement" data-requirement="length">
-                        <i class="fas fa-times"></i> Between 2 and 50 characters
+<div class="landing-hero">
+    <!-- Background Wave & Grid Contour Overlays -->
+    <div class="hero-contour-waves"></div>
+
+    <div class="landing-hero-content">
+        <h1>Register as <span class="highlight">Admin</span></h1>
+        <p class="landing-hero-subtitle">Create an administrator account for your Board Game Club(s).</p>
+
+        <?php display_session_message('error'); ?>
+        <?php display_session_message('registration_error', 'error'); ?>
+        <?php display_session_message('success'); ?>
+
+        <div class="landing-card">
+            <!-- Corner Contour Brackets -->
+            <div class="card-corner-bracket card-corner-bracket--tl"></div>
+            <div class="card-corner-bracket card-corner-bracket--tr"></div>
+            <div class="card-corner-bracket card-corner-bracket--bl"></div>
+            <div class="card-corner-bracket card-corner-bracket--br"></div>
+
+            <form id="registrationForm" action="process_registration.php" method="POST" class="stack">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+
+                <div class="form-group">
+                    <label for="username" class="form-label form-label--required">Username</label>
+                    <div class="input-with-icon">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="username" name="username" required class="form-control"
+                               placeholder="Choose a unique username" minlength="2" maxlength="50"
+                               pattern="^[a-zA-Z0-9_]+$" title="Only letters, numbers, and underscores allowed"
+                               autocomplete="username" autofocus>
                     </div>
-                    <div class="requirement" data-requirement="alphanumeric">
-                        <i class="fas fa-times"></i> Only letters, numbers, and underscores
+                    <small class="help-text">2 to 50 characters (letters, numbers, underscores).</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label form-label--required">Club Admin Email</label>
+                    <div class="input-with-icon">
+                        <span class="input-icon">✉️</span>
+                        <input type="email" id="email" name="email" required class="form-control"
+                               placeholder="admin@yourdomain.com" autocomplete="email">
                     </div>
-                    <div class="requirement" data-requirement="no-spaces">
-                        <i class="fas fa-times"></i> No spaces allowed
+                    <small class="help-text">Used for admin login and notifications.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label form-label--required">Password</label>
+                    <div class="input-with-icon">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="password" name="password" required class="form-control"
+                               minlength="8" placeholder="Create a strong password" autocomplete="new-password">
+                    </div>
+                    <small class="help-text">Min 8 characters with uppercase, lowercase, number, and symbol.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password" class="form-label form-label--required">Confirm Password</label>
+                    <div class="input-with-icon">
+                        <span class="input-icon">🔑</span>
+                        <input type="password" id="confirm_password" name="confirm_password" required class="form-control"
+                               minlength="8" placeholder="Re-enter your password" autocomplete="new-password">
                     </div>
                 </div>
-                <div class="error-message" id="usernameError"></div>
-            </div>
 
-            <div class="form-group">
-                <label for="email" class="form-field-required">Club Admin Email</label>
-                <input type="email" id="email" name="email" required class="form-control"
-                       placeholder="admin@yourdomain.com">
-                <div class="field-help">We'll use this email for your admin account login and important notifications.</div>
-                <!-- This is where the server-side error will appear -->
-                <div class="error-message" id="emailError"></div>
-            </div>
+                <div class="form-divider"></div>
 
-            <div class="form-group">
-                <label for="password" class="form-field-required">Password</label>
-                <div class="password-container">
-                    <input type="password" id="password" name="password" required
-                        minlength="8" class="form-control"
-                        placeholder="Create a strong password">
-                    <i class="password-toggle fas fa-eye"></i>
+                <div style="display: flex; gap: 0.75rem; width: 100%; margin-top: 1rem;">
+                    <button type="submit" class="btn btn--primary" style="flex: 1; text-align: center; justify-content: center;">Register Account</button>
                 </div>
-                <div class="field-help">Must be at least 8 characters with uppercase, lowercase, numbers, and symbols.</div>
-                <div class="password-strength">
-                    <div class="password-strength-bar"></div>
-                </div>
-                <div class="password-requirements">
-                    <div class="requirement" data-requirement="length">
-                        <i class="fas fa-times"></i> At least 8 characters
-                    </div>
-                    <div class="requirement" data-requirement="uppercase">
-                        <i class="fas fa-times"></i> One uppercase letter
-                    </div>
-                    <div class="requirement" data-requirement="lowercase">
-                        <i class="fas fa-times"></i> One lowercase letter
-                    </div>
-                    <div class="requirement" data-requirement="number">
-                        <i class="fas fa-times"></i> One number
-                    </div>
-                    <div class="requirement" data-requirement="special">
-                        <i class="fas fa-times"></i> One special character
-                    </div>
-                </div>
-                <div class="error-message" id="passwordError"></div>
-            </div>
-
-            <div class="form-group">
-                <label for="confirm_password" class="form-field-required">Confirm Password</label>
-                <div class="password-container">
-                    <input type="password" id="confirm_password" name="confirm_password" required class="form-control"
-                           placeholder="Re-enter your password">
-                    <i class="password-toggle fas fa-eye"></i>
-                </div>
-                <div class="field-help">Make sure both passwords match exactly.</div>
-                <div class="error-message" id="confirmPasswordError"></div>
-            </div>
-
-            <div class="form-group">
-                <button type="submit" class="btn" disabled>Register</button>
-                <a href="admin/login.php" class="btn btn--secondary">Back to Login</a>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
-    </div>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('registrationForm');
-            const usernameInput = document.getElementById('username');
-            const emailInput = document.getElementById('email'); // Get email input
-            const passwordInput = document.getElementById('password');
-            const confirmPasswordInput = document.getElementById('confirm_password');
-            const submitButton = form.querySelector('button[type="submit"]');
-            const emailError = document.getElementById('emailError'); // Get email error div
-            const usernameError = document.getElementById('usernameError'); // Get username error div (if needed)
-            const passwordError = document.getElementById('passwordError'); // Get password error div
-            const confirmPasswordError = document.getElementById('confirmPasswordError'); // Get confirm password error div
+</div>
 
-            // --- Display Server-Side Error ---
-            <?php if (isset($_SESSION['registration_error'])): ?>
-                const errorMessage = <?php echo json_encode($_SESSION['registration_error']); ?>;
-                // Display error near the relevant field (e.g., email)
-                // You might want more sophisticated logic here if the error could apply
-                // to username or password too, but for 'Email already registered',
-                // showing it by the email field makes sense.
-                if (emailError) {
-                    emailError.textContent = errorMessage;
-                    if (emailInput) {
-                       emailInput.classList.add('is-invalid'); // Optional: Add error style
-                    }
-                } else {
-                    // Fallback if emailError div doesn't exist for some reason
-                    alert('Registration Error: ' + errorMessage);
-                }
-                <?php unset($_SESSION['registration_error']); // Clear the message after preparing to display ?>
-            <?php endif; ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const pwInput = document.getElementById('password');
+    const confirmInput = document.getElementById('confirm_password');
 
-            // --- Validation Functions (Keep these as they are) ---
-            function validateUsername() {
-                // ... (your existing username validation logic) ...
-                 const username = usernameInput.value.trim();
-                let allValid = true;
-                const requirements = {
-                    length: username.length >= 2 && username.length <= 50,
-                    alphanumeric: /^[a-zA-Z0-9_]+$/.test(username),
-                    'no-spaces': !/\s/.test(username)
-                };
-                Object.entries(requirements).forEach(([req, valid]) => {
-                    const reqElement = document.querySelector(`.username-requirements [data-requirement="${req}"]`);
-                    if (reqElement) {
-                        reqElement.classList.toggle('valid', valid);
-                        reqElement.classList.toggle('invalid', !valid);
-                        reqElement.querySelector('i').className = valid ? 'fas fa-check' : 'fas fa-times';
-                    }
-                    if (!valid) allValid = false;
-                });
-                if (username.length === 0) { /* handle empty UI */
-                    const lengthReqElement = document.querySelector('.username-requirements [data-requirement="length"]');
-                    if(lengthReqElement) { lengthReqElement.classList.remove('valid'); lengthReqElement.classList.add('invalid'); lengthReqElement.querySelector('i').className = 'fas fa-times'; }
-                    const alphaReqElement = document.querySelector('.username-requirements [data-requirement="alphanumeric"]');
-                    if(alphaReqElement) { alphaReqElement.classList.remove('valid'); alphaReqElement.classList.add('invalid'); alphaReqElement.querySelector('i').className = 'fas fa-times'; }
-                    allValid = false;
-                }
-                return allValid;
-            }
+    function checkMatch() {
+        if (confirmInput.value && confirmInput.value !== pwInput.value) {
+            confirmInput.setCustomValidity('Passwords do not match');
+        } else {
+            confirmInput.setCustomValidity('');
+        }
+    }
+    if (pwInput && confirmInput) {
+        pwInput.addEventListener('input', checkMatch);
+        confirmInput.addEventListener('input', checkMatch);
+    }
+});
+</script>
 
-            function validatePassword() {
-                // ... (your existing password validation logic) ...
-                 const password = passwordInput.value;
-                let allValid = true;
-                const requirements = {
-                    length: password.length >= 8,
-                    uppercase: /[A-Z]/.test(password),
-                    lowercase: /[a-z]/.test(password),
-                    number: /[0-9]/.test(password),
-                    special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
-                };
-                Object.entries(requirements).forEach(([req, valid]) => {
-                    const reqElement = document.querySelector(`.password-requirements [data-requirement="${req}"]`);
-                    if (reqElement) {
-                        reqElement.classList.toggle('valid', valid);
-                        reqElement.classList.toggle('invalid', !valid);
-                        reqElement.querySelector('i').className = valid ? 'fas fa-check' : 'fas fa-times';
-                    }
-                    if (!valid) allValid = false;
-                });
-                return allValid;
-            }
-
-             // --- Simplified Check Form Validity (Only enables/disables button) ---
-             function checkFormValidity() {
-                const emailValue = emailInput.value;
-                const isUsernameValid = validateUsername(); // Re-run validation logic
-                const isPasswordValid = validatePassword(); // Re-run validation logic
-                const doPasswordsMatch = passwordInput.value === confirmPasswordInput.value && passwordInput.value.length > 0;
-                const isEmailFormatValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue); // Basic client check
-
-                // Clear confirm password error if passwords now match or fields change
-                if (confirmPasswordError) {
-                     if (passwordInput.value === confirmPasswordInput.value) {
-                         confirmPasswordError.textContent = '';
-                         confirmPasswordInput.classList.remove('is-invalid');
-                     } else if (confirmPasswordInput.value.length > 0) {
-                         // Only show mismatch error if confirm field has content
-                         confirmPasswordError.textContent = 'Passwords do not match';
-                         confirmPasswordInput.classList.add('is-invalid');
-                     } else {
-                         // Clear error if confirm field is empty
-                          confirmPasswordError.textContent = '';
-                         confirmPasswordInput.classList.remove('is-invalid');
-                     }
-                }
-
-
-                submitButton.disabled = !(
-                    isUsernameValid &&
-                    emailValue.length > 0 &&
-                    isEmailFormatValid &&
-                    isPasswordValid &&
-                    doPasswordsMatch
-                );
-            }
-
-            // --- Event Listeners ---
-
-            // Username validation on input
-            usernameInput.addEventListener('input', () => {
-                validateUsername(); // Update visual indicators
-                checkFormValidity(); // Check overall form validity for button state
-            });
-
-            // Email: Clear server error on input, check validity
-            emailInput.addEventListener('input', () => {
-                if (emailError && emailError.textContent) {
-                    emailError.textContent = ''; // Clear server-side error now
-                    emailInput.classList.remove('is-invalid');
-                }
-                checkFormValidity(); // Check overall form validity
-            });
-
-            // Password validation on input
-            passwordInput.addEventListener('input', () => {
-                validatePassword(); // Update visual indicators
-                 // Also check confirm password whenever password changes
-                 if (confirmPasswordInput.value.length > 0) {
-                      checkFormValidity(); // This will re-evaluate password match
-                 } else {
-                      checkFormValidity(); // Still check validity for button state
-                 }
-
-            });
-
-            // Confirm Password validation on input
-            confirmPasswordInput.addEventListener('input', () => {
-                checkFormValidity(); // This will check the match and update button state
-            });
-
-
-            // Password visibility toggles (keep as is)
-            document.querySelectorAll('.password-toggle').forEach(toggle => {
-                toggle.addEventListener('click', function() {
-                    const targetInput = this.previousElementSibling;
-                    if (targetInput && targetInput.matches('input[type="password"], input[type="text"]')) {
-                         const type = targetInput.getAttribute('type');
-                         targetInput.setAttribute('type', type === 'password' ? 'text' : 'password');
-                         this.className = `password-toggle fas ${type === 'password' ? 'fa-eye-slash' : 'fa-eye'}`;
-                    }
-                });
-            });
-
-            // Form submission handler (keep as is)
-            form.addEventListener('submit', function(e) {
-                checkFormValidity(); // Final check before submitting
-                if (submitButton.disabled) {
-                    e.preventDefault();
-                    return false;
-                }
-                return true;
-            });
-
-            // --- Initial State Check ---
-            // Run validations to set initial UI indicators and button state
-            validateUsername();
-            validatePassword();
-            checkFormValidity(); // Call this last to set the button state correctly based on initial field values (if any)
-
-        });
-    </script>
-    <script src="js/mobile-menu.js"></script>
-    <script src="js/form-loading.js"></script>
-    <script src="js/confirmations.js"></script>
-    <script src="js/form-validation.js"></script>
-    <script src="js/empty-states.js"></script>
-    <script src="js/multi-step-form.js"></script>
-    <script src="js/breadcrumbs.js"></script>
-</body>
-</html>
+<?php
+$extraScripts = '<script src="js/form-loading.js"></script>';
+require_once 'includes/templates/footer.php';
+?>

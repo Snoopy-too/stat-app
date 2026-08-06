@@ -41,7 +41,7 @@ if ($club_id) {
     } catch (Exception $e) {}
 }
 
-if (!$club) {
+if ($demo || !$club) {
     $club_id = 1;
     $club = ['club_id' => 1, 'club_name' => 'Meeple & Dice Club'];
 }
@@ -75,19 +75,13 @@ $query = "
 
 $params = [$club_id];
 
-if ($search) {
-    $query .= " AND (m.member_name LIKE ? OR c.champ_comments LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-}
-
 $query .= " ORDER BY {$sort_column} {$order_direction}";
 
 $stmt = $pdo->prepare($query);
 $stmt->execute($params);
 $champions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-if ($demo && empty($champions)) {
+if ($demo) {
     $champions = [
         [
             'champion_id' => 1,
@@ -191,8 +185,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $csrf_token = $security->generateCSRFToken();
 ?>
 
+<?php
+$themeParam = $_GET['theme'] ?? $_GET['club_theme'] ?? ($demo ? 'arcade' : '');
+$htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themeParam) . '" data-theme="dark" data-theme-locked="true"' : '';
+?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" <?php echo $htmlThemeAttrs; ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -206,9 +204,7 @@ $csrf_token = $security->generateCSRFToken();
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
         <?php NavigationHelper::renderCompactHeader('Manage Champions (' . $club['club_name'] . ')'); ?>
-        <div class="header-actions">
-            <a href="manage_trophy.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle btn--small">Manage Trophy</a>
-        </div>
+
     </div>
 
     <div class="container container--wide">
@@ -310,6 +306,9 @@ $csrf_token = $security->generateCSRFToken();
                     </tr>
                 </thead>
                 <tbody>
+                    <tr id="noSearchMatch" style="display: none;">
+                        <td colspan="5" class="text-center text-muted" style="padding: 1.5rem;">No champions match your search.</td>
+                    </tr>
                     <?php if (empty($champions)): ?>
                         <tr>
                             <td colspan="5" class="text-center text-muted" style="padding: 1.5rem;">No champions created yet.</td>
@@ -522,6 +521,33 @@ $csrf_token = $security->generateCSRFToken();
     forms.forEach(function(form) {
         form.addEventListener('submit', saveScrollPosition);
     });
+
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        const filterChampions = () => {
+            const query = searchInput.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('.data-table tbody tr:not(#noSearchMatch)');
+            let visibleCount = 0;
+            let hasOriginalRows = false;
+            rows.forEach(row => {
+                if (row.querySelector('.text-muted') && rows.length === 1) return;
+                hasOriginalRows = true;
+                const text = row.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            const noMatch = document.getElementById('noSearchMatch');
+            if (noMatch) {
+                noMatch.style.display = (visibleCount === 0 && query !== '' && hasOriginalRows) ? '' : 'none';
+            }
+        };
+        searchInput.addEventListener('input', filterChampions);
+        if (searchInput.value) filterChampions();
+    }
 })();
 </script>
 </html>

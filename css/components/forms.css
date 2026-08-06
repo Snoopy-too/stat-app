@@ -29,8 +29,9 @@
     margin-left: 0.25rem;
 }
 
-/* Inputs */
-.form-control {
+/* Inputs & Code Display Fields */
+.form-control,
+.code-field {
     display: block;
     width: 100%;
     padding: 0.5rem 0.75rem;
@@ -39,20 +40,23 @@
     color: var(--color-text);
     background-color: var(--color-surface);
     background-clip: padding-box;
-    border: 1px solid var(--color-border-strong);
+    border: 1.5px solid var(--color-border-strong);
     border-radius: var(--radius-sm);
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     appearance: none;
 }
 
-.form-control:hover {
-    border-color: var(--color-text-muted);
+.form-control:hover,
+.code-field:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-soft);
 }
 
-.form-control:focus {
+.form-control:focus,
+.code-field:focus {
     border-color: var(--color-primary);
     outline: 0;
-    box-shadow: 0 0 0 3px var(--color-focus-ring);
+    box-shadow: 0 0 0 3px var(--color-primary-soft);
 }
 
 .form-control::placeholder {

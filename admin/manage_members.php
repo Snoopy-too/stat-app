@@ -61,7 +61,13 @@ $query = "
             FROM teams t
             WHERE t.club_id = m.club_id
               AND (t.member1_id = m.member_id OR t.member2_id = m.member_id
-                OR t.member3_id = m.member_id OR t.member4_id = m.member_id)) as member_teams
+                OR t.member3_id = m.member_id OR t.member4_id = m.member_id)) as member_teams,
+           (
+                (SELECT COUNT(*) FROM game_results gr WHERE COALESCE(gr.winner, gr.member_id) = m.member_id)
+                +
+                (SELECT COUNT(*) FROM team_game_results tgr JOIN teams t ON tgr.winner = t.team_id WHERE (t.member1_id = m.member_id OR t.member2_id = m.member_id OR t.member3_id = m.member_id OR t.member4_id = m.member_id))
+           ) as total_wins,
+           (SELECT COUNT(*) FROM champions ch WHERE ch.member_id = m.member_id) as championships_count
     FROM members m
     JOIN clubs c ON m.club_id = c.club_id
     WHERE m.club_id = ?
@@ -75,9 +81,13 @@ if ($status_filter !== 'all') {
 }
 
 // Define valid sort columns
-$valid_sort_columns = ['member_name', 'nickname', 'email', 'status'];
+$valid_sort_columns = ['member_name', 'nickname', 'total_wins', 'championships_count', 'status'];
 $sort = in_array($sort, $valid_sort_columns) ? $sort : 'member_name';
-$query .= " ORDER BY m." . $sort . " " . ($order === 'desc' ? 'DESC' : 'ASC');
+if ($sort === 'total_wins' || $sort === 'championships_count') {
+    $query .= " ORDER BY " . $sort . " " . ($order === 'desc' ? 'DESC' : 'ASC');
+} else {
+    $query .= " ORDER BY m." . $sort . " " . ($order === 'desc' ? 'DESC' : 'ASC');
+}
 
 $stmt = $pdo->prepare($query);
 $stmt->execute($params);
@@ -85,10 +95,10 @@ $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if ($demo) {
     $members = [
-        ['member_id' => 1, 'member_name' => 'Alex Rivers', 'nickname' => 'Alex', 'email' => 'alex@example.com', 'status' => 'active', 'club_name' => 'Meeple & Dice Club'],
-        ['member_id' => 2, 'member_name' => 'Sam Taylor', 'nickname' => 'Sam', 'email' => 'sam@example.com', 'status' => 'active', 'club_name' => 'Meeple & Dice Club'],
-        ['member_id' => 3, 'member_name' => 'Jordan Lee', 'nickname' => 'Jordan', 'email' => 'jordan@example.com', 'status' => 'active', 'club_name' => 'Meeple & Dice Club'],
-        ['member_id' => 4, 'member_name' => 'Casey Morgan', 'nickname' => 'Casey', 'email' => 'casey@example.com', 'status' => 'active', 'club_name' => 'Meeple & Dice Club']
+        ['member_id' => 1, 'member_name' => 'Alex Rivers', 'nickname' => 'Alex', 'email' => 'alex@example.com', 'status' => 'active', 'club_name' => 'Meeple & Dice Club', 'total_wins' => 12, 'championships_count' => 2],
+        ['member_id' => 2, 'member_name' => 'Sam Taylor', 'nickname' => 'Sam', 'email' => 'sam@example.com', 'status' => 'active', 'club_name' => 'Meeple & Dice Club', 'total_wins' => 8, 'championships_count' => 1],
+        ['member_id' => 3, 'member_name' => 'Jordan Lee', 'nickname' => 'Jordan', 'email' => 'jordan@example.com', 'status' => 'active', 'club_name' => 'Meeple & Dice Club', 'total_wins' => 5, 'championships_count' => 0],
+        ['member_id' => 4, 'member_name' => 'Casey Morgan', 'nickname' => 'Casey', 'email' => 'casey@example.com', 'status' => 'active', 'club_name' => 'Meeple & Dice Club', 'total_wins' => 3, 'championships_count' => 0]
     ];
 }
 
@@ -242,6 +252,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     break;
                     
                 case 'bulk_delete':
+                    $password = $_POST['password'] ?? '';
+                    if (!verify_admin_password($password, $pdo)) {
+                        $_SESSION['error'] = "Incorrect password. Bulk delete cancelled.";
+                        header("Location: manage_members.php?club_id=" . $club_id);
+                        exit();
+                    }
                     $stmt = $pdo->prepare("DELETE FROM members WHERE member_id = ? AND club_id = ? AND EXISTS (SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?)");
                     foreach ($selected_members as $member_id) {
                         $stmt->execute([$member_id, $club_id, $club_id, $_SESSION['admin_id']]);
@@ -496,13 +512,22 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                                 </a>
                             </th>
                             <th>
-                                <a href="?club_id=<?php echo $club_id; ?>&sort=email&order=<?php echo ($sort === 'email' && strtolower($order) === 'asc') ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo $status_filter; ?>" class="table-sort-link sort-link">
-                                    <span>Email</span>
-                                    <?php if ($sort === 'email'): ?>
+                                <a href="?club_id=<?php echo $club_id; ?>&sort=total_wins&order=<?php echo ($sort === 'total_wins' && strtolower($order) === 'asc') ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo $status_filter; ?>" class="table-sort-link sort-link">
+                                    <span>Total Wins</span>
+                                    <?php if ($sort === 'total_wins'): ?>
                                         <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
                                     <?php endif; ?>
                                 </a>
                             </th>
+                            <th>
+                                <a href="?club_id=<?php echo $club_id; ?>&sort=championships_count&order=<?php echo ($sort === 'championships_count' && strtolower($order) === 'asc') ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo $status_filter; ?>" class="table-sort-link sort-link">
+                                    <span>Championships</span>
+                                    <?php if ($sort === 'championships_count'): ?>
+                                        <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
+                                    <?php endif; ?>
+                                </a>
+                            </th>
+                            <th>Teams</th>
                             <th>
                                 <a href="?club_id=<?php echo $club_id; ?>&sort=status&order=<?php echo ($sort === 'status' && strtolower($order) === 'asc') ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo $status_filter; ?>" class="table-sort-link sort-link">
                                     <span>Status</span>
@@ -511,17 +536,16 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                                     <?php endif; ?>
                                 </a>
                             </th>
-                            <th>Teams</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                     <tr id="noSearchMatch" style="display: none;">
-                        <td colspan="7" class="text-center text-muted" style="padding: 1.5rem;">No members match your search.</td>
+                        <td colspan="8" class="text-center text-muted" style="padding: 1.5rem;">No members match your search.</td>
                     </tr>
                     <?php if (empty($members)): ?>
                         <tr>
-                            <td colspan="7" class="text-center text-muted" style="padding: 1.5rem;">No members created yet.</td>
+                            <td colspan="8" class="text-center text-muted" style="padding: 1.5rem;">No members created yet.</td>
                         </tr>
                     <?php endif; ?>
                     <?php foreach ($members as $member): ?>
@@ -532,11 +556,15 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                             </td>
                             <td><?php echo htmlspecialchars($member['member_name']); ?></td>
                             <td><?php echo htmlspecialchars($member['nickname']); ?></td>
-                            <td><?php echo htmlspecialchars($member['email']); ?></td>
+                            <td><strong style="color: var(--color-primary);"><?php echo (int)($member['total_wins'] ?? 0); ?></strong></td>
                             <td>
-                                <span class="status-badge status-<?php echo $member['status']; ?>">
-                                    <?php echo ucfirst($member['status']); ?>
-                                </span>
+                                <?php if (!empty($member['championships_count']) && $member['championships_count'] > 0): ?>
+                                    <span style="display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 600; color: #d97706; background: rgba(217, 119, 6, 0.1); padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.85rem;">
+                                        🏆 <?php echo (int)$member['championships_count']; ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="text-muted">0</span>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <?php if (!empty($member['member_teams'])): ?>
@@ -547,16 +575,15 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                                     <span class="text-muted">—</span>
                                 <?php endif; ?>
                             </td>
+                            <td>
+                                <span class="status-badge status-<?php echo $member['status']; ?>">
+                                    <?php echo ucfirst($member['status']); ?>
+                                </span>
+                            </td>
                             <td data-label="Actions">
                                 <div class="btn-group" style="display:flex; gap:0.35rem; align-items:center;">
                                     <a href="edit_member.php?club_id=<?php echo $club_id; ?>&member_id=<?php echo $member['member_id']; ?>" 
-                                       class="btn btn--small btn--secondary">Edit</a>
-                                    <form method="POST" style="display:inline; margin:0;" id="delete-form-<?php echo $member['member_id']; ?>">
-                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                                        <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="member_id" value="<?php echo $member['member_id']; ?>">
-                                        <button type="button" class="btn btn--small btn--danger" onclick="confirmDeleteMember(event, <?php echo $member['member_id']; ?>, '<?php echo addslashes($member['member_name']); ?>')">Delete</button>
-                                    </form>
+                                       class="btn btn--small btn--secondary">View/Edit</a>
                                 </div>
                             </td>
                         </tr>
@@ -666,8 +693,20 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                     cancelText: 'Cancel',
                     type: type,
                     warningMessage: warningMessage,
-                    onConfirm: () => {
-                        document.getElementById('bulk-form').submit();
+                    requirePassword: (action === 'bulk_delete'),
+                    onConfirm: (password) => {
+                        const bulkForm = document.getElementById('bulk-form');
+                        if (action === 'bulk_delete' && password) {
+                            let passInput = bulkForm.querySelector('input[name="password"]');
+                            if (!passInput) {
+                                passInput = document.createElement('input');
+                                passInput.type = 'hidden';
+                                passInput.name = 'password';
+                                bulkForm.appendChild(passInput);
+                            }
+                            passInput.value = password;
+                        }
+                        bulkForm.submit();
                     },
                     onCancel: () => {
                         selectEl.value = '';

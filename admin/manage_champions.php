@@ -117,6 +117,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         try {
             if ($bulk_action === 'bulk_delete') {
+                $password = $_POST['password'] ?? '';
+                if (!verify_admin_password($password, $pdo)) {
+                    $_SESSION['error'] = "Incorrect password. Bulk delete cancelled.";
+                    header("Location: manage_champions.php?club_id=" . $club_id);
+                    exit();
+                }
                 $stmt = $pdo->prepare("DELETE FROM champions WHERE ID = ?");
                 foreach ($selected_champions as $champion_id) {
                     $stmt->execute([$champion_id]);
@@ -325,12 +331,7 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                             <td data-label="Comments"><?php echo htmlspecialchars($champion['champ_comments']); ?></td>
                             <td data-label="Actions">
                                 <div style="display:flex; gap:0.5rem; align-items:center;">
-                                    <button type="button" class="btn btn--small btn--secondary" onclick="editChampion(<?php echo $champion['ID']; ?>, <?php echo $champion['member_id']; ?>, '<?php echo $champion['date']; ?>', '<?php echo addslashes($champion['champ_comments']); ?>')">
-                                        Edit
-                                    </button>
-                                    <button type="button" class="btn btn--small btn--danger" onclick="confirmDeleteChampion(<?php echo $champion['ID']; ?>, '<?php echo addslashes($champion['member_name']); ?>')">
-                                        Delete
-                                    </button>
+                                    <a href="edit_champion.php?club_id=<?php echo $club_id; ?>&champion_id=<?php echo $champion['ID']; ?>" class="btn btn--small btn--secondary">View/Edit</a>
                                 </div>
                             </td>
                         </tr>
@@ -343,41 +344,8 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
         </div>
     </div>
 
-    <!-- Edit Champion Modal -->
-    <div id="editChampionModal" class="modal">
-        <div class="modal__dialog">
-            <form id="editChampionForm" method="POST">
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                <input type="hidden" name="action" value="edit">
-                <input type="hidden" name="champion_id" id="edit_champion_id">
-                <div class="form-group">
-                    <label>Member:</label>
-                    <select name="edit_member_id" id="edit_member_id" required class="form-control">
-                        <?php foreach ($members as $member): ?>
-                            <option value="<?php echo $member['member_id']; ?>">
-                                <?php echo htmlspecialchars($member['member_name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Date:</label>
-                    <input type="date" name="edit_date" id="edit_date" required class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Comments:</label>
-                    <textarea name="edit_comments" id="edit_comments" class="form-control" rows="3"></textarea>
-                </div>
-                <div class="form-group">
-                    <button type="submit" class="btn btn--primary">Save Changes</button>
-                    <button type="button" class="btn btn--subtle" onclick="closeEditModal()">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script>
-        document.getElementById('select-all').addEventListener('change', function() {
+        document.getElementById('select-all')?.addEventListener('change', function() {
             document.querySelectorAll('.champion-checkbox').forEach(checkbox => {
                 checkbox.checked = this.checked;
             });
@@ -403,29 +371,24 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                     cancelText: 'Cancel',
                     type: 'danger',
                     warningMessage: 'Selected champion records will be permanently removed.',
-                    onConfirm: () => {
-                        document.getElementById('bulk-form').submit();
+                    requirePassword: true,
+                    onConfirm: (password) => {
+                        const bulkForm = document.getElementById('bulk-form');
+                        let passInput = bulkForm.querySelector('input[name="password"]');
+                        if (!passInput) {
+                            passInput = document.createElement('input');
+                            passInput.type = 'hidden';
+                            passInput.name = 'password';
+                            bulkForm.appendChild(passInput);
+                        }
+                        passInput.value = password;
+                        bulkForm.submit();
                     },
                     onCancel: () => {
                         selectEl.value = '';
                     }
                 });
             }
-        }
-
-        const championModal = document.getElementById('editChampionModal');
-        const championModalDialog = championModal.querySelector('.modal__dialog');
-
-        function editChampion(championId, memberId, date, comments) {
-            document.getElementById('edit_champion_id').value = championId;
-            document.getElementById('edit_member_id').value = memberId;
-            document.getElementById('edit_date').value = date;
-            document.getElementById('edit_comments').value = comments;
-            championModal.classList.add('is-open');
-        }
-
-        function closeEditModal() {
-            championModal.classList.remove('is-open');
         }
 
         function toggleAddChampionForm() {

@@ -194,7 +194,7 @@ if (isset($_SESSION['club_id'])) {
                 .then(clubs => {
                     const resultsHtml = clubs.length ? clubs.map(club => `
                         <div class="club-item">
-                            <h3><a href="club_stats.php?id=${club.club_id}">${club.club_name}</a></h3>
+                            <h3><a href="${club.slug ? encodeURIComponent(club.slug) : 'club_stats.php?id=' + club.club_id}">${club.club_name}</a></h3>
                             ${club.description ? `<p>${club.description.substring(0, 100)}...</p>` : ''}
                         </div>
                     `).join('') : '<p style="text-align:center;color:var(--color-text-muted);font-size:0.9rem;margin:0.5rem 0;">No clubs found</p>';

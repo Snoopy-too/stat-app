@@ -182,7 +182,7 @@ if (empty($wot_labels)) {
                     <?php endif; ?>
                 </div>
                 <div class="member-actions">
-                    <a href="edit_member.php?id=<?php echo $member['member_id']; ?>" class="btn">Edit</a>
+                    <a href="edit_member.php?id=<?php echo $member['member_id']; ?>" class="btn">View/Edit</a>
                     <a href="view_stats.php?id=<?php echo $member['member_id']; ?>" class="btn">Stats</a>
                 </div>
             </div>

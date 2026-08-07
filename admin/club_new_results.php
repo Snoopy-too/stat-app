@@ -23,8 +23,23 @@ if (!$club_id && !empty($_SESSION['club_id'])) {
     $club_id = (int)$_SESSION['club_id'];
 }
 
+// Auto-resolve club_id if missing
+if (!$club_id && isset($_SESSION['admin_id'])) {
+    try {
+        $stmt = $pdo->prepare("SELECT c.club_id FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ? ORDER BY c.club_name ASC LIMIT 1");
+        $stmt->execute([$_SESSION['admin_id']]);
+        $club_id = (int)$stmt->fetchColumn();
+    } catch (Throwable $e) {}
+}
 if (!$club_id) {
-    header("Location: new_result.php");
+    try {
+        $club_id = (int)$pdo->query("SELECT club_id FROM clubs ORDER BY club_id ASC LIMIT 1")->fetchColumn();
+    } catch (Throwable $e) {}
+}
+
+if (!$club_id) {
+    $_SESSION['error'] = "Please create a club first.";
+    header("Location: dashboard.php");
     exit();
 }
 
@@ -32,13 +47,20 @@ $_SESSION['current_club_id'] = $club_id;
 $_SESSION['club_id'] = $club_id;
 
 // Verify admin has access to this club
-$stmt = $pdo->prepare("
-    SELECT c.* FROM clubs c
-    JOIN club_admins ca ON c.club_id = ca.club_id
-    WHERE c.club_id = ? AND ca.admin_id = ?
-");
-$stmt->execute([$club_id, $_SESSION['admin_id']]);
-$club = $stmt->fetch(PDO::FETCH_ASSOC);
+$club = null;
+if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
+    $stmt = $pdo->prepare("SELECT * FROM clubs WHERE club_id = ?");
+    $stmt->execute([$club_id]);
+    $club = $stmt->fetch(PDO::FETCH_ASSOC);
+} else {
+    $stmt = $pdo->prepare("
+        SELECT c.* FROM clubs c
+        JOIN club_admins ca ON c.club_id = ca.club_id
+        WHERE c.club_id = ? AND ca.admin_id = ?
+    ");
+    $stmt->execute([$club_id, $_SESSION['admin_id'] ?? 0]);
+    $club = $stmt->fetch(PDO::FETCH_ASSOC);
+}
 
 if (!$club) {
     $_SESSION['error'] = "Club not found or access denied.";
@@ -170,7 +192,7 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <input type="text" id="gameSearchInput" class="form-control" placeholder="🔍 Search games..." aria-label="Search games">
                 </div>
             <?php endif; ?>
-            <a href="add_game.php?club_id=<?php echo $club_id; ?>" class="btn btn--primary">
+            <a href="manage_games.php?club_id=<?php echo $club_id; ?>&action=add" class="btn btn--primary">
                 <span style="color: white; font-weight: bold; margin-right: 0.35rem;">+</span>Add a Game
             </a>
         </div>

@@ -13,22 +13,36 @@ if (strlen($search_term) >= 2) {
         // Create search pattern with wildcards
         $search_pattern = "%{$search_term}%";
         
-        // Prepare SQL query using LIKE for partial matches and SOUNDEX for fuzzy matching
-        // Order results by match priority (exact matches first, then SOUNDEX matches)
-        $stmt = $pdo->prepare("SELECT club_id, club_name,
+        // Prepare SQL query searching club_name, slug, and description
+        $stmt = $pdo->prepare("SELECT club_id, club_name, description, slug,
             CASE
-                WHEN LOWER(club_name) LIKE LOWER(?) THEN 1
-                WHEN SOUNDEX(club_name) = SOUNDEX(?) THEN 2
-                ELSE 3
+                WHEN LOWER(club_name) = LOWER(?) THEN 1
+                WHEN LOWER(club_name) LIKE LOWER(?) THEN 2
+                WHEN LOWER(slug) LIKE LOWER(?) THEN 3
+                WHEN LOWER(description) LIKE LOWER(?) THEN 4
+                WHEN SOUNDEX(club_name) = SOUNDEX(?) THEN 5
+                ELSE 6
             END as match_priority
             FROM clubs
             WHERE (is_private = 0 OR is_private IS NULL)
             AND (LOWER(club_name) LIKE LOWER(?)
+            OR LOWER(slug) LIKE LOWER(?)
+            OR LOWER(description) LIKE LOWER(?)
             OR SOUNDEX(club_name) = SOUNDEX(?))
             ORDER BY match_priority, club_name
             LIMIT 10");
         
-        $stmt->execute([$search_pattern, $search_term, $search_pattern, $search_term]);
+        $stmt->execute([
+            $search_term,
+            $search_pattern,
+            $search_pattern,
+            $search_pattern,
+            $search_term,
+            $search_pattern,
+            $search_pattern,
+            $search_pattern,
+            $search_term
+        ]);
         $response = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Remove match_priority from results

@@ -3,6 +3,7 @@ declare(strict_types=1);
 session_start();
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
+ensure_game_type_column_exists($pdo);
 require_once '../includes/SecurityUtils.php';
 require_once '../includes/NavigationHelper.php';
 
@@ -54,6 +55,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $bulk_action = $_POST['bulk_action'];
 
         if ($bulk_action === 'bulk_delete') {
+            $password = $_POST['password'] ?? '';
+            if (!verify_admin_password($password, $pdo)) {
+                $_SESSION['error'] = "Incorrect password. Bulk delete cancelled.";
+                header("Location: manage_games.php" . ($club_id ? "?club_id=$club_id" : ""));
+                exit();
+            }
             $deleted_count = 0;
             $skipped_count = 0;
 
@@ -158,19 +165,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($uploadError) {
                     $_SESSION['error'] = $uploadError;
                 } else {
-                    $stmt = $pdo->prepare("INSERT INTO games (club_id, game_name, min_players, max_players, game_image) VALUES (?, ?, ?, ?, ?)");
+                    $stmt = $pdo->prepare("INSERT INTO games (club_id, game_name, min_players, max_players, game_image, game_type) VALUES (?, ?, ?, ?, ?, ?)");
                     $stmt->execute([
                         $post_club_id,
                         trim($_POST['game_name']),
                         (int)($_POST['min_players'] ?? 1),
                         (int)($_POST['max_players'] ?? 4),
-                        $game_image
+                        $game_image,
+                        $_POST['game_type'] ?? 'winner_losers'
                     ]);
                     $_SESSION['success'] = "Game added successfully!";
                 }
             } else {
                 $_SESSION['error'] = "Please select a club for the game.";
             }
+            header("Location: manage_games.php" . ($club_id ? "?club_id=$club_id" : ""));
+            exit();
         } elseif ($_POST['action'] === 'delete' && isset($_POST['game_id'])) {
             $del_game_id = (int)$_POST['game_id'];
             
@@ -361,7 +371,10 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                 <h2>Games (<?php echo count($games); ?>)</h2>
             </div>
 
-            <div id="add-game-form-wrapper" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? '' : 'display:none;'; ?> margin: 1rem 0 1.25rem 0; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 0.75rem); background: var(--color-surface-muted);">
+            <?php 
+            $showAddForm = (isset($_GET['action']) && $_GET['action'] === 'add') || (isset($_POST['action']) && $_POST['action'] === 'create');
+            ?>
+            <div id="add-game-form-wrapper" style="<?php echo $showAddForm ? '' : 'display:none;'; ?> margin: 1rem 0 1.25rem 0; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 0.75rem); background: var(--color-surface-muted);">
                 <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);">Add New Game</h3>
                 <form method="POST" enctype="multipart/form-data" class="form">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
@@ -382,6 +395,15 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                             <label for="max_players">Max Players</label>
                             <input type="number" id="max_players" name="max_players" value="4" min="1" max="99" class="form-control">
                         </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="game_type">Game Type <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                            <select name="game_type" id="game_type" class="form-control">
+                                <option value="winner_losers">Winner/Losers</option>
+                                <option value="ranked">Ranked (1st, 2nd, 3rd...)</option>
+                                <option value="teams">Teams</option>
+                                <option value="cooperative">Cooperative</option>
+                            </select>
+                        </div>
                         <?php if (!$club_id): ?>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label for="game_club_id">Club <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
@@ -393,15 +415,25 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                             </select>
                         </div>
                         <?php endif; ?>
+                    </div>
+                    
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label for="game_image">Game Image <small class="text-muted">(file)</small></label>
-                            <input type="file" id="game_image" name="game_image" accept="image/jpeg,image/png,image/gif" class="form-control">
+                            <label class="form-label">Game Image</label>
+                            <div class="upload-zone" id="upload-zone" style="border: 2px dashed var(--color-border); border-radius: 8px; padding: 1rem; text-align: center; background: var(--color-surface); cursor: pointer; position: relative;">
+                                <span class="upload-zone__icon" style="font-size: 1.5rem; display: block; margin-bottom: 0.25rem;">🖼️</span>
+                                <span class="upload-zone__text" style="font-size: 0.9rem; color: var(--color-text);">Click to upload or drag & drop file</span>
+                                <span class="upload-zone__hint" style="font-size: 0.75rem; color: var(--color-text-muted); display: block; margin-top: 0.25rem;">JPG, PNG, GIF (Max 1MB)</span>
+                                <input type="file" name="game_image" id="game_image" accept="image/jpeg,image/png,image/gif" style="position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer;">
+                            </div>
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label for="image_url">Or Image URL</label>
+                            <label for="image_url">Or Image Link / URL</label>
                             <input type="url" id="image_url" name="image_url" placeholder="https://..." class="form-control">
+                            <small style="color: var(--color-text-muted); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Paste a direct web link to an image file</small>
                         </div>
                     </div>
+
                     <div class="form-group" style="display:flex; gap:0.5rem; margin-bottom:0;">
                         <button type="submit" class="btn btn--primary">Save Game</button>
                         <button type="button" class="btn btn--subtle" onclick="toggleAddGameForm()">Cancel</button>
@@ -410,7 +442,7 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
             </div>
 
             <div class="card-toolbar">
-                <button type="button" class="btn btn--primary" id="toggle-add-game-btn" onclick="toggleAddGameForm()" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? 'visibility:hidden;' : ''; ?>">
+                <button type="button" class="btn btn--primary" id="toggle-add-game-btn" onclick="toggleAddGameForm()" style="<?php echo $showAddForm ? 'visibility:hidden;' : ''; ?>">
                     <span style="color: white; font-weight: bold; margin-right: 0.35rem;">+</span>Add a Game
                 </button>
                 <form method="GET" class="toolbar-group toolbar-group--grow" id="filter-form">
@@ -503,37 +535,9 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                             <td>
                                 <div class="btn-group">
                                     <a href="edit_game.php?club_id=<?php echo $game['club_id']; ?>&game_id=<?php echo $game['game_id']; ?>" 
-                                       class="btn btn--small btn--secondary">Edit</a>
+                                       class="btn btn--small btn--secondary">View/Edit</a>
                                     <a href="results.php?club_id=<?php echo $game['club_id']; ?>&game_id=<?php echo $game['game_id']; ?>" 
                                        class="btn btn--small btn--subtle">Results</a>
-                                    
-                                    <?php if ($game['total_plays'] == 0): ?>
-                                        <form method="POST" style="display:inline;" id="delete-form-<?php echo $game['game_id']; ?>">
-                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                                            <input type="hidden" name="action" value="delete">
-                                            <input type="hidden" name="game_id" value="<?php echo $game['game_id']; ?>">
-                                            <button type="button" class="btn btn--small btn--danger" 
-                                                    onclick="showConfirmDialog(event, {
-                                                        title: 'Delete Game?',
-                                                        message: 'Are you sure you want to permanently delete \'<?php echo addslashes($game['game_name']); ?>\'? This action cannot be undone.',
-                                                        confirmText: 'Delete Game',
-                                                        onConfirm: () => document.getElementById('delete-form-<?php echo $game['game_id']; ?>').submit()
-                                                    })">
-                                                Delete
-                                            </button>
-                                        </form>
-                                    <?php else: ?>
-                                        <button type="button" class="btn btn--small btn--danger" 
-                                                onclick="showConfirmDialog(event, {
-                                                    title: 'Deletion Restricted',
-                                                    message: 'This game has associated match results. Please ensure all related records have been removed prior to deleting the game entry.',
-                                                    confirmText: 'Understood',
-                                                    type: 'primary'
-                                                })"
-                                                title="Game cannot be deleted while it has match results">
-                                            Delete
-                                        </button>
-                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
@@ -629,8 +633,18 @@ function executeBulkAction(selectEl) {
             cancelText: 'Cancel',
             type: 'danger',
             warningMessage: 'Games with no recorded match results will be permanently removed.',
-            onConfirm: () => {
-                document.getElementById('bulk-form').submit();
+            requirePassword: true,
+            onConfirm: (password) => {
+                const bulkForm = document.getElementById('bulk-form');
+                let passInput = bulkForm.querySelector('input[name="password"]');
+                if (!passInput) {
+                    passInput = document.createElement('input');
+                    passInput.type = 'hidden';
+                    passInput.name = 'password';
+                    bulkForm.appendChild(passInput);
+                }
+                passInput.value = password;
+                bulkForm.submit();
             },
             onCancel: () => {
                 selectEl.value = '';
@@ -652,5 +666,16 @@ function toggleAddGameForm() {
         if (btn) btn.style.visibility = 'visible';
     }
 }
+
+document.getElementById('game_image')?.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const uploadZone = document.getElementById('upload-zone');
+    if (!uploadZone) return;
+    if (file) {
+        uploadZone.style.borderColor = 'var(--color-primary)';
+        const textSpan = uploadZone.querySelector('.upload-zone__text');
+        if (textSpan) textSpan.textContent = 'Selected: ' + file.name;
+    }
+});
 </script>
 </html>

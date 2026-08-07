@@ -62,6 +62,7 @@ function showConfirmDialog(event, options) {
         confirmText: 'Confirm',
         cancelText: 'Cancel',
         type: 'danger', // danger, primary, warning
+        requirePassword: false,
         onConfirm: null,
         onCancel: null
     }, options);
@@ -95,6 +96,15 @@ function showConfirmDialog(event, options) {
                     <strong>Warning:</strong> ${settings.warningMessage || 'This action is permanent and cannot be undone.'}
                 </div>
             ` : ''}
+            ${settings.requirePassword ? `
+                <div style="margin-top: 1.25rem;">
+                    <label for="confirm-modal-password" style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.35rem; color: var(--color-heading);">
+                        Admin Password Required: <span style="color: var(--color-danger, #ef4444); font-weight: bold;">*</span>
+                    </label>
+                    <input type="password" id="confirm-modal-password" class="form-control" placeholder="Enter your password" autocomplete="current-password" style="width: 100%; box-sizing: border-box;">
+                    <div id="confirm-modal-password-error" style="color: var(--color-danger, #ef4444); font-size: 0.8rem; margin-top: 0.25rem; display: none;">Password is required.</div>
+                </div>
+            ` : ''}
             <div class="confirm-modal__actions" style="margin-top: var(--spacing-6); display: flex; gap: var(--spacing-3); justify-content: flex-start;">
                 <button class="btn ${btnClass} confirm-modal__confirm">${settings.confirmText}</button>
                 <button class="btn btn--subtle confirm-modal__cancel">${settings.cancelText}</button>
@@ -109,11 +119,22 @@ function showConfirmDialog(event, options) {
     // Handle confirm button
     const confirmBtn = dialog.querySelector('.confirm-modal__confirm');
     confirmBtn.addEventListener('click', () => {
+        let passwordVal = '';
+        if (settings.requirePassword) {
+            const passInput = dialog.querySelector('#confirm-modal-password');
+            const passErr = dialog.querySelector('#confirm-modal-password-error');
+            passwordVal = passInput ? passInput.value.trim() : '';
+            if (!passwordVal) {
+                if (passErr) passErr.style.display = 'block';
+                if (passInput) passInput.focus();
+                return;
+            }
+        }
         modal.classList.add('is-closing');
         setTimeout(() => {
             modal.remove();
             if (typeof settings.onConfirm === 'function') {
-                settings.onConfirm();
+                settings.onConfirm(passwordVal);
             }
         }, 200);
     });
@@ -144,8 +165,22 @@ function showConfirmDialog(event, options) {
     }
     document.addEventListener('keydown', handleEscape);
 
-    // Focus confirm button
-    confirmBtn.focus();
+    // Focus input or confirm button
+    if (settings.requirePassword) {
+        const passInput = dialog.querySelector('#confirm-modal-password');
+        if (passInput) {
+            passInput.focus();
+            passInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    confirmBtn.click();
+                }
+            });
+        }
+    } else {
+        confirmBtn.focus();
+    }
+
 }
 
 /**

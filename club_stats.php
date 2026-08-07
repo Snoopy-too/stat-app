@@ -142,7 +142,7 @@ if ($club) {
                     </div>
                     <div class="leaderboard-list">
                         <?php foreach ($leaderboard as $index => $player): ?>
-                        <a href="member_stathistory.php?id=<?php echo $player['member_id']; ?>" class="leaderboard-item">
+                        <a href="admin/edit_member.php?club_id=<?php echo $club_id; ?>&member_id=<?php echo $player['member_id']; ?>" class="leaderboard-item">
                             <span class="leaderboard-rank"><?php echo $index + 1; ?></span>
                             <span class="leaderboard-name"><?php echo htmlspecialchars($player['nickname']); ?></span>
                             <span class="leaderboard-stats">
@@ -168,7 +168,7 @@ if ($club) {
                             <?php foreach ($members as $member): ?>
                                 <div class="member-item">
                                     <span class="member-nickname"><?php echo htmlspecialchars($member['nickname']); ?></span>
-                                    <a href="member_stathistory.php?id=<?php echo urlencode($member['member_id']); ?>" class="btn btn--subtle btn--small">View</a>
+                                    <a href="admin/edit_member.php?club_id=<?php echo $club_id; ?>&member_id=<?php echo urlencode($member['member_id']); ?>" class="btn btn--subtle btn--small">View/Edit</a>
                                 </div>
                             <?php endforeach; ?>
                         </div>

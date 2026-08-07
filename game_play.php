@@ -89,7 +89,7 @@ function ordinal_suffix($number) {
             <h1>Board Game Club StatApp</h1>
             <p class="header-subtitle"><?php echo htmlspecialchars($member['nickname']); ?>'s <?php echo htmlspecialchars($game['game_name']); ?> history</p>
         </div>
-        <a href="member_stathistory.php?id=<?php echo $member_id; ?>" class="btn btn--secondary">&larr; Back to Member Stats</a>
+        <a href="admin/edit_member.php?member_id=<?php echo $member_id; ?>" class="btn btn--secondary">&larr; Back to Member Details</a>
     </div>
 
     <div class="container container--narrow">

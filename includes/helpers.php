@@ -85,6 +85,28 @@ function ensure_game_image_column_exists($pdo) {
 }
 
 /**
+ * Ensures the 'game_type' column exists in the 'games' table
+ *
+ * @param PDO $pdo
+ * @return void
+ */
+function ensure_game_type_column_exists($pdo) {
+    static $checked = false;
+    if ($checked || !$pdo) {
+        return;
+    }
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM games LIKE 'game_type'");
+        if ($stmt && $stmt->rowCount() === 0) {
+            $pdo->exec("ALTER TABLE games ADD COLUMN game_type VARCHAR(50) NOT NULL DEFAULT 'winner_losers'");
+        }
+        $checked = true;
+    } catch (Throwable $e) {
+        // Silently fail if table issue or lacking permissions
+    }
+}
+
+/**
  * Ensures all result-related tables exist in the database
  *
  * @param PDO $pdo
@@ -172,3 +194,31 @@ function ensure_results_tables_exist($pdo) {
         } catch (Throwable $e2) {}
     }
 }
+
+/**
+ * Verify logged in admin password for sensitive operations (e.g. bulk delete)
+ *
+ * @param string $password
+ * @param PDO $pdo
+ * @return bool
+ */
+function verify_admin_password($password, $pdo) {
+    if (empty($password) || !$pdo) {
+        return false;
+    }
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (empty($_SESSION['admin_id'])) {
+        return false;
+    }
+    try {
+        $stmt = $pdo->prepare("SELECT password_hash FROM admin_users WHERE admin_id = ?");
+        $stmt->execute([$_SESSION['admin_id']]);
+        $hash = $stmt->fetchColumn();
+        return $hash && password_verify($password, $hash);
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+

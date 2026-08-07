@@ -58,6 +58,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_action']) && !em
     $bulk_action = $_POST['bulk_action'];
 
     if ($bulk_action === 'bulk_delete') {
+        $password = $_POST['password'] ?? '';
+        if (!verify_admin_password($password, $pdo)) {
+            $_SESSION['error'] = "Incorrect password. Bulk delete cancelled.";
+            header("Location: club_teams.php?club_id=" . $club_id);
+            exit();
+        }
         try {
             $pdo->beginTransaction();
             $placeholders = str_repeat('?,', count($selected_teams) - 1) . '?';
@@ -82,6 +88,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_action']) && !em
     header("Location: club_teams.php?club_id=" . $club_id);
     exit();
 }
+
+// Handle single team deletion
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_single_team') {
+    if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
+        $_SESSION['error'] = "Invalid security token. Please try again.";
+        header("Location: club_teams.php?club_id=" . $club_id);
+        exit();
+    }
+    $del_team_id = (int)($_POST['team_id'] ?? 0);
+    if ($del_team_id > 0) {
+        $stmt = $pdo->prepare("DELETE FROM teams WHERE team_id = ? AND club_id = ?");
+        $stmt->execute([$del_team_id, $club_id]);
+        $_SESSION['success'] = "Team deleted successfully!";
+    }
+    header("Location: club_teams.php?club_id=" . $club_id);
+    exit();
+}
+
 
 // Handle team creation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_team'])) {
@@ -366,8 +390,7 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                             <td data-label="Created" style="font-size:0.85rem;color:var(--color-text-muted);"><?php echo date('M j, Y', strtotime($team['created_at'])); ?></td>
                             <td data-label="Actions">
                                 <div style="display:flex; gap:0.5rem; align-items:center;">
-                                    <a href="edit_team.php?team_id=<?php echo $team['team_id']; ?>&club_id=<?php echo $club_id; ?>" class="btn btn--small btn--secondary">Edit</a>
-                                    <button type="button" class="btn btn--small btn--danger" onclick="confirmDeleteTeam(event, <?php echo $team['team_id']; ?>, '<?php echo addslashes($team['team_name']); ?>')">Delete</button>
+                                    <a href="edit_team.php?team_id=<?php echo $team['team_id']; ?>&club_id=<?php echo $club_id; ?>" class="btn btn--small btn--secondary">View/Edit</a>
                                 </div>
                             </td>
                         </tr>
@@ -483,8 +506,18 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                 cancelText: 'Cancel',
                 type: 'danger',
                 warningMessage: 'Selected teams will be permanently removed.',
-                onConfirm: () => {
-                    document.getElementById('bulk-form').submit();
+                requirePassword: true,
+                onConfirm: (password) => {
+                    const bulkForm = document.getElementById('bulk-form');
+                    let passInput = bulkForm.querySelector('input[name="password"]');
+                    if (!passInput) {
+                        passInput = document.createElement('input');
+                        passInput.type = 'hidden';
+                        passInput.name = 'password';
+                        bulkForm.appendChild(passInput);
+                    }
+                    passInput.value = password;
+                    bulkForm.submit();
                 },
                 onCancel: () => {
                     selectEl.value = '';

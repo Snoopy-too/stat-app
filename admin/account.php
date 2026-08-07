@@ -474,7 +474,7 @@ $csrf_token = $security->generateCSRFToken();
                                             <a href="account.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--small btn--secondary">Select</a>
                                         <?php endif; ?>
                                         <?php if ($club['admin_role'] === 'owner'): ?>
-                                            <a href="edit_club.php?id=<?php echo $club['club_id']; ?>&from=account" class="btn btn--small btn--secondary">Edit</a>
+                                            <a href="edit_club.php?id=<?php echo $club['club_id']; ?>&from=account" class="btn btn--small btn--secondary">View/Edit</a>
                                         <?php else: ?>
                                             <button type="button" class="btn btn--small btn--danger"
                                                     onclick="confirmLeaveClub(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>')">

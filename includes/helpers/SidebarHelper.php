@@ -75,9 +75,10 @@ class SidebarHelper {
 
         if ($clubId) {
             echo '<a href="manage_members.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'members' ? 'active' : '') . '">Members</a>';
-            echo '<a href="manage_games.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'games' ? 'active' : '') . '">Games</a>';
-            echo '<a href="manage_champions.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'champions' ? 'active' : '') . '">Champions</a>';
             echo '<a href="club_teams.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'teams' ? 'active' : '') . '">Teams</a>';
+            echo '<a href="manage_champions.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'champions' ? 'active' : '') . '">Champions</a>';
+            echo '<a href="manage_games.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'games' ? 'active' : '') . '">Games</a>';
+            echo '<a href="results.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'results' ? 'active' : '') . '">Results</a>';
         }
 
         echo '<a href="account.php" class="nav-link ' . ($currentPage === 'account' ? 'active' : '') . '">Account</a>';
@@ -293,6 +294,7 @@ class SidebarHelper {
         $teamCount = null;
         $championCount = null;
         $gameCount = null;
+        $resultCount = null;
 
         if ($clubId && isset($pdo)) {
             try {
@@ -301,15 +303,21 @@ class SidebarHelper {
                         (SELECT COUNT(*) FROM members WHERE club_id = ?) as member_count,
                         (SELECT COUNT(*) FROM teams t JOIN members m ON t.member1_id = m.member_id WHERE m.club_id = ?) as team_count,
                         (SELECT COUNT(*) FROM champions WHERE club_id = ?) as champion_count,
-                        (SELECT COUNT(*) FROM games WHERE club_id = ?) as game_count
+                        (SELECT COUNT(*) FROM games WHERE club_id = ?) as game_count,
+                        (
+                            (SELECT COUNT(*) FROM game_results gr JOIN games g ON gr.game_id = g.game_id WHERE g.club_id = ?) +
+                            (SELECT COUNT(*) FROM team_game_results tgr JOIN games g ON tgr.game_id = g.game_id WHERE g.club_id = ?) +
+                            (SELECT COUNT(*) FROM cooperative_game_results cgr JOIN games g ON cgr.game_id = g.game_id WHERE g.club_id = ?)
+                        ) as result_count
                 ");
-                $cStmt->execute([$clubId, $clubId, $clubId, $clubId]);
+                $cStmt->execute([$clubId, $clubId, $clubId, $clubId, $clubId, $clubId, $clubId]);
                 $counts = $cStmt->fetch(PDO::FETCH_ASSOC);
                 if ($counts) {
                     $memberCount = (int)$counts['member_count'];
                     $teamCount = (int)$counts['team_count'];
                     $championCount = (int)$counts['champion_count'];
                     $gameCount = (int)$counts['game_count'];
+                    $resultCount = (int)$counts['result_count'];
                 }
             } catch (Throwable $e) {}
         }
@@ -354,7 +362,7 @@ class SidebarHelper {
         // Section 1: Quick Actions
         echo '<div class="sidebar__section" style="margin-bottom:0.5rem;">';
 
-        echo '<a href="new_result.php' . $clubQuery . '" class="sidebar__link' . ($currentPage === 'new_result' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'new_result' ? $activeLinkStyle : $normalLinkStyle) . '">';
+        echo '<a href="club_new_results.php' . $clubQuery . '" class="sidebar__link' . ($currentPage === 'new_result' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'new_result' ? $activeLinkStyle : $normalLinkStyle) . '">';
         echo '<span class="sidebar__link-icon" style="' . $iconStyle . '">➕</span>';
         echo '<span>New Result</span>';
         echo '</a>';
@@ -369,6 +377,7 @@ class SidebarHelper {
         $tLabel = 'Teams' . ($teamCount !== null ? ' (' . $teamCount . ')' : '');
         $cLabel = 'Champions' . ($championCount !== null ? ' (' . $championCount . ')' : '');
         $gLabel = 'Games' . ($gameCount !== null ? ' (' . $gameCount . ')' : '');
+        $rLabel = 'Results' . ($resultCount !== null ? ' (' . $resultCount . ')' : '');
 
         echo '<a href="manage_members.php' . $clubQuery . '" class="sidebar__link' . ($currentPage === 'members' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'members' ? $activeLinkStyle : $normalLinkStyle) . '">';
         echo '<span class="sidebar__link-icon" style="' . $iconStyle . '">👥</span>';
@@ -388,6 +397,11 @@ class SidebarHelper {
         echo '<a href="manage_games.php' . $clubQuery . '" class="sidebar__link' . ($currentPage === 'games' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'games' ? $activeLinkStyle : $normalLinkStyle) . '">';
         echo '<span class="sidebar__link-icon" style="' . $iconStyle . '">🎲</span>';
         echo '<span>' . htmlspecialchars($gLabel) . '</span>';
+        echo '</a>';
+
+        echo '<a href="results.php' . $clubQuery . '" class="sidebar__link' . ($currentPage === 'results' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'results' ? $activeLinkStyle : $normalLinkStyle) . '">';
+        echo '<span class="sidebar__link-icon" style="' . $iconStyle . '">📊</span>';
+        echo '<span>' . htmlspecialchars($rLabel) . '</span>';
         echo '</a>';
 
         echo '</div>';

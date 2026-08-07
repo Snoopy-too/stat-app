@@ -3,6 +3,7 @@ session_start();
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 ensure_game_image_column_exists($pdo);
+ensure_game_type_column_exists($pdo);
 require_once '../includes/SecurityUtils.php';
 require_once '../includes/NavigationHelper.php';
 
@@ -24,6 +25,14 @@ if (!$game) {
     header("Location: manage_games.php?club_id=" . $club_id);
     exit();
 }
+
+// Check if game can be deleted (no play records)
+$stmt = $pdo->prepare("
+    SELECT (SELECT COUNT(*) FROM game_results WHERE game_id = ?) +
+           (SELECT COUNT(*) FROM team_game_results WHERE game_id = ?) AS total_plays
+");
+$stmt->execute([$game_id, $game_id]);
+$total_plays = (int)$stmt->fetchColumn();
 
 // Handle game update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update') {
@@ -107,12 +116,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             exit();
         }
 
-        $stmt = $pdo->prepare("UPDATE games SET game_name = ?, min_players = ?, max_players = ?, game_image = ? WHERE game_id = ? AND club_id = ?");
+        $stmt = $pdo->prepare("UPDATE games SET game_name = ?, min_players = ?, max_players = ?, game_image = ?, game_type = ? WHERE game_id = ? AND club_id = ?");
         $stmt->execute([
             trim($_POST['game_name']),
             $_POST['min_players'],
             $_POST['max_players'],
             $game_image,
+            $_POST['game_type'] ?? 'winner_losers',
             $game_id,
             $club_id
         ]);
@@ -137,10 +147,6 @@ $csrf_token = $security->generateCSRFToken();
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
     <style>
-        .admin-form-shell {
-            max-width: 800px;
-            margin: 0 auto;
-        }
         .form-grid-2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -240,66 +246,99 @@ $csrf_token = $security->generateCSRFToken();
     <div class="container">
         <?php display_session_message('error'); ?>
 
-        <div class="admin-form-shell">
-            <div class="modern-card">
-                <div class="section-header">
-                    <h2>Edit Game Details</h2>
-                </div>
+        <div class="card" style="padding: 1.5rem;">
+            <div class="card-header" style="margin-bottom: 1.25rem;">
+                <h2 style="margin:0;">Edit Game Details</h2>
+            </div>
                 <form method="POST" class="form" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                    <input type="hidden" name="action" value="update">
                     
                     <?php if ($game['game_image']): ?>
-                        <div class="form-group">
+                        <div class="form-group" style="margin-bottom: 1.25rem;">
                             <label class="form-label">Current Image</label>
-                            <div style="display: flex; flex-direction: column; align-items: flex-start; gap: var(--spacing-2);">
-                                <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'], '../')); ?>" alt="Game Image" class="current-image-preview" loading="lazy">
-                                <label class="form-check">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'], '../')); ?>" alt="Game Image" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--color-border);" loading="lazy">
+                                <label class="form-check" style="display:flex; align-items:center; gap:0.35rem; cursor:pointer;">
                                     <input type="checkbox" name="remove_image" value="1" class="form-check-input">
-                                    <span class="form-check-label">Remove current image</span>
+                                    <span class="form-check-label" style="font-size:0.9rem;">Remove current image</span>
                                 </label>
                             </div>
                         </div>
                     <?php endif; ?>
 
-                    <div class="form-group">
-                        <label for="game_name" class="form-label">Game Name</label>
-                        <input type="text" name="game_name" id="game_name" placeholder="Game Name" value="<?php echo htmlspecialchars($game['game_name']); ?>" required class="form-control">
-                    </div>
-
-                    <div class="form-grid-2">
-                        <div class="form-group">
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="game_name" class="form-label">Game Name <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                            <input type="text" name="game_name" id="game_name" placeholder="e.g. Catan" value="<?php echo htmlspecialchars($game['game_name']); ?>" required class="form-control">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
                             <label for="min_players" class="form-label">Min Players</label>
-                            <input type="number" name="min_players" id="min_players" placeholder="Min Players" value="<?php echo htmlspecialchars($game['min_players']); ?>" required min="1" class="form-control">
+                            <input type="number" name="min_players" id="min_players" placeholder="Min Players" value="<?php echo htmlspecialchars((string)$game['min_players']); ?>" required min="1" max="99" class="form-control">
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="margin-bottom: 0;">
                             <label for="max_players" class="form-label">Max Players</label>
-                            <input type="number" name="max_players" id="max_players" placeholder="Max Players" value="<?php echo $game['max_players']; ?>" required min="1" class="form-control">
+                            <input type="number" name="max_players" id="max_players" placeholder="Max Players" value="<?php echo htmlspecialchars((string)$game['max_players']); ?>" required min="1" max="99" class="form-control">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="game_type" class="form-label">Game Type <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                            <select name="game_type" id="game_type" class="form-control">
+                                <option value="winner_losers" <?php echo (($game['game_type'] ?? 'winner_losers') === 'winner_losers') ? 'selected' : ''; ?>>Winner/Losers</option>
+                                <option value="ranked" <?php echo (($game['game_type'] ?? '') === 'ranked') ? 'selected' : ''; ?>>Ranked (1st, 2nd, 3rd...)</option>
+                                <option value="teams" <?php echo (($game['game_type'] ?? '') === 'teams') ? 'selected' : ''; ?>>Teams</option>
+                                <option value="cooperative" <?php echo (($game['game_type'] ?? '') === 'cooperative') ? 'selected' : ''; ?>>Cooperative</option>
+                            </select>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Update Image (Optional)</label>
-                        <div class="upload-zone" id="upload-zone">
-                            <span class="upload-zone__icon">🔄</span>
-                            <span class="upload-zone__text">Click to replace or drag & drop file</span>
-                            <span class="upload-zone__hint">JPG, PNG, GIF (Max 1MB, 600px recommended)</span>
-                            <input type="file" name="game_image" id="game_image" accept="image/jpeg,image/png,image/gif">
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">Game Image</label>
+                            <div class="upload-zone" id="upload-zone" style="border: 2px dashed var(--color-border); border-radius: 8px; padding: 1rem; text-align: center; background: var(--color-surface); cursor: pointer; position: relative;">
+                                <span class="upload-zone__icon" style="font-size: 1.5rem; display: block; margin-bottom: 0.25rem;">🖼️</span>
+                                <span class="upload-zone__text" style="font-size: 0.9rem; color: var(--color-text);">Click to replace or drag & drop file</span>
+                                <span class="upload-zone__hint" style="font-size: 0.75rem; color: var(--color-text-muted); display: block; margin-top: 0.25rem;">JPG, PNG, GIF (Max 1MB)</span>
+                                <input type="file" name="game_image" id="game_image" accept="image/jpeg,image/png,image/gif" style="position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer;">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="image_url" class="form-label">Or Image Link / URL</label>
+                            <input type="url" name="image_url" id="image_url" placeholder="https://..." class="form-control">
+                            <small style="color: var(--color-text-muted); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Paste a direct web link to an image file</small>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="image_url" class="form-label">Or Image Link / URL</label>
-                        <input type="url" name="image_url" id="image_url" placeholder="https://example.com/image.jpg" class="form-control">
-                        <small style="color: var(--color-text-muted); font-size: var(--font-size-xs);">Paste a direct web link to an image file</small>
-                    </div>
-
-                    <div style="margin-top: var(--spacing-6); display: flex; justify-content: flex-start; gap: var(--spacing-3);">
-                        <input type="hidden" name="action" value="update">
-                        <button type="submit" class="btn btn--primary">Save</button>
+                    <div class="form-group" style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0; flex-wrap:wrap;">
+                        <button type="submit" class="btn btn--primary">Save Game</button>
                         <a href="manage_games.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle">Cancel</a>
+                        <?php if ($total_plays === 0): ?>
+                            <button type="button" class="btn btn--danger" style="margin-left: auto;"
+                                    onclick="showConfirmDialog(event, {
+                                        title: '⚠️ Delete Game',
+                                        message: 'Are you sure you want to permanently delete <strong><?php echo addslashes(htmlspecialchars($game['game_name'])); ?></strong>? This action cannot be undone.',
+                                        confirmText: 'Delete Game',
+                                        cancelText: 'Cancel',
+                                        type: 'danger',
+                                        onConfirm: () => document.getElementById('delete-game-form').submit()
+                                    })">Delete Game</button>
+                        <?php else: ?>
+                            <button type="button" class="btn btn--danger" style="margin-left: auto;"
+                                    onclick="showConfirmDialog(event, {
+                                        title: 'Deletion Restricted',
+                                        message: 'This game has <?php echo $total_plays; ?> match result(s). Remove all related records before deleting.',
+                                        confirmText: 'Understood',
+                                        type: 'primary'
+                                    })" title="Game cannot be deleted while it has match results">Delete Game</button>
+                        <?php endif; ?>
                     </div>
                 </form>
-            </div>
+                <?php if ($total_plays === 0): ?>
+                <form method="POST" action="manage_games.php?club_id=<?php echo $club_id; ?>" style="display:none;" id="delete-game-form">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="game_id" value="<?php echo $game_id; ?>">
+                </form>
+                <?php endif; ?>
         </div>
     </div>
 

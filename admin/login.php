@@ -7,7 +7,7 @@ require_once '../includes/SecurityUtils.php';
 require_once '../includes/helpers.php';
 
 if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
-    header("Location: new_result.php");
+    header("Location: dashboard.php");
     exit();
 }
 
@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             }
                         }
 
-                        header("Location: new_result.php");
+                        header("Location: dashboard.php");
                         exit();
                     }
                     // Log failed password verification

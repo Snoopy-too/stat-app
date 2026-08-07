@@ -39,6 +39,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
+    if (isset($_POST['action']) && $_POST['action'] === 'delete') {
+        $stmt = $pdo->prepare("DELETE FROM teams WHERE team_id = ? AND club_id = ?");
+        $stmt->execute([$team_id, $club_id]);
+        $_SESSION['success'] = "Team deleted successfully!";
+        header("Location: club_teams.php?club_id=" . $club_id);
+        exit();
+    }
+
     $team_name = trim($_POST['team_name'] ?? '');
     $member1 = !empty($_POST['member1']) ? (int)$_POST['member1'] : null;
     $member2 = !empty($_POST['member2']) ? (int)$_POST['member2'] : null;
@@ -184,11 +192,26 @@ $csrf_token = $security->generateCSRFToken();
                     </button>
                 </div>
 
-                <div class="form-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-start;">
+                <div class="form-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-start; flex-wrap: wrap;">
                     <input type="hidden" name="update_team" value="1">
                     <button type="submit" class="btn btn--primary">Update Team</button>
                     <a href="club_teams.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle">Cancel</a>
+                    <button type="button" class="btn btn--danger" style="margin-left: auto;"
+                            onclick="showConfirmDialog(event, {
+                                title: '⚠️ Delete Team',
+                                message: 'Are you sure you want to delete <strong><?php echo addslashes(htmlspecialchars($team['team_name'])); ?></strong>?',
+                                confirmText: 'Delete Team',
+                                cancelText: 'Cancel',
+                                type: 'danger',
+                                warningMessage: 'This action is permanent and cannot be undone. Team records and statistics will be removed.',
+                                onConfirm: () => document.getElementById('delete-team-form').submit()
+                            })">Delete Team</button>
                 </div>
+            </form>
+
+            <form id="delete-team-form" action="edit_team.php?team_id=<?php echo $team_id; ?>&club_id=<?php echo $club_id; ?>" method="POST" style="display:none;">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                <input type="hidden" name="action" value="delete">
             </form>
         </div>
         <script>

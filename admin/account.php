@@ -380,7 +380,7 @@ $csrf_token = $security->generateCSRFToken();
             <div class="card-toolbar">
                 <?php if ($can_add_club): ?>
                     <button type="button" class="btn btn--primary" id="add-club-btn" onclick="toggleAddClubForm()" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? 'visibility:hidden;' : ''; ?>">
-                        <span style="color: white; font-weight: bold; margin-right: 0.35rem;">+</span>Add a Club
+                        Add a Club
                     </button>
                 <?php endif; ?>
             </div>
@@ -391,11 +391,11 @@ $csrf_token = $security->generateCSRFToken();
                         <tr>
                             <th>Club Name</th>
                             <th class="hide-on-mobile">Created</th>
+                            <th class="th-sideways"><span class="th-sideways-inner">Results</span></th>
                             <th class="th-sideways"><span class="th-sideways-inner">Members</span></th>
                             <th class="th-sideways"><span class="th-sideways-inner">Teams</span></th>
                             <th class="th-sideways"><span class="th-sideways-inner">Champs</span></th>
                             <th class="th-sideways"><span class="th-sideways-inner">Games</span></th>
-                            <th class="th-sideways"><span class="th-sideways-inner">Results</span></th>
                             <?php if ($club_count > 1): ?>
                                 <th style="text-align:center; vertical-align:bottom; padding-bottom:0.5rem;">
                                     <?php if ($current_default_club_id > 0): ?>
@@ -434,6 +434,9 @@ $csrf_token = $security->generateCSRFToken();
                                     </div>
                                 </td>
                                 <td class="hide-on-mobile" data-label="Created" style="font-size:0.85rem;color:var(--color-text-muted);"><?php echo date('Y/m/d', strtotime($club['created_at'])); ?></td>
+                                <td style="text-align:center;" data-label="Results">
+                                    <span class="club-stat-pill"><?php echo $club['total_plays'] ?: 0; ?></span>
+                                </td>
                                 <td style="text-align:center;" data-label="Member">
                                     <span class="club-stat-pill"><?php echo $club['member_count']; ?></span>
                                 </td>
@@ -445,9 +448,6 @@ $csrf_token = $security->generateCSRFToken();
                                 </td>
                                 <td style="text-align:center;" data-label="Games">
                                     <span class="club-stat-pill"><?php echo $club['game_count']; ?></span>
-                                </td>
-                                <td style="text-align:center;" data-label="Results">
-                                    <span class="club-stat-pill"><?php echo $club['total_plays'] ?: 0; ?></span>
                                 </td>
                                 <?php if ($club_count > 1): ?>
                                     <td style="text-align:center;" data-label="Default">
@@ -470,9 +470,9 @@ $csrf_token = $security->generateCSRFToken();
                                 <td class="actions-cell" data-label="Actions" style="text-align:right;">
                                     <div style="display:flex;align-items:center;justify-content:flex-end;gap:0.5rem;">
                                         <?php if ($is_active): ?>
-                                            <span class="badge badge--primary" style="font-weight:600;">Viewing</span>
+                                            <span class="badge badge--primary" style="font-weight:600;">Managing</span>
                                         <?php else: ?>
-                                            <a href="account.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--small btn--secondary">Select</a>
+                                            <a href="account.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--small btn--secondary">Manage</a>
                                         <?php endif; ?>
                                         <?php if ($club['admin_role'] === 'owner'): ?>
                                             <a href="edit_club.php?id=<?php echo $club['club_id']; ?>&from=account" class="btn btn--small btn--secondary">View/Edit</a>
@@ -492,11 +492,11 @@ $csrf_token = $security->generateCSRFToken();
                         <tr>
                             <td>Total (<?php echo $club_count; ?> <?php echo $club_count === 1 ? 'Club' : 'Clubs'; ?>)</td>
                             <td class="hide-on-mobile"></td>
+                            <td style="text-align:center;"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_plays; ?></span></td>
                             <td style="text-align:center;"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_members; ?></span></td>
                             <td style="text-align:center;"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_teams; ?></span></td>
                             <td style="text-align:center;"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_champions; ?></span></td>
                             <td style="text-align:center;"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_games; ?></span></td>
-                            <td style="text-align:center;"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_plays; ?></span></td>
                             <td colspan="<?php echo $club_count > 1 ? 2 : 1; ?>"></td>
                         </tr>
                     </tfoot>

@@ -7,6 +7,7 @@
 require_once __DIR__ . '/helpers/BreadcrumbHelper.php';
 require_once __DIR__ . '/helpers/ContextBarHelper.php';
 require_once __DIR__ . '/helpers/SidebarHelper.php';
+require_once __DIR__ . '/helpers/TableHelper.php';
 
 class NavigationHelper {
 

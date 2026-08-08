@@ -42,7 +42,7 @@ if (!$demo && $club_id) {
                         WHERE (t.member1_id = m.member_id OR t.member2_id = m.member_id OR t.member3_id = m.member_id OR t.member4_id = m.member_id)
                     ) as tm_wins
             FROM members m
-            WHERE m.club_id = ?
+            WHERE m.club_id = ? AND (m.status IS NULL OR m.status != 'inactive')
             ORDER BY (ind_wins + tm_wins) DESC, name ASC
             LIMIT 12
         ");
@@ -97,6 +97,7 @@ if (!$demo && $club_id) {
                 JOIN games g ON gr.game_id = g.game_id
                 WHERE g.club_id = ?
                   AND COALESCE(gr.winner, gr.member_id) = m.member_id
+                  AND (m.status IS NULL OR m.status != 'inactive')
                 GROUP BY m.member_id, month_key
                 ORDER BY name, month_key
             ");

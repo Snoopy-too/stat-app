@@ -96,6 +96,22 @@
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
 }
 
+.results-pie-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1.25rem;
+}
+
+.results-pie-grid > div {
+    grid-column: span 12;
+}
+
+@media (min-width: 480px) and (orientation: landscape), (min-width: 568px) {
+    .results-pie-grid > div {
+        grid-column: span 6;
+    }
+}
+
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));

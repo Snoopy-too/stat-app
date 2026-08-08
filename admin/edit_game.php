@@ -55,7 +55,7 @@ $stmt = $pdo->prepare("
     SELECT m.nickname as winner_name, COUNT(*) as wins
     FROM game_results gr
     JOIN members m ON gr.winner = m.member_id
-    WHERE gr.game_id = ?
+    WHERE gr.game_id = ? AND (m.status IS NULL OR m.status != 'inactive')
     GROUP BY gr.winner, m.nickname
     ORDER BY wins DESC
     LIMIT 1

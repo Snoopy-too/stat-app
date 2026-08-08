@@ -70,7 +70,7 @@ if ($is_edit) {
 
     if (!$existing_result) {
         $_SESSION['error'] = "Result record not found.";
-        header("Location: results.php");
+        header("Location: manage_results.php");
         exit();
     }
 
@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->prepare("DELETE FROM game_results WHERE result_id = ?")->execute([$result_id]);
             }
             $_SESSION['success'] = "Result deleted successfully!";
-            header("Location: results.php?club_id=" . $club_id);
+            header("Location: manage_results.php?club_id=" . $club_id);
             exit();
         } catch (Throwable $e) {
             $_SESSION['error'] = "Error deleting result: " . $e->getMessage();
@@ -234,7 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $pdo->commit();
                 $_SESSION['success'] = 'Result updated successfully!';
-                header('Location: add_result.php?result_id=' . $result_id . '&type=' . $game_type);
+                header('Location: manage_results.php?club_id=' . $club_id . ($game_id ? '&game_id=' . $game_id : ''));
                 exit();
             } else {
                 // Execute INSERT
@@ -281,7 +281,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $pdo->commit();
                 $_SESSION['success'] = 'Game result saved successfully!';
-                header('Location: results.php?club_id=' . $club_id . '&game_id=' . $game_id);
+                header('Location: manage_results.php?club_id=' . $club_id . '&game_id=' . $game_id);
                 exit();
             }
         } catch (Throwable $e) {
@@ -578,7 +578,7 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
 
                 <div style="display:flex; gap:0.5rem; margin-top: 1rem; align-items:center; flex-wrap:wrap;">
                     <button type="submit" class="btn btn--primary"><?php echo $is_edit ? 'Save Changes' : 'Save Result'; ?></button>
-                    <a href="results.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle">Back to Results</a>
+                    <a href="manage_results.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle">Back to Results</a>
                     <?php if ($is_edit): ?>
                         <button type="button" class="btn btn--danger" style="margin-left: auto;" onclick="if(confirm('Are you sure you want to delete this result?')) document.getElementById('delete-form').submit()">Delete Result</button>
                     <?php endif; ?>

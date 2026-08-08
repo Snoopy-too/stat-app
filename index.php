@@ -193,7 +193,7 @@ if (isset($_SESSION['club_id'])) {
                 .then(response => response.json())
                 .then(clubs => {
                     const resultsHtml = clubs.length ? clubs.map(club => {
-                        const url = club.slug ? `club_stats.php?slug=${encodeURIComponent(club.slug)}` : `club_stats.php?id=${club.club_id}`;
+                        const url = club.slug ? `club_game_results.php?slug=${encodeURIComponent(club.slug)}` : `club_game_results.php?id=${club.club_id}`;
                         return `
                             <a href="${url}" class="club-item" style="display: block; text-decoration: none;">
                                 <h3 style="margin: 0 0 0.2rem; font-size: 1rem; color: var(--color-primary); font-weight: 600;">${club.club_name}</h3>

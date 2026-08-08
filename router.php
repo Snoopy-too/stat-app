@@ -15,11 +15,11 @@ if ($uri !== '/' && file_exists(__DIR__ . $uri)) {
     return false;
 }
 
-// Match slug pattern from .htaccess: RewriteRule ^([a-zA-Z0-9-]+)$ club_stats.php?slug=$1 [L,QSA]
+// Match slug pattern from .htaccess: RewriteRule ^([a-zA-Z0-9-]+)$ club_game_results.php?slug=$1 [L,QSA]
 $slug = ltrim($uri, '/');
-if (!empty($slug) && preg_match('/^[a-zA-Z0-9-]+$/', $slug) && file_exists(__DIR__ . '/club_stats.php')) {
+if (!empty($slug) && preg_match('/^[a-zA-Z0-9-]+$/', $slug) && file_exists(__DIR__ . '/club_game_results.php')) {
     $_GET['slug'] = $slug;
-    require __DIR__ . '/club_stats.php';
+    require __DIR__ . '/club_game_results.php';
     exit;
 }
 

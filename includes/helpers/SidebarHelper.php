@@ -77,7 +77,7 @@ class SidebarHelper {
             echo '<a href="manage_teams.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'teams' ? 'active' : '') . '">Teams</a>';
             echo '<a href="manage_champions.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'champions' ? 'active' : '') . '">Champions</a>';
             echo '<a href="manage_games.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'games' ? 'active' : '') . '">Games</a>';
-            echo '<a href="results.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'results' ? 'active' : '') . '">Results</a>';
+            echo '<a href="manage_results.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'results' ? 'active' : '') . '">Results</a>';
         }
 
         echo '</nav>';
@@ -459,7 +459,7 @@ class SidebarHelper {
         $gLabel = 'Games' . ($gameCount !== null ? ' (' . $gameCount . ')' : '');
         $rLabel = 'Results' . ($resultCount !== null ? ' (' . $resultCount . ')' : '');
 
-        echo '<a href="results.php' . $clubQuery . '" class="sidebar__link' . ($currentPage === 'results' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'results' ? $activeLinkStyle : $normalLinkStyle) . '">';
+        echo '<a href="manage_results.php' . $clubQuery . '" class="sidebar__link' . ($currentPage === 'results' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'results' ? $activeLinkStyle : $normalLinkStyle) . '">';
         echo '<span class="sidebar__link-icon" style="' . $iconStyle . '"><span class="material-symbols-outlined">leaderboard</span></span>';
         echo '<span>' . htmlspecialchars($rLabel) . '</span>';
         echo '</a>';

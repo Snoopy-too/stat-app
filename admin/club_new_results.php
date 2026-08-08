@@ -194,7 +194,7 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             <?php endif; ?>
             <a href="manage_games.php?club_id=<?php echo $club_id; ?>&action=add" class="btn btn--primary">
-                <span style="color: white; font-weight: bold; margin-right: 0.35rem;">+</span>Add a Game
+                Add a Game
             </a>
         </div>
 

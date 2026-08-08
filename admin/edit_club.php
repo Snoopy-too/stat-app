@@ -294,7 +294,7 @@ $csrf_token = $security->generateCSRFToken();
         <?php NavigationHelper::renderSidebarToggle(); ?>
         <?php NavigationHelper::renderCompactHeader('Edit Club', $club['club_name']); ?>
         <div class="header-actions">
-            <a href="../club_stats.php?id=<?php echo $club_id; ?>" class="btn btn--ghost btn--small" target="_blank" title="View public club page" style="display:inline-flex;align-items:center;">
+            <a href="../club_game_results.php?id=<?php echo $club_id; ?>" class="btn btn--ghost btn--small" target="_blank" title="View public club page" style="display:inline-flex;align-items:center;">
                 <span class="material-symbols-outlined" style="font-size:1.1rem;margin-right:0.25rem;">visibility</span>
                 <span>Preview Public Page</span>
             </a>
@@ -426,7 +426,7 @@ $csrf_token = $security->generateCSRFToken();
 
                 <div class="card-toolbar">
                     <button type="button" class="btn btn--primary" id="add-admin-btn" onclick="toggleAddAdminForm()" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'add_admin' && isset($_SESSION['error'])) ? 'visibility:hidden;' : ''; ?>">
-                        <span style="color: white; font-weight: bold; margin-right: 0.35rem;">+</span>Add an Administrator
+                        Add an Administrator
                     </button>
                 </div>
             <?php endif; ?>

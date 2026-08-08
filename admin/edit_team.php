@@ -21,7 +21,7 @@ $team = $stmt->fetch(PDO::FETCH_ASSOC);
 $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : (isset($_POST['club_id']) ? (int)$_POST['club_id'] : (int)($team['club_id'] ?? 0));
 
 if (!$team) {
-    header("Location: club_teams.php" . ($club_id ? "?club_id=" . $club_id : ""));
+    header("Location: manage_teams.php" . ($club_id ? "?club_id=" . $club_id : ""));
     exit();
 }
 
@@ -43,15 +43,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("DELETE FROM teams WHERE team_id = ? AND club_id = ?");
         $stmt->execute([$team_id, $club_id]);
         $_SESSION['success'] = "Team deleted successfully!";
-        header("Location: club_teams.php?club_id=" . $club_id);
+        header("Location: manage_teams.php?club_id=" . $club_id);
         exit();
     }
 
     $team_name = trim($_POST['team_name'] ?? '');
-    $member1 = !empty($_POST['member1']) ? (int)$_POST['member1'] : null;
-    $member2 = !empty($_POST['member2']) ? (int)$_POST['member2'] : null;
-    $member3 = !empty($_POST['member3']) ? (int)$_POST['member3'] : null;
-    $member4 = !empty($_POST['member4']) ? (int)$_POST['member4'] : null;
+    $selected_members = isset($_POST['team_members']) ? array_values(array_filter(array_map('intval', $_POST['team_members']))) : [];
+    if (empty($selected_members)) {
+        $m1 = !empty($_POST['member1']) ? (int)$_POST['member1'] : null;
+        $m2 = !empty($_POST['member2']) ? (int)$_POST['member2'] : null;
+        $m3 = !empty($_POST['member3']) ? (int)$_POST['member3'] : null;
+        $m4 = !empty($_POST['member4']) ? (int)$_POST['member4'] : null;
+        $selected_members = array_values(array_filter([$m1, $m2, $m3, $m4]));
+    }
+
+    $member1 = $selected_members[0] ?? null;
+    $member2 = $selected_members[1] ?? null;
+    $member3 = $selected_members[2] ?? null;
+    $member4 = $selected_members[3] ?? null;
 
     if (!empty($team_name) && $member1) {
         try {
@@ -78,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $pdo->commit();
             $_SESSION['success'] = "Team updated successfully!";
-            header("Location: club_teams.php?club_id=" . $club_id);
+            header("Location: manage_teams.php?club_id=" . $club_id);
             exit();
         } catch (PDOException $e) {
             if ($pdo->inTransaction()) {
@@ -103,6 +112,30 @@ $csrf_token = $security->generateCSRFToken();
     <title>Edit Team</title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
+    <style>
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: var(--spacing-3, 0.75rem);
+            padding: var(--spacing-3, 0.75rem);
+            border: 1.5px solid var(--color-border-strong);
+            border-radius: var(--radius-sm, 4px);
+            background: var(--color-surface-muted);
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2, 0.5rem);
+            padding: var(--spacing-2, 0.5rem);
+            border-radius: var(--radius-sm, 4px);
+            transition: background-color var(--transition-fast, 0.15s);
+            cursor: pointer;
+            user-select: none;
+        }
+        .checkbox-item:hover {
+            background-color: var(--color-surface);
+        }
+    </style>
 </head>
 <body class="has-sidebar">
     <?php NavigationHelper::renderAdminSidebar('teams', $club_id); ?>
@@ -129,61 +162,31 @@ $csrf_token = $security->generateCSRFToken();
                         <input type="text" id="team_name" name="team_name" value="<?php echo htmlspecialchars($team['team_name']); ?>" required class="form-control">
                     </div>
 
-                    <div class="form-group">
-                        <label for="member1">Member 1 (Required)</label>
-                        <select id="member1" name="member1" required class="form-control">
-                            <option value="">Select Member</option>
-                            <?php foreach ($members as $member): ?>
-                                <option value="<?php echo $member['member_id']; ?>" <?php echo $member['member_id'] == $team['member1_id'] ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($member['member_name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="member2">Member 2</label>
-                        <select id="member2" name="member2" class="form-control">
-                            <option value="">Select Member</option>
-                            <?php foreach ($members as $member): ?>
-                                <option value="<?php echo $member['member_id']; ?>" <?php echo $member['member_id'] == $team['member2_id'] ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($member['member_name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <?php $has_m3 = !empty($team['member3_id']); ?>
-                    <div class="form-group" id="group-member3" style="<?php echo $has_m3 ? '' : 'display: none;'; ?>">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-                            <label for="member3" style="margin-bottom: 0;">Member 3</label>
-                            <button type="button" onclick="removeMemberField(3)" style="background: none; border: none; color: var(--color-danger); cursor: pointer; font-size: 0.8rem; font-weight: 500;">✕ Remove</button>
+                        <?php
+                        $current_team_members = array_values(array_filter([
+                            (int)($team['member1_id'] ?? 0),
+                            (int)($team['member2_id'] ?? 0),
+                            (int)($team['member3_id'] ?? 0),
+                            (int)($team['member4_id'] ?? 0)
+                        ]));
+                        ?>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
+                                <label class="form-label" style="margin:0;">Select Team Members: <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                                <div style="display:flex; gap:0.5rem;">
+                                    <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.team-member-checkbox', true)">Select All</button>
+                                    <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.team-member-checkbox', false)">Uncheck All</button>
+                                </div>
+                            </div>
+                            <div id="team-members-checkbox-list" class="checkbox-grid">
+                                <?php foreach ($members as $member): ?>
+                                    <label for="team_member_<?php echo $member['member_id']; ?>" class="form-check checkbox-item">
+                                        <input type="checkbox" name="team_members[]" id="team_member_<?php echo $member['member_id']; ?>" value="<?php echo $member['member_id']; ?>" class="form-check-input team-member-checkbox" <?php echo in_array((int)$member['member_id'], $current_team_members) ? 'checked' : ''; ?>>
+                                        <span class="form-check-label"><?php echo htmlspecialchars($member['nickname'] ?? $member['member_name'] ?? ''); ?></span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
-                        <select id="member3" name="member3" class="form-control">
-                            <option value="">Select Member</option>
-                            <?php foreach ($members as $member): ?>
-                                <option value="<?php echo $member['member_id']; ?>" <?php echo $member['member_id'] == $team['member3_id'] ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($member['member_name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <?php $has_m4 = !empty($team['member4_id']); ?>
-                    <div class="form-group" id="group-member4" style="<?php echo $has_m4 ? '' : 'display: none;'; ?>">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-                            <label for="member4" style="margin-bottom: 0;">Member 4</label>
-                            <button type="button" onclick="removeMemberField(4)" style="background: none; border: none; color: var(--color-danger); cursor: pointer; font-size: 0.8rem; font-weight: 500;">✕ Remove</button>
-                        </div>
-                        <select id="member4" name="member4" class="form-control">
-                            <option value="">Select Member</option>
-                            <?php foreach ($members as $member): ?>
-                                <option value="<?php echo $member['member_id']; ?>" <?php echo $member['member_id'] == $team['member4_id'] ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($member['member_name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
                 </div>
 
                 <div style="margin-top: 0.75rem;">
@@ -195,7 +198,7 @@ $csrf_token = $security->generateCSRFToken();
                 <div class="form-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-start; flex-wrap: wrap;">
                     <input type="hidden" name="update_team" value="1">
                     <button type="submit" class="btn btn--primary">Update Team</button>
-                    <a href="club_teams.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle">Cancel</a>
+                    <a href="manage_teams.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle">Cancel</a>
                     <button type="button" class="btn btn--danger" style="margin-left: auto;"
                             onclick="showConfirmDialog(event, {
                                 title: '⚠️ Delete Team',
@@ -270,8 +273,17 @@ $csrf_token = $security->generateCSRFToken();
             selects.forEach(sel => {
                 sel.addEventListener('change', updateMemberDropdowns);
             });
-            updateMemberDropdowns();
-        });
+        function toggleAllCheckboxes(selector, checkedState) {
+            document.querySelectorAll(selector).forEach(cb => {
+                const item = cb.closest('.checkbox-item');
+                if (!item || item.style.display !== 'none') {
+                    if (cb.checked !== checkedState) {
+                        cb.checked = checkedState;
+                        cb.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
+            });
+        }
         </script>
     </div>
     <script src="../js/sidebar.js"></script>

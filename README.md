@@ -11,7 +11,7 @@ The following sections break down the key components and their functionalities f
 - `admin/add_result.php`: Record new individual game results for a club's game.
 - `admin/add_team_result.php`: Record new team-based game results for a club's game.
 - `admin/change_password.php`: Change administrator account password.
-- `admin/club_teams.php`: Manage and view all teams for a particular club.
+- `admin/manage_teams.php`: Manage and view all teams for a particular club.
 - `admin/dashboard.php`: Main admin dashboard showing high-level statistics and shortcuts.
 - `admin/delete_team.php`: Remove a team from a club.
 - `admin/edit_club.php`: Edit club name.

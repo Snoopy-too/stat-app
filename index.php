@@ -1,9 +1,9 @@
 <?php
 session_start();
 
-// Redirect admin users directly to their dashboard
+// Redirect admin users directly to their account
 if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
-    header('Location: admin/dashboard.php');
+    header('Location: admin/account.php');
     exit;
 }
 
@@ -67,7 +67,7 @@ if (isset($_SESSION['club_id'])) {
 
             <div class="landing-hero-cta">
                 <?php if (isset($_SESSION['is_super_admin'])): ?>
-                    <a href="admin/dashboard.php" class="btn btn--secondary">Go to Dashboard</a>
+                    <a href="admin/account.php" class="btn btn--secondary">Go to Account</a>
                 <?php else: ?>
                     <a href="admin/login.php" class="btn btn--secondary">Login</a>
                 <?php endif; ?>
@@ -117,7 +117,7 @@ if (isset($_SESSION['club_id'])) {
                 <div class="gallery-scroll" id="galleryScroll">
                     <div class="gallery-item">
                         <div class="gallery-item-preview">
-                            <iframe src="admin/club_teams.php?demo=1&theme=arcade" title="Teams" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+                            <iframe src="admin/manage_teams.php?demo=1&theme=arcade" title="Teams" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
                         </div>
                         <div class="gallery-item-caption">Teams</div>
                     </div>
@@ -192,12 +192,15 @@ if (isset($_SESSION['club_id'])) {
             fetch(`search_clubs.php?term=${encodeURIComponent(searchTerm)}`)
                 .then(response => response.json())
                 .then(clubs => {
-                    const resultsHtml = clubs.length ? clubs.map(club => `
-                        <div class="club-item">
-                            <h3><a href="${club.slug ? encodeURIComponent(club.slug) : 'club_stats.php?id=' + club.club_id}">${club.club_name}</a></h3>
-                            ${club.description ? `<p>${club.description.substring(0, 100)}...</p>` : ''}
-                        </div>
-                    `).join('') : '<p style="text-align:center;color:var(--color-text-muted);font-size:0.9rem;margin:0.5rem 0;">No clubs found</p>';
+                    const resultsHtml = clubs.length ? clubs.map(club => {
+                        const url = club.slug ? `club_stats.php?slug=${encodeURIComponent(club.slug)}` : `club_stats.php?id=${club.club_id}`;
+                        return `
+                            <a href="${url}" class="club-item" style="display: block; text-decoration: none;">
+                                <h3 style="margin: 0 0 0.2rem; font-size: 1rem; color: var(--color-primary); font-weight: 600;">${club.club_name}</h3>
+                                ${club.description ? `<p style="margin: 0; color: var(--color-text-muted); font-size: 0.85rem;">${club.description.substring(0, 100)}...</p>` : ''}
+                            </a>
+                        `;
+                    }).join('') : '<p style="text-align:center;color:var(--color-text-muted);font-size:0.9rem;margin:0.5rem 0;">No clubs found</p>';
 
                     document.getElementById('searchResults').innerHTML = resultsHtml;
                 })

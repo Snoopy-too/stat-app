@@ -24,7 +24,7 @@ $stmt->execute([$club_id, $_SESSION['admin_id']]);
 $club = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$club) {
-    header("Location: dashboard.php");
+    header("Location: account.php");
     exit();
 }
 
@@ -164,14 +164,37 @@ $csrf_token = $security->generateCSRFToken();
             <form method="POST" enctype="multipart/form-data" class="stack">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <div class="form-group">
-                    <label for="logo">Upload New Logo:</label>
-                    <input type="file" name="logo" id="logo" class="form-control" accept="image/jpeg,image/png,image/gif" required>
-                    <span class="field-hint">Maximum file size: 1MB. Allowed formats: JPG, PNG, GIF.</span>
+                    <label class="form-label">Upload New Logo:</label>
+                    <div class="upload-zone" id="upload-zone">
+                        <span class="upload-zone__icon">🎯</span>
+                        <span class="upload-zone__text">Click to upload or drag & drop club logo</span>
+                        <span class="upload-zone__hint">JPG, PNG, GIF (Max 1MB)</span>
+                        <input type="file" name="logo" id="logo" accept="image/jpeg,image/png,image/gif" required onchange="handleLogoChange(this)">
+                    </div>
                 </div>
                 <button type="submit" class="btn btn--primary">Upload Logo</button>
             </form>
         </div>
     </div>
+    <script>
+        function handleLogoChange(input) {
+            const zone = document.getElementById('upload-zone');
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    let preview = zone.querySelector('.upload-zone__preview-img');
+                    if (!preview) {
+                        preview = document.createElement('img');
+                        preview.className = 'upload-zone__preview-img';
+                        zone.prepend(preview);
+                    }
+                    preview.src = e.target.result;
+                    zone.classList.add('has-preview');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
     <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>

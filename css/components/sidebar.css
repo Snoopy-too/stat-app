@@ -150,8 +150,9 @@
 }
 
 .sidebar__link--active:hover {
-    background: #c7d2fe;
-    background: var(--color-primary-muted, #c7d2fe);
+    background: var(--color-primary-muted, var(--color-primary-soft));
+    color: var(--color-heading);
+    filter: brightness(1.15);
 }
 
 /* Link Icon */

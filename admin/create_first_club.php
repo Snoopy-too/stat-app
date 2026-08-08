@@ -12,7 +12,7 @@ if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
 
 // Redirect multi_club admins to dashboard (they don't need this page)
 if (isset($_SESSION['admin_type']) && $_SESSION['admin_type'] !== 'single_club') {
-    header("Location: dashboard.php");
+    header("Location: account.php");
     exit();
 }
 
@@ -22,7 +22,7 @@ $security = new SecurityUtils($pdo);
 $clubCheckStmt = $pdo->prepare("SELECT COUNT(*) FROM club_admins WHERE admin_id = ?");
 $clubCheckStmt->execute([$_SESSION['admin_id']]);
 if ($clubCheckStmt->fetchColumn() > 0) {
-    header("Location: dashboard.php");
+    header("Location: account.php");
     exit();
 }
 
@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->commit();
 
                 $_SESSION['success'] = "Your club has been created successfully!";
-                header("Location: dashboard.php");
+                header("Location: account.php");
                 exit();
             } catch (PDOException $e) {
                 $pdo->rollBack();

@@ -7,14 +7,14 @@ $demo = isset($_GET['demo']) || isset($_GET['preview']) || !isset($_SESSION['log
 if ($demo) {
     $_SESSION['club_name'] = $_SESSION['club_name'] ?? 'Meeple & Dice Club';
     $members = [
-        ['member_id' => 1, 'full_name' => 'Alex Rivers', 'username' => '@arivers'],
-        ['member_id' => 2, 'full_name' => 'Sam Taylor', 'username' => '@staylor'],
-        ['member_id' => 3, 'full_name' => 'Jordan Lee', 'username' => '@jlee'],
-        ['member_id' => 4, 'full_name' => 'Casey Morgan', 'username' => '@cmorgan']
+        ['member_id' => 1, 'nickname' => 'Alex', 'username' => '@arivers'],
+        ['member_id' => 2, 'nickname' => 'Sam', 'username' => '@staylor'],
+        ['member_id' => 3, 'nickname' => 'Jordan', 'username' => '@jlee'],
+        ['member_id' => 4, 'nickname' => 'Casey', 'username' => '@cmorgan']
     ];
 } else {
     // Fetch existing members for this club
-    $stmt = $pdo->prepare("SELECT * FROM members WHERE club_id = ? ORDER BY full_name");
+    $stmt = $pdo->prepare("SELECT * FROM members WHERE club_id = ? ORDER BY nickname");
     $stmt->execute([$_SESSION['club_id']]);
     $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
@@ -29,7 +29,7 @@ if (!$demo && $club_id) {
     try {
         $stmt_stats = $pdo->prepare("
             SELECT m.member_id,
-                   COALESCE(NULLIF(m.nickname, ''), m.member_name, m.full_name) as name,
+                   COALESCE(NULLIF(m.nickname, ''), 'Member') as name,
                    (
                        SELECT COUNT(*)
                        FROM game_results gr
@@ -59,9 +59,9 @@ if (!$demo && $club_id) {
     }
 }
 
-if (empty($chart_member_names)) {
+if ($demo && empty($chart_member_names)) {
     foreach ($members as $idx => $m) {
-        $name = !empty($m['full_name']) ? $m['full_name'] : (!empty($m['member_name']) ? $m['member_name'] : 'Member ' . ($idx + 1));
+        $name = !empty($m['nickname']) ? $m['nickname'] : 'Member ' . ($idx + 1);
         $chart_member_names[] = $name;
         $chart_individual_wins[] = max(1, 8 - ($idx * 2));
         $chart_team_wins[] = max(0, 4 - $idx);
@@ -89,7 +89,7 @@ if (!$demo && $club_id) {
             $wot_labels = array_map(fn($m) => date('M Y', strtotime($m . '-01')), $all_months);
 
             $stmt_mwins = $pdo->prepare("
-                SELECT COALESCE(NULLIF(m.nickname, ''), m.member_name, m.full_name) as name,
+                SELECT COALESCE(NULLIF(m.nickname, ''), 'Member') as name,
                        DATE_FORMAT(gr.played_at, '%Y-%m') as month_key,
                        COUNT(*) as wins
                 FROM game_results gr
@@ -124,11 +124,11 @@ if (!$demo && $club_id) {
     }
 }
 
-if (empty($wot_labels)) {
+if ($demo && empty($wot_labels)) {
     $wot_labels = ['Apr', 'May', 'Jun', 'Jul', 'Aug'];
     $demo_wins = [[1,2,2,3,4],[0,1,2,2,3],[0,0,1,2,2],[0,1,1,1,2]];
     foreach ($members as $idx => $m) {
-        $name = !empty($m['full_name']) ? $m['full_name'] : ($m['member_name'] ?? 'Member ' . ($idx+1));
+        $name = !empty($m['nickname']) ? $m['nickname'] : 'Member ' . ($idx + 1);
         $wot_datasets[] = ['name' => $name, 'data' => $demo_wins[$idx] ?? array_fill(0, 5, 0)];
         if ($idx >= 3) break;
     }
@@ -153,30 +153,40 @@ if (empty($wot_labels)) {
 
     <div class="container">
         <?php if (!empty($chart_member_names)): ?>
-        <div class="card" style="margin-bottom: 1.5rem;">
-            <h2>Analytics & Trends</h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
-                <div>
-                    <h3 style="font-size: 1rem; margin-bottom: 0.75rem; text-align: center;">Wins for Members and Their Teams</h3>
-                    <div style="position: relative; height: 260px;">
-                        <canvas id="memberWinsChart"></canvas>
+        <details class="card" style="margin-bottom: 1.5rem;" id="analytics-accordion">
+            <summary style="cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; user-select: none; padding: 0.25rem 0;">
+                <h2 style="margin: 0; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.25rem;">
+                    <span class="material-symbols-outlined" style="font-size: 1.35rem;">monitoring</span>
+                    <span>Analytics & Trends</span>
+                </h2>
+                <span class="material-symbols-outlined accordion-icon" style="transition: transform 0.2s ease;">expand_more</span>
+            </summary>
+            <div style="margin-top: 1rem; border-top: 1px solid var(--color-border); padding-top: 1rem;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                    <div>
+                        <h3 style="font-size: 1rem; margin-bottom: 0.75rem; text-align: center;">Wins for Members and Their Teams</h3>
+                        <div style="position: relative; height: 260px;">
+                            <canvas id="memberWinsChart"></canvas>
+                        </div>
                     </div>
-                </div>
-                <div>
-                    <h3 style="font-size: 1rem; margin-bottom: 0.75rem; text-align: center;">Cumulative Wins Over Time</h3>
-                    <div style="position: relative; height: 260px;">
-                        <canvas id="winRatesChart"></canvas>
+                    <?php if (!empty($wot_labels) && !empty($wot_datasets)): ?>
+                    <div>
+                        <h3 style="font-size: 1rem; margin-bottom: 0.75rem; text-align: center;">Cumulative Wins Over Time</h3>
+                        <div style="position: relative; height: 260px;">
+                            <canvas id="winRatesChart"></canvas>
+                        </div>
                     </div>
+                    <?php endif; ?>
                 </div>
             </div>
-        </div>
+        </details>
         <?php endif; ?>
 
         <div class="member-list">
             <?php foreach ($members as $member): ?>
             <div class="member-item">
                 <div class="member-info">
-                    <strong><?php echo htmlspecialchars($member['full_name']); ?></strong>
+                    <strong><?php echo htmlspecialchars($member['nickname'] ?? 'Member'); ?></strong>
                     <?php if (!empty($member['username'])): ?>
                         <br><small><?php echo htmlspecialchars($member['username']); ?></small>
                     <?php endif; ?>
@@ -340,6 +350,18 @@ if (empty($wot_labels)) {
                     winRatesChart.options.scales.y.grid.color = c.border;
                     winRatesChart.update();
                 }
+            }
+
+            const analyticsAccordion = document.getElementById('analytics-accordion');
+            if (analyticsAccordion) {
+                analyticsAccordion.addEventListener('toggle', function() {
+                    if (this.open) {
+                        setTimeout(() => {
+                            if (typeof memberWinsChart !== 'undefined' && memberWinsChart) memberWinsChart.resize();
+                            if (typeof winRatesChart !== 'undefined' && winRatesChart) winRatesChart.resize();
+                        }, 50);
+                    }
+                });
             }
 
             window.addEventListener('themechange', updateChartTheme);

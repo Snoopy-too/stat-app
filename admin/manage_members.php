@@ -141,7 +141,7 @@ if (!$demo && $club_id) {
     }
 }
 
-if (empty($chart_member_names)) {
+if ($demo && empty($chart_member_names)) {
     foreach ($members as $idx => $m) {
         $name = !empty($m['nickname']) ? $m['nickname'] : (!empty($m['member_name']) ? $m['member_name'] : 'Member ' . ($idx + 1));
         $chart_member_names[] = $name;
@@ -209,7 +209,7 @@ if (!$demo && $club_id) {
     }
 }
 
-if (empty($wot_labels)) {
+if ($demo && empty($wot_labels)) {
     // Demo fallback
     $wot_labels = ['Apr', 'May', 'Jun', 'Jul', 'Aug'];
     $demo_wins = [[1,2,2,3,4],[0,1,2,2,3],[0,0,1,2,2],[0,1,1,1,2]];
@@ -327,25 +327,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } else if (isset($_POST['action'])) {
         // Update the INSERT query in the POST handling section
-        if ($_POST['action'] === 'create' && !empty($_POST['member_name']) && !empty($_POST['email']) && !empty($_POST['club_id'])) {
+        if ($_POST['action'] === 'create' && !empty($_POST['member_name']) && !empty($_POST['email'])) {
+            $target_club_id = !empty($_POST['club_id']) ? (int)$_POST['club_id'] : (int)$club_id;
             try {
                 $stmt = $pdo->prepare("SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?");
-                $stmt->execute([$_POST['club_id'], $_SESSION['admin_id']]);
+                $stmt->execute([$target_club_id, $_SESSION['admin_id']]);
                 if (!$stmt->fetch()) {
                     throw new Exception("Unauthorized club access");
                 }
                 
                 $stmt = $pdo->prepare("INSERT INTO members (club_id, admin_id, member_name, nickname, email, status) VALUES (?, ?, ?, ?, ?, 'active')");
                 $stmt->execute([
-                    $_POST['club_id'],
+                    $target_club_id,
                     $_SESSION['admin_id'],
                     trim($_POST['member_name']),
                     trim($_POST['nickname']),
                     trim($_POST['email'])
                 ]);
-                $club_id = $_POST['club_id'];
+                $club_id = $target_club_id;
                 $_SESSION['success'] = "Member added successfully!";
             } catch (PDOException $e) {
+                $_SESSION['error'] = "Failed to add member: " . $e->getMessage();
+            } catch (Exception $e) {
                 $_SESSION['error'] = "Failed to add member: " . $e->getMessage();
             }
             header("Location: manage_members.php?club_id=" . $club_id);
@@ -389,10 +392,7 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
-        <?php NavigationHelper::renderCompactHeader('Manage Members (' . $club['club_name'] . ')'); ?>
-        <div class="header-actions">
-            <a href="../club_stats.php?id=<?php echo $club_id; ?>" class="btn btn--ghost btn--small" target="_blank" title="View on public site">👁️ Preview</a>
-        </div>
+        <?php NavigationHelper::renderCompactHeader('Manage ' . $club['club_name'] . ' Members (' . count($members) . ')'); ?>
     </div>
 
     <div class="container container--wide">
@@ -400,33 +400,39 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
         <?php display_session_message('error'); ?>
 
         <?php if (!empty($chart_member_names)): ?>
-        <div class="card" style="margin-bottom: 1.5rem;">
-            <h2>Analytics & Trends</h2>
-            <div style="margin-top: 1rem;">
-                <h3 style="font-size: 1rem; margin-bottom: 0.75rem; text-align: center;">Wins for Members and Their Teams</h3>
-                <div style="position: relative; height: 260px;">
-                    <canvas id="memberWinsChart"></canvas>
+        <details class="card" style="margin-bottom: 1.5rem;" id="analytics-accordion">
+            <summary style="cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; user-select: none; padding: 0.25rem 0;">
+                <h2 style="margin: 0; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.25rem;">
+                    <span class="material-symbols-outlined" style="font-size: 1.35rem;">monitoring</span>
+                    <span>Analytics & Trends</span>
+                </h2>
+                <span class="material-symbols-outlined accordion-icon" style="transition: transform 0.2s ease;">expand_more</span>
+            </summary>
+            <div style="margin-top: 1rem; border-top: 1px solid var(--color-border); padding-top: 1rem;">
+                <div>
+                    <h3 style="font-size: 1rem; margin-bottom: 0.75rem; text-align: center;">Wins for Members and Their Teams</h3>
+                    <div style="position: relative; height: 260px;">
+                        <canvas id="memberWinsChart"></canvas>
+                    </div>
                 </div>
-            </div>
-            <div style="margin-top: 2rem;">
-                <h3 style="font-size: 1rem; margin-bottom: 0.75rem; text-align: center;">Cumulative Wins Over Time</h3>
-                <div style="position: relative; height: 260px;">
-                    <canvas id="winRatesChart"></canvas>
+                <?php if (!empty($wot_labels) && !empty($wot_datasets)): ?>
+                <div style="margin-top: 2rem;">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.75rem; text-align: center;">Cumulative Wins Over Time</h3>
+                    <div style="position: relative; height: 260px;">
+                        <canvas id="winRatesChart"></canvas>
+                    </div>
                 </div>
+                <?php endif; ?>
             </div>
-        </div>
+        </details>
         <?php endif; ?>
-
-        <div class="card">
-            <div class="card-header">
-                <h2>Members (<?php echo count($members); ?>)</h2>
-            </div>
 
             <div id="add-member-form-wrapper" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? '' : 'display:none;'; ?> margin: 1rem 0 1.25rem 0; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 0.75rem); background: var(--color-surface-muted);">
                 <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);">Add New Member</h3>
                 <form method="POST" class="form">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                     <input type="hidden" name="action" value="create">
+                    <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
                     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
                         <div class="form-group" style="margin-bottom: 0;">
                             <label for="member_name">Full Name <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
@@ -439,17 +445,6 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                         <div class="form-group" style="margin-bottom: 0;">
                             <label for="email">Email Address <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
                             <input type="email" id="email" name="email" placeholder="Email Address" required class="form-control">
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label for="club_id">Club <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
-                            <select name="club_id" id="club_id" required class="form-control">
-                                <option value="">Select Club</option>
-                                <?php foreach ($admin_clubs as $club_option): ?>
-                                    <option value="<?php echo $club_option['club_id']; ?>" <?php echo ($club_id == $club_option['club_id']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($club_option['club_name']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
                         </div>
                     </div>
                     <div class="form-group" style="display:flex; gap:0.5rem; margin-bottom:0;">
@@ -521,7 +516,7 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                             </th>
                             <th>
                                 <a href="?club_id=<?php echo $club_id; ?>&sort=championships_count&order=<?php echo ($sort === 'championships_count' && strtolower($order) === 'asc') ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo $status_filter; ?>" class="table-sort-link sort-link">
-                                    <span>Championships</span>
+                                    <span>Trophies</span>
                                     <?php if ($sort === 'championships_count'): ?>
                                         <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
                                     <?php endif; ?>
@@ -591,7 +586,6 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                     </tbody>
                 </table>
             </div>
-        </div>
 
         </div>
 
@@ -1016,6 +1010,18 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                     winRatesChart.options.scales.y.grid.color = c.border;
                     winRatesChart.update();
                 }
+            }
+
+            const analyticsAccordion = document.getElementById('analytics-accordion');
+            if (analyticsAccordion) {
+                analyticsAccordion.addEventListener('toggle', function() {
+                    if (this.open) {
+                        setTimeout(() => {
+                            if (typeof memberWinsChart !== 'undefined' && memberWinsChart) memberWinsChart.resize();
+                            if (typeof winRatesChart !== 'undefined' && winRatesChart) winRatesChart.resize();
+                        }, 50);
+                    }
+                });
             }
 
             window.addEventListener('themechange', updateChartTheme);

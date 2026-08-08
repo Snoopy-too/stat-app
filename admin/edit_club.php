@@ -25,7 +25,7 @@ $club = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$club || $club['admin_role'] !== 'owner') {
     $_SESSION['error'] = "Only the club owner can edit this club.";
-    header("Location: dashboard.php");
+    header("Location: account.php");
     exit();
 }
 
@@ -139,9 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $_SESSION['success'] = "Club deleted successfully.";
-            $from = $_GET['from'] ?? '';
-            $redirect_target = ($from === 'account') ? "account.php" : (($from === 'manage_clubs') ? "manage_clubs.php" : "dashboard.php");
-            header("Location: " . $redirect_target);
+            header("Location: account.php");
             exit();
 
         } catch (Exception $e) {
@@ -250,12 +248,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 $_SESSION['success'] = "Club updated successfully!";
                 $from = $_GET['from'] ?? '';
-                $redirect_target = "view_club.php?id=" . $club_id;
-                if ($from === 'account') {
-                    $redirect_target = "account.php";
-                } elseif ($from === 'manage_clubs') {
-                    $redirect_target = "manage_clubs.php";
-                }
+                $redirect_target = ($from === 'account') ? "account.php" : "view_club.php?id=" . $club_id;
                 header("Location: " . $redirect_target);
                 exit();
                 
@@ -300,6 +293,12 @@ $csrf_token = $security->generateCSRFToken();
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
         <?php NavigationHelper::renderCompactHeader('Edit Club', $club['club_name']); ?>
+        <div class="header-actions">
+            <a href="../club_stats.php?id=<?php echo $club_id; ?>" class="btn btn--ghost btn--small" target="_blank" title="View public club page" style="display:inline-flex;align-items:center;">
+                <span class="material-symbols-outlined" style="font-size:1.1rem;margin-right:0.25rem;">visibility</span>
+                <span>Preview Public Page</span>
+            </a>
+        </div>
     </div>
 
     <div class="container container--narrow">
@@ -318,7 +317,7 @@ $csrf_token = $security->generateCSRFToken();
                 </div>
 
                 <div class="form-group">
-                    <label for="logo"><strong>Club Logo:</strong></label>
+                    <label class="form-label"><strong>Club Logo:</strong></label>
                     <div id="logo-preview-container" style="display:<?php echo !empty($club['logo_image']) ? 'flex' : 'none'; ?>; align-items:center; gap:1rem; margin-bottom:0.75rem;">
                         <img id="logo-preview-img" src="<?php echo !empty($club['logo_image']) ? '../images/club_logos/' . htmlspecialchars($club['logo_image']) : ''; ?>" alt="Club Logo" style="width:64px; height:64px; border-radius:0.5rem; object-fit:cover; border:1px solid var(--color-border);">
                         <?php if (!empty($club['logo_image'])): ?>
@@ -328,10 +327,12 @@ $csrf_token = $security->generateCSRFToken();
                             </label>
                         <?php endif; ?>
                     </div>
-                    <input type="file" id="logo" name="logo" class="form-control" accept="image/jpeg,image/png,image/gif" onchange="previewLogo(this)">
-                    <small style="color:var(--text-light); display:block; margin-top:0.25rem;">
-                        Maximum file size: 1MB. Allowed formats: JPG, PNG, GIF.
-                    </small>
+                    <div class="upload-zone" id="upload-zone">
+                        <span class="upload-zone__icon">🎯</span>
+                        <span class="upload-zone__text">Click to upload or drag & drop club logo</span>
+                        <span class="upload-zone__hint">JPG, PNG, GIF (Max 1MB)</span>
+                        <input type="file" id="logo" name="logo" accept="image/jpeg,image/png,image/gif" onchange="previewLogo(this)">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="slug"><strong>Club URL Slug (optional):</strong>
@@ -394,7 +395,7 @@ $csrf_token = $security->generateCSRFToken();
                 <div class="form-actions" style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
                     <button type="submit" class="btn btn--primary">Save Changes</button>
                     <button type="button" class="btn btn--danger" onclick="openDeleteModal()">Delete Club</button>
-                    <a href="<?php echo (!empty($_GET['from']) && $_GET['from'] === 'account') ? 'account.php' : ((!empty($_GET['from']) && $_GET['from'] === 'manage_clubs') ? 'manage_clubs.php' : 'view_club.php?id=' . $club_id); ?>" class="btn btn--subtle">Cancel</a>
+                    <a href="<?php echo (!empty($_GET['from']) && $_GET['from'] === 'account') ? 'account.php' : 'view_club.php?id=' . $club_id; ?>" class="btn btn--subtle">Cancel</a>
                 </div>
             </form>
         </div>
@@ -562,6 +563,7 @@ $csrf_token = $security->generateCSRFToken();
             const container = document.getElementById('logo-preview-container');
             const img = document.getElementById('logo-preview-img');
             const removeCheckbox = document.getElementById('remove_logo_checkbox');
+            const uploadZone = document.getElementById('upload-zone');
 
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -569,8 +571,23 @@ $csrf_token = $security->generateCSRFToken();
                     if (img) img.src = e.target.result;
                     if (container) container.style.display = 'flex';
                     if (removeCheckbox) removeCheckbox.checked = false;
+
+                    if (uploadZone) {
+                        let preview = uploadZone.querySelector('.upload-zone__preview-img');
+                        if (!preview) {
+                            preview = document.createElement('img');
+                            preview.className = 'upload-zone__preview-img';
+                            uploadZone.prepend(preview);
+                        }
+                        preview.src = e.target.result;
+                        uploadZone.classList.add('has-preview');
+                    }
                 };
                 reader.readAsDataURL(input.files[0]);
+            } else if (uploadZone) {
+                uploadZone.classList.remove('has-preview');
+                const preview = uploadZone.querySelector('.upload-zone__preview-img');
+                if (preview) preview.remove();
             }
         }
     </script>

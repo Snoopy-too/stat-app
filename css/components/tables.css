@@ -227,7 +227,7 @@
 }
 
 /* Mobile Layout (Card View) */
-@media (max-width: 48rem) {
+@media (max-width: 48rem) and (orientation: portrait) {
 
     .data-table thead,
     .members-table thead,

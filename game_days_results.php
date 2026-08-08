@@ -11,7 +11,7 @@ if (!$selected_date || !$club_id) {
 }
 
 // Format the date for display
-$display_date = date('F j, Y', strtotime($selected_date));
+$display_date = date('Y/m/d', strtotime($selected_date));
 
 // Fetch individual game results for the selected date and club
 $individual_results = [];
@@ -191,7 +191,7 @@ try {
                                 <?php endif; ?>
                             </td>
                             <td data-label="Game">
-                                <a href="team_game_play_details.php?result_id=<?php echo urlencode($result['result_id']); ?>" class="game-link game-link--button">
+                                <a href="game_play_details.php?result_id=<?php echo urlencode($result['result_id']); ?>&type=team" class="game-link game-link--button">
                                     <?php echo htmlspecialchars($result['game_name']); ?>
                                 </a>
                             </td>

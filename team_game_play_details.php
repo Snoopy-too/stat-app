@@ -208,7 +208,7 @@ if ($result_id > 0) {
 
                 <div class="detail-row">
                     <div class="detail-label">Played At:</div>
-                    <div class="detail-value"><?php echo date('F j, Y, g:i a', strtotime($result['played_at'])); ?></div>
+                    <div class="detail-value"><?php echo date('Y/m/d g:i a', strtotime($result['played_at'])); ?></div>
                 </div>
 
                 <?php if (!empty($result['duration'])): ?>

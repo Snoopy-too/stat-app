@@ -76,9 +76,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $pdo->prepare("
                     SELECT 
                     (SELECT COUNT(*) FROM game_results WHERE game_id = ?) + 
-                    (SELECT COUNT(*) FROM team_game_results WHERE game_id = ?) as total_plays
+                    (SELECT COUNT(*) FROM team_game_results WHERE game_id = ?) +
+                    (SELECT COUNT(*) FROM cooperative_game_results WHERE game_id = ?) as total_plays
                 ");
-                $stmt->execute([$del_game_id, $del_game_id]);
+                $stmt->execute([$del_game_id, $del_game_id, $del_game_id]);
                 $count = $stmt->fetchColumn();
 
                 if ($count > 0) {
@@ -199,9 +200,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("
                 SELECT 
                 (SELECT COUNT(*) FROM game_results WHERE game_id = ?) + 
-                (SELECT COUNT(*) FROM team_game_results WHERE game_id = ?) as total_plays
+                (SELECT COUNT(*) FROM team_game_results WHERE game_id = ?) +
+                (SELECT COUNT(*) FROM cooperative_game_results WHERE game_id = ?) as total_plays
             ");
-            $stmt->execute([$del_game_id, $del_game_id]);
+            $stmt->execute([$del_game_id, $del_game_id, $del_game_id]);
             $count = $stmt->fetchColumn();
             
             if ($count > 0) {
@@ -236,12 +238,21 @@ $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'game_name';
 $order = isset($_GET['order']) ? $_GET['order'] : 'asc';
 // Define valid sort columns
-$valid_sort_columns = ['game_name', 'created_at', 'total_plays'];
+$valid_sort_columns = ['game_name', 'game_type', 'total_plays', 'last_played'];
 $sort = in_array($sort, $valid_sort_columns) ? $sort : 'game_name';
 $order = ($order === 'desc') ? 'desc' : 'asc';
 // Build the query
 $query = "SELECT g.*, c.club_name, 
-          (COALESCE(gr.total, 0) + COALESCE(tgr.total, 0)) as total_plays 
+          (COALESCE(gr.total, 0) + COALESCE(tgr.total, 0) + COALESCE(cgr.total, 0)) as total_plays,
+          (
+              SELECT MAX(played_at) FROM (
+                  SELECT game_id, played_at FROM game_results
+                  UNION ALL
+                  SELECT game_id, played_at FROM team_game_results
+                  UNION ALL
+                  SELECT game_id, played_at FROM cooperative_game_results
+              ) all_res WHERE all_res.game_id = g.game_id
+          ) as last_played
           FROM games g 
           JOIN clubs c ON g.club_id = c.club_id
           LEFT JOIN (
@@ -253,15 +264,22 @@ $query = "SELECT g.*, c.club_name,
               SELECT game_id, COUNT(result_id) as total 
               FROM team_game_results 
               GROUP BY game_id
-          ) tgr ON g.game_id = tgr.game_id"; // Adjusted subqueries for accurate counting
+          ) tgr ON g.game_id = tgr.game_id
+          LEFT JOIN (
+              SELECT game_id, COUNT(result_id) as total 
+              FROM cooperative_game_results 
+              GROUP BY game_id
+          ) cgr ON g.game_id = cgr.game_id"; // Adjusted subqueries for accurate counting
 $params = [];
 if ($club_id) {
     $query .= " WHERE g.club_id = ?";
     $params[] = $club_id;
 }
-$query .= " GROUP BY g.game_id, c.club_id, c.club_name, g.game_name, g.min_players, g.max_players, g.created_at";
+$query .= " GROUP BY g.game_id, c.club_id, c.club_name, g.game_name, g.min_players, g.max_players, g.game_type";
 if ($sort === 'total_plays') {
     $query .= " ORDER BY total_plays $order, g.game_name ASC";
+} elseif ($sort === 'last_played') {
+    $query .= " ORDER BY last_played $order, g.game_name ASC";
 } else {
     $query .= " ORDER BY g.$sort $order";
 }
@@ -271,10 +289,10 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if ($demo) {
     $games = [
-        ['game_id' => 1, 'game_name' => 'Catan', 'min_players' => 3, 'max_players' => 4, 'total_plays' => 42, 'club_name' => 'Meeple & Dice Club', 'created_at' => date('Y-m-d H:i:s'), 'game_image' => null],
-        ['game_id' => 2, 'game_name' => 'Wingspan', 'min_players' => 1, 'max_players' => 5, 'total_plays' => 35, 'club_name' => 'Meeple & Dice Club', 'created_at' => date('Y-m-d H:i:s'), 'game_image' => null],
-        ['game_id' => 3, 'game_name' => 'Ticket to Ride', 'min_players' => 2, 'max_players' => 5, 'total_plays' => 28, 'club_name' => 'Meeple & Dice Club', 'created_at' => date('Y-m-d H:i:s'), 'game_image' => null],
-        ['game_id' => 4, 'game_name' => 'Codenames', 'min_players' => 2, 'max_players' => 8, 'total_plays' => 54, 'club_name' => 'Meeple & Dice Club', 'created_at' => date('Y-m-d H:i:s'), 'game_image' => null]
+        ['game_id' => 1, 'game_name' => 'Catan', 'min_players' => 3, 'max_players' => 4, 'total_plays' => 42, 'last_played' => date('Y-m-d H:i:s', strtotime('-2 days')), 'club_name' => 'Meeple & Dice Club', 'game_type' => 'winner_losers', 'game_image' => null],
+        ['game_id' => 2, 'game_name' => 'Wingspan', 'min_players' => 1, 'max_players' => 5, 'total_plays' => 35, 'last_played' => date('Y-m-d H:i:s', strtotime('-5 days')), 'club_name' => 'Meeple & Dice Club', 'game_type' => 'ranked', 'game_image' => null],
+        ['game_id' => 3, 'game_name' => 'Ticket to Ride', 'min_players' => 2, 'max_players' => 5, 'total_plays' => 28, 'last_played' => date('Y-m-d H:i:s', strtotime('-12 days')), 'club_name' => 'Meeple & Dice Club', 'game_type' => 'teams', 'game_image' => null],
+        ['game_id' => 4, 'game_name' => 'Codenames', 'min_players' => 2, 'max_players' => 8, 'total_plays' => 54, 'last_played' => date('Y-m-d H:i:s', strtotime('-1 day')), 'club_name' => 'Meeple & Dice Club', 'game_type' => 'cooperative', 'game_image' => null]
     ];
 }
 
@@ -359,17 +377,12 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
-        <?php NavigationHelper::renderCompactHeader('Manage Games' . ($club_name ? ' (' . $club_name . ')' : '')); ?>
+        <?php NavigationHelper::renderCompactHeader('Manage ' . ($club_name ?: 'Club') . ' Games (' . count($games) . ')'); ?>
     </div>
     
     <div class="container">
         <?php display_session_message('success'); ?>
         <?php display_session_message('error'); ?>
-
-        <div class="card">
-            <div class="card-header">
-                <h2>Games (<?php echo count($games); ?>)</h2>
-            </div>
 
             <?php 
             $showAddForm = (isset($_GET['action']) && $_GET['action'] === 'add') || (isset($_POST['action']) && $_POST['action'] === 'create');
@@ -457,23 +470,12 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                         <a href="?<?php echo $club_id ? 'club_id=' . $club_id : ''; ?>" class="btn btn--subtle btn--small">Reset</a>
                     </div>
                 </form>
-                <form method="POST" class="toolbar-group" id="bulk-form">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                    <?php if ($club_id): ?>
-                        <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
-                    <?php endif; ?>
-                    <select name="bulk_action" id="bulk-action-select" class="form-control form-control--sm" onchange="executeBulkAction(this)">
-                        <option value="">Bulk Actions</option>
-                        <option value="bulk_delete">Delete Selected</option>
-                    </select>
-                </form>
             </div>
 
             <div class="table-responsive">
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th><input type="checkbox" id="select-all" class="form-check-input"></th>
                         <?php if (!$club_id): ?><th>Club</th><?php endif; ?>
                         <th style="width: 50px; text-align: left;">Image</th>
                         <th style="text-align: left;">
@@ -486,9 +488,17 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                         </th>
                         <th>Players</th>
                         <th>
-                            <a href="?<?php echo http_build_query(array_merge($_GET, ['sort'=>'created_at','order'=>($sort==='created_at'&&strtolower($order)==='asc')?'desc':'asc'])); ?>" class="table-sort-link sort-link">
-                                <span>Added</span>
-                                <?php if ($sort === 'created_at'): ?>
+                            <a href="?<?php echo http_build_query(array_merge($_GET, ['sort'=>'game_type','order'=>($sort==='game_type'&&strtolower($order)==='asc')?'desc':'asc'])); ?>" class="table-sort-link sort-link">
+                                <span>Type</span>
+                                <?php if ($sort === 'game_type'): ?>
+                                    <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
+                                <?php endif; ?>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?<?php echo http_build_query(array_merge($_GET, ['sort'=>'last_played','order'=>($sort==='last_played'&&strtolower($order)==='asc')?'desc':'asc'])); ?>" class="table-sort-link sort-link">
+                                <span>Last Played</span>
+                                <?php if ($sort === 'last_played'): ?>
                                     <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
                                 <?php endif; ?>
                             </a>
@@ -515,10 +525,6 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                     <?php endif; ?>
                     <?php foreach ($games as $game): ?>
                         <tr>
-                            <td>
-                                <input type="checkbox" name="selected_games[]" form="bulk-form"
-                                       value="<?php echo $game['game_id']; ?>" class="form-check-input game-checkbox">
-                            </td>
                             <?php if (!$club_id): ?><td data-label="Club"><?php echo htmlspecialchars($game['club_name']); ?></td><?php endif; ?>
                             <td data-label="Image">
                                 <?php if (!empty($game['game_image'])): ?>
@@ -530,7 +536,8 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                             </td>
                             <td data-label="Game Name" style="text-align: left;"><?php echo htmlspecialchars($game['game_name']); ?></td>
                             <td data-label="Players"><?php echo $game['min_players'] . '-' . $game['max_players']; ?></td>
-                            <td data-label="Added"><?php echo date('M j, Y', strtotime($game['created_at'])); ?></td>
+                            <td data-label="Type"><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $game['game_type'] ?? 'winner_losers'))); ?></td>
+                            <td data-label="Last Played"><?php echo !empty($game['last_played']) ? date('Y/m/d', strtotime($game['last_played'])) : '—'; ?></td>
                             <td data-label="Total Plays"><?php echo $game['total_plays']; ?></td>
                             <td>
                                 <div class="btn-group">
@@ -545,7 +552,6 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                 </tbody>
             </table>
             </div>
-        </div>
     </div>
     <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
@@ -606,52 +612,7 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
         if (searchInput.value) filterGames();
     }
 
-    document.getElementById('select-all')?.addEventListener('change', function() {
-        document.querySelectorAll('.game-checkbox').forEach(checkbox => {
-            checkbox.checked = this.checked;
-        });
-    });
 })();
-
-function executeBulkAction(selectEl) {
-    const action = selectEl.value;
-    if (!action) return;
-
-    const selectedCheckboxes = document.querySelectorAll('.game-checkbox:checked');
-
-    if (selectedCheckboxes.length === 0) {
-        alert('Please select at least one game.');
-        selectEl.value = '';
-        return;
-    }
-
-    if (action === 'bulk_delete') {
-        showConfirmDialog(null, {
-            title: '⚠️ Delete Selected Games?',
-            message: `Are you sure you want to delete ${selectedCheckboxes.length} selected game(s)?`,
-            confirmText: 'Delete Games',
-            cancelText: 'Cancel',
-            type: 'danger',
-            warningMessage: 'Games with no recorded match results will be permanently removed.',
-            requirePassword: true,
-            onConfirm: (password) => {
-                const bulkForm = document.getElementById('bulk-form');
-                let passInput = bulkForm.querySelector('input[name="password"]');
-                if (!passInput) {
-                    passInput = document.createElement('input');
-                    passInput.type = 'hidden';
-                    passInput.name = 'password';
-                    bulkForm.appendChild(passInput);
-                }
-                passInput.value = password;
-                bulkForm.submit();
-            },
-            onCancel: () => {
-                selectEl.value = '';
-            }
-        });
-    }
-}
 
 function toggleAddGameForm() {
     const wrapper = document.getElementById('add-game-form-wrapper');

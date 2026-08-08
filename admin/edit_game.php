@@ -29,10 +29,59 @@ if (!$game) {
 // Check if game can be deleted (no play records)
 $stmt = $pdo->prepare("
     SELECT (SELECT COUNT(*) FROM game_results WHERE game_id = ?) +
-           (SELECT COUNT(*) FROM team_game_results WHERE game_id = ?) AS total_plays
+           (SELECT COUNT(*) FROM team_game_results WHERE game_id = ?) +
+           (SELECT COUNT(*) FROM cooperative_game_results WHERE game_id = ?) AS total_plays
 ");
-$stmt->execute([$game_id, $game_id]);
+$stmt->execute([$game_id, $game_id, $game_id]);
 $total_plays = (int)$stmt->fetchColumn();
+
+// Fetch game analytics for infographics
+$stmt = $pdo->prepare("
+    SELECT MAX(played_at) FROM (
+        SELECT played_at FROM game_results WHERE game_id = ?
+        UNION ALL
+        SELECT played_at FROM team_game_results WHERE game_id = ?
+        UNION ALL
+        SELECT played_at FROM cooperative_game_results WHERE game_id = ?
+    ) all_plays
+");
+$stmt->execute([$game_id, $game_id, $game_id]);
+$last_played_raw = $stmt->fetchColumn();
+$last_played = $last_played_raw ? date('Y/m/d', strtotime($last_played_raw)) : 'Never';
+
+$top_winner = 'None yet';
+$top_winner_wins = 0;
+$stmt = $pdo->prepare("
+    SELECT m.nickname as winner_name, COUNT(*) as wins
+    FROM game_results gr
+    JOIN members m ON gr.winner = m.member_id
+    WHERE gr.game_id = ?
+    GROUP BY gr.winner, m.nickname
+    ORDER BY wins DESC
+    LIMIT 1
+");
+$stmt->execute([$game_id]);
+$tw = $stmt->fetch(PDO::FETCH_ASSOC);
+if ($tw) {
+    $top_winner = $tw['winner_name'];
+    $top_winner_wins = (int)$tw['wins'];
+} else {
+    $stmt = $pdo->prepare("
+        SELECT t.team_name as winner_name, COUNT(*) as wins
+        FROM team_game_results tgr
+        JOIN teams t ON tgr.winner = t.team_id
+        WHERE tgr.game_id = ?
+        GROUP BY tgr.winner, t.team_name
+        ORDER BY wins DESC
+        LIMIT 1
+    ");
+    $stmt->execute([$game_id]);
+    $tw = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($tw) {
+        $top_winner = $tw['winner_name'];
+        $top_winner_wins = (int)$tw['wins'];
+    }
+}
 
 // Handle game update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update') {
@@ -143,7 +192,7 @@ $csrf_token = $security->generateCSRFToken();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Game - <?php echo htmlspecialchars($game['game_name']); ?></title>
+    <title>View and Edit <?php echo htmlspecialchars($game['game_name']); ?> - Board Game StatApp</title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
     <style>
@@ -240,15 +289,50 @@ $csrf_token = $security->generateCSRFToken();
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
-        <?php NavigationHelper::renderCompactHeader('Edit Game', htmlspecialchars($game['game_name'])); ?>
+        <?php NavigationHelper::renderCompactHeader('View and Edit ' . htmlspecialchars($game['game_name']), $game['club_name']); ?>
     </div>
 
     <div class="container">
         <?php display_session_message('error'); ?>
 
+        <!-- Analytics & Infographics Section -->
+        <div class="card" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                    <h3 style="margin: 0; font-size: 1.15rem; color: var(--color-heading); display: flex; align-items: center; gap: 0.5rem;">
+                        <span>📊</span> Game Overview & Infographics
+                    </h3>
+                    <p style="margin: 0.2rem 0 0; font-size: 0.85rem; color: var(--color-text-muted);">Key statistics and activity summary for <?php echo htmlspecialchars($game['game_name']); ?>.</p>
+                </div>
+                <span class="badge badge--neutral" style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $game['game_type'] ?? 'winner_losers'))); ?></span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+                <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem 1rem; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.35rem;">🎲</div>
+                    <div style="font-size: 1.6rem; font-weight: 800; color: var(--color-primary); line-height: 1;"><?php echo $total_plays; ?></div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 600; margin-top: 0.4rem;">Total Plays</div>
+                </div>
+                <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem 1rem; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.35rem;">📅</div>
+                    <div style="font-size: 1.2rem; font-weight: 700; color: var(--color-heading); line-height: 1.2; margin-top: 0.2rem;"><?php echo $last_played; ?></div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 600; margin-top: 0.4rem;">Last Match Played</div>
+                </div>
+                <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem 1rem; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.35rem;">🏆</div>
+                    <div style="font-size: 1.1rem; font-weight: 700; color: var(--color-heading); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?php echo htmlspecialchars($top_winner); ?></div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 600; margin-top: 0.4rem;"><?php echo $top_winner_wins > 0 ? $top_winner_wins . ' ' . ($top_winner_wins === 1 ? 'victory' : 'victories') : 'Top Champion'; ?></div>
+                </div>
+                <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem 1rem; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.35rem;">👥</div>
+                    <div style="font-size: 1.4rem; font-weight: 800; color: var(--color-heading); line-height: 1;"><?php echo (int)$game['min_players'] . ' - ' . (int)$game['max_players']; ?></div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 600; margin-top: 0.4rem;">Player Capacity</div>
+                </div>
+            </div>
+        </div>
+
         <div class="card" style="padding: 1.5rem;">
             <div class="card-header" style="margin-bottom: 1.25rem;">
-                <h2 style="margin:0;">Edit Game Details</h2>
+                <h2 style="margin:0;">View and Edit <?php echo htmlspecialchars($game['game_name']); ?></h2>
             </div>
                 <form method="POST" class="form" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">

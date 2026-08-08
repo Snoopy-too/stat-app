@@ -1,8 +1,11 @@
 <?php
 session_start();
 require_once 'config/database.php';
+require_once 'includes/helpers.php';
 require_once 'includes/NavigationHelper.php';
 require_once 'includes/services/ClubService.php';
+
+ensure_results_tables_exist($pdo);
 
 // Get club ID or Slug from URL parameter
 $club_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -28,10 +31,10 @@ if ($club) {
         'result_count' => 142
     ];
     $leaderboard = [
-        ['full_name' => 'Alex Rivers', 'score' => 124, 'wins' => 28, 'games_played' => 45],
-        ['full_name' => 'Sam Taylor', 'score' => 98, 'wins' => 22, 'games_played' => 38],
-        ['full_name' => 'Jordan Lee', 'score' => 85, 'wins' => 19, 'games_played' => 32],
-        ['full_name' => 'Casey Morgan', 'score' => 72, 'wins' => 15, 'games_played' => 29]
+        ['nickname' => 'Alex', 'score' => 124, 'wins' => 28, 'games_played' => 45],
+        ['nickname' => 'Sam', 'score' => 98, 'wins' => 22, 'games_played' => 38],
+        ['nickname' => 'Jordan', 'score' => 85, 'wins' => 19, 'games_played' => 32],
+        ['nickname' => 'Casey', 'score' => 72, 'wins' => 15, 'games_played' => 29]
     ];
 }
 ?>
@@ -111,13 +114,16 @@ if ($club) {
 
                 <?php
                 // Fetch current champion if exists
-                $champ_stmt = $pdo->prepare("SELECT m.nickname, c.champ_comments, c.date 
-                    FROM champions c 
-                    INNER JOIN members m ON c.member_id = m.member_id 
-                    WHERE c.club_id = ? 
-                    ORDER BY c.date DESC LIMIT 1");
-                $champ_stmt->execute([$club_id]);
-                $champion = $champ_stmt->fetch(PDO::FETCH_ASSOC);
+                $champion = false;
+                try {
+                    $champ_stmt = $pdo->prepare("SELECT m.nickname, c.champ_comments, c.date 
+                        FROM champions c 
+                        INNER JOIN members m ON c.member_id = m.member_id 
+                        WHERE c.club_id = ? 
+                        ORDER BY c.date DESC LIMIT 1");
+                    $champ_stmt->execute([$club_id]);
+                    $champion = $champ_stmt->fetch(PDO::FETCH_ASSOC);
+                } catch (Throwable $e) {}
                 ?>
                 
                 <?php if ($champion): ?>
@@ -127,7 +133,7 @@ if ($club) {
 
                         </div>
                         <p class="champion-name"><?php echo htmlspecialchars($champion['nickname']); ?></p>
-                        <p class="champion-date">Since: <?php echo date('F j, Y', strtotime($champion['date'])); ?></p>
+                        <p class="champion-date">Since: <?php echo date('Y/m/d', strtotime($champion['date'])); ?></p>
                         <?php if ($champion['champ_comments']): ?>
                             <p class="champion-comments"><?php echo nl2br(htmlspecialchars($champion['champ_comments'])); ?></p>
                         <?php endif; ?>
@@ -142,14 +148,14 @@ if ($club) {
                     </div>
                     <div class="leaderboard-list">
                         <?php foreach ($leaderboard as $index => $player): ?>
-                        <a href="admin/edit_member.php?club_id=<?php echo $club_id; ?>&member_id=<?php echo $player['member_id']; ?>" class="leaderboard-item">
+                        <div class="leaderboard-item">
                             <span class="leaderboard-rank"><?php echo $index + 1; ?></span>
                             <span class="leaderboard-name"><?php echo htmlspecialchars($player['nickname']); ?></span>
                             <span class="leaderboard-stats">
                                 <span class="leaderboard-wins"><?php echo $player['wins']; ?> wins</span>
                                 <span class="leaderboard-plays"><?php echo $player['total_plays']; ?> plays</span>
                             </span>
-                        </a>
+                        </div>
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -157,9 +163,17 @@ if ($club) {
 
                 <?php
                 // Fetch members of the club
-                $members_stmt = $pdo->prepare("SELECT member_id, nickname FROM members WHERE club_id = ? AND status = 'active' ORDER BY nickname");
-                $members_stmt->execute([$club_id]);
-                $members = $members_stmt->fetchAll(PDO::FETCH_ASSOC);
+                $members = [];
+                try {
+                    $mColStmt = $pdo->query("SHOW COLUMNS FROM members");
+                    $memCols = $mColStmt ? $mColStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+                    $hasMemberStatus = in_array('status', $memCols);
+                    $mWhere = $hasMemberStatus ? "WHERE club_id = ? AND status = 'active'" : "WHERE club_id = ?";
+
+                    $members_stmt = $pdo->prepare("SELECT member_id, nickname FROM members {$mWhere} ORDER BY nickname");
+                    $members_stmt->execute([$club_id]);
+                    $members = $members_stmt->fetchAll(PDO::FETCH_ASSOC);
+                } catch (Throwable $e) {}
                 
                 if (count($members) > 0): ?>
                     <div class="members-section" id="members-section">
@@ -168,7 +182,9 @@ if ($club) {
                             <?php foreach ($members as $member): ?>
                                 <div class="member-item">
                                     <span class="member-nickname"><?php echo htmlspecialchars($member['nickname']); ?></span>
-                                    <a href="admin/edit_member.php?club_id=<?php echo $club_id; ?>&member_id=<?php echo urlencode($member['member_id']); ?>" class="btn btn--subtle btn--small">View/Edit</a>
+                                    <?php if (!empty($_SESSION['admin_id'])): ?>
+                                        <a href="admin/edit_member.php?club_id=<?php echo $club_id; ?>&member_id=<?php echo urlencode($member['member_id']); ?>" class="btn btn--subtle btn--small">Edit</a>
+                                    <?php endif; ?>
                                 </div>
                             <?php endforeach; ?>
                         </div>
@@ -177,9 +193,12 @@ if ($club) {
                 <!-- Club Teams Section -->
                 <?php
                 // Fetch teams for this club
-                $teams_stmt = $pdo->prepare("SELECT * FROM teams WHERE club_id = ? ORDER BY team_name");
-                $teams_stmt->execute([$club_id]);
-                $teams = $teams_stmt->fetchAll(PDO::FETCH_ASSOC);
+                $teams = [];
+                try {
+                    $teams_stmt = $pdo->prepare("SELECT * FROM teams WHERE club_id = ? ORDER BY team_name");
+                    $teams_stmt->execute([$club_id]);
+                    $teams = $teams_stmt->fetchAll(PDO::FETCH_ASSOC);
+                } catch (Throwable $e) {}
                 if (count($teams) > 0): ?>
                     <div class="teams-section">
                         <h3>Club Teams</h3>

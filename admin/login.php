@@ -7,7 +7,8 @@ require_once '../includes/SecurityUtils.php';
 require_once '../includes/helpers.php';
 
 if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
-    header("Location: dashboard.php");
+    $clubId = $_SESSION['current_club_id'] ?? $_SESSION['club_id'] ?? null;
+    header("Location: club_new_results.php" . ($clubId ? "?club_id=" . (int)$clubId : ""));
     exit();
 }
 
@@ -91,7 +92,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             }
                         }
 
-                        header("Location: dashboard.php");
+                        $targetClubId = $_SESSION['current_club_id'] ?? $_SESSION['club_id'] ?? null;
+                        header("Location: club_new_results.php" . ($targetClubId ? "?club_id=" . (int)$targetClubId : ""));
                         exit();
                     }
                     // Log failed password verification

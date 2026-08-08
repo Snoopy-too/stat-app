@@ -107,7 +107,7 @@ function ordinal_suffix($number) {
                 <tbody>
                     <?php foreach ($game_history as $entry): ?>
                     <tr>
-                        <td><?php echo date('F j, Y', strtotime($entry['game_date'])); ?></td>
+                        <td><?php echo date('Y/m/d', strtotime($entry['game_date'])); ?></td>
                         <td>
                             <?php if (!empty($entry['position'])): ?>
                                 <?php $position = (int) $entry['position']; ?>

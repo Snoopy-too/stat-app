@@ -249,7 +249,8 @@ $query = "SELECT c.*,
           (SELECT COUNT(*) FROM members WHERE club_id = c.club_id) as member_count,
           (SELECT COUNT(*) FROM games WHERE club_id = c.club_id) as game_count,
           (COALESCE((SELECT COUNT(DISTINCT session_id) FROM game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0) +
-           COALESCE((SELECT COUNT(DISTINCT session_id) FROM team_game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0)) as total_plays,
+           COALESCE((SELECT COUNT(DISTINCT session_id) FROM team_game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0) +
+           COALESCE((SELECT COUNT(DISTINCT session_id) FROM cooperative_game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0)) as total_plays,
           (SELECT COUNT(*) FROM champions WHERE club_id = c.club_id) as champion_count,
           (SELECT COUNT(*) FROM teams t JOIN members m ON t.member1_id = m.member_id WHERE m.club_id = c.club_id) as team_count,
           ca.role as admin_role,
@@ -391,10 +392,10 @@ $csrf_token = $security->generateCSRFToken();
                             <th>Club Name</th>
                             <th class="hide-on-mobile">Created</th>
                             <th class="th-sideways"><span class="th-sideways-inner">Members</span></th>
-                            <th class="th-sideways"><span class="th-sideways-inner">Games</span></th>
-                            <th class="th-sideways"><span class="th-sideways-inner">Plays</span></th>
-                            <th class="th-sideways"><span class="th-sideways-inner">Champions</span></th>
                             <th class="th-sideways"><span class="th-sideways-inner">Teams</span></th>
+                            <th class="th-sideways"><span class="th-sideways-inner">Champs</span></th>
+                            <th class="th-sideways"><span class="th-sideways-inner">Games</span></th>
+                            <th class="th-sideways"><span class="th-sideways-inner">Results</span></th>
                             <?php if ($club_count > 1): ?>
                                 <th style="text-align:center; vertical-align:bottom; padding-bottom:0.5rem;">
                                     <?php if ($current_default_club_id > 0): ?>
@@ -428,25 +429,25 @@ $csrf_token = $security->generateCSRFToken();
                                         <?php endif; ?>
                                         <div style="display:flex;flex-direction:column;gap:0.15rem;">
                                             <span style="font-weight:600;color:var(--color-heading);"><?php echo htmlspecialchars($club['club_name']); ?></span>
-                                            <span class="show-on-mobile-only text-xs text-muted" style="display:none;"><?php echo date('M j, Y', strtotime($club['created_at'])); ?></span>
+                                            <span class="show-on-mobile-only text-xs text-muted" style="display:none;"><?php echo date('Y/m/d', strtotime($club['created_at'])); ?></span>
                                         </div>
                                     </div>
                                 </td>
-                                <td class="hide-on-mobile" data-label="Created" style="font-size:0.85rem;color:var(--color-text-muted);"><?php echo date('M j, Y', strtotime($club['created_at'])); ?></td>
-                                <td style="text-align:center;" data-label="Members">
+                                <td class="hide-on-mobile" data-label="Created" style="font-size:0.85rem;color:var(--color-text-muted);"><?php echo date('Y/m/d', strtotime($club['created_at'])); ?></td>
+                                <td style="text-align:center;" data-label="Member">
                                     <span class="club-stat-pill"><?php echo $club['member_count']; ?></span>
                                 </td>
-                                <td style="text-align:center;" data-label="Games">
-                                    <span class="club-stat-pill"><?php echo $club['game_count']; ?></span>
-                                </td>
-                                <td style="text-align:center;" data-label="Plays">
-                                    <span class="club-stat-pill"><?php echo $club['total_plays'] ?: 0; ?></span>
+                                <td style="text-align:center;" data-label="Teams">
+                                    <span class="club-stat-pill"><?php echo $club['team_count']; ?></span>
                                 </td>
                                 <td style="text-align:center;" data-label="Champions">
                                     <span class="club-stat-pill"><?php echo $club['champion_count']; ?></span>
                                 </td>
-                                <td style="text-align:center;" data-label="Teams">
-                                    <span class="club-stat-pill"><?php echo $club['team_count']; ?></span>
+                                <td style="text-align:center;" data-label="Games">
+                                    <span class="club-stat-pill"><?php echo $club['game_count']; ?></span>
+                                </td>
+                                <td style="text-align:center;" data-label="Results">
+                                    <span class="club-stat-pill"><?php echo $club['total_plays'] ?: 0; ?></span>
                                 </td>
                                 <?php if ($club_count > 1): ?>
                                     <td style="text-align:center;" data-label="Default">
@@ -492,10 +493,10 @@ $csrf_token = $security->generateCSRFToken();
                             <td>Total (<?php echo $club_count; ?> <?php echo $club_count === 1 ? 'Club' : 'Clubs'; ?>)</td>
                             <td class="hide-on-mobile"></td>
                             <td style="text-align:center;"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_members; ?></span></td>
+                            <td style="text-align:center;"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_teams; ?></span></td>
+                            <td style="text-align:center;"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_champions; ?></span></td>
                             <td style="text-align:center;"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_games; ?></span></td>
                             <td style="text-align:center;"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_plays; ?></span></td>
-                            <td style="text-align:center;"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_champions; ?></span></td>
-                            <td style="text-align:center;"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_teams; ?></span></td>
                             <td colspan="<?php echo $club_count > 1 ? 2 : 1; ?>"></td>
                         </tr>
                     </tfoot>
@@ -509,7 +510,7 @@ $csrf_token = $security->generateCSRFToken();
             <div class="card-header">
                 <h2>Theme for <?php echo htmlspecialchars($active_club_name); ?></h2>
             </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
+            <div class="theme-grid">
                 <?php
                 $available_themes = [
                     'light'    => ['name' => 'Cards & Dice',      'icon' => '🃏', 'bg' => '#ffffff', 'primary' => '#4f46e5', 'accent' => '#7c3aed'],
@@ -522,7 +523,7 @@ $csrf_token = $security->generateCSRFToken();
 
                 <?php foreach ($available_themes as $t_key => $t_info): ?>
                     <?php $is_selected = ($current_club_theme === $t_key); ?>
-                    <form method="POST" style="margin:0;">
+                    <form method="POST" class="theme-card-form">
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                         <input type="hidden" name="action" value="update_club_theme">
                         <input type="hidden" name="club_id" value="<?php echo $active_club_id; ?>">
@@ -640,7 +641,7 @@ $csrf_token = $security->generateCSRFToken();
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <span style="color: var(--color-text-muted);">Member Since</span>
-                            <strong style="color: var(--color-heading);"><?php echo date('M j, Y', strtotime($admin['created_at'])); ?></strong>
+                            <strong style="color: var(--color-heading);"><?php echo date('Y/m/d', strtotime($admin['created_at'])); ?></strong>
                         </div>
                     </div>
                 </div>

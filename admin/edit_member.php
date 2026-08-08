@@ -295,7 +295,7 @@ $coop_win_rate = $coop_total > 0 ? number_format(($coop_wins / $coop_total) * 10
                         <?php else: ?>
                             <?php foreach ($game_history as $gh): ?>
                                 <tr>
-                                    <td><?php echo date('M j, Y', strtotime($gh['game_date'])); ?></td>
+                                    <td><?php echo date('Y/m/d', strtotime($gh['game_date'])); ?></td>
                                     <td>
                                         <a href="edit_game.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $gh['game_id']; ?>" style="font-weight: 600; text-decoration: none; color: var(--color-primary);">
                                             <?php echo htmlspecialchars($gh['game_name']); ?>

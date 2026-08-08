@@ -264,3 +264,22 @@
         width: 100%;
     }
 }
+
+/* Theme Option Cards Grid */
+.theme-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.theme-card-form {
+    margin: 0;
+    grid-column: span 3;
+}
+
+@media (max-width: 48rem) and (orientation: portrait) {
+    .theme-card-form {
+        grid-column: span 6;
+    }
+}

@@ -2,6 +2,7 @@
 declare(strict_types=1);
 session_start();
 require_once 'config/database.php';
+require_once 'includes/helpers.php';
 require_once 'includes/NavigationHelper.php';
 require_once 'includes/services/ClubService.php';
 require_once 'includes/services/GameService.php';
@@ -84,40 +85,36 @@ if ($club) {
             </div>
             
             <?php if (count($games) > 0): ?>
-                <div class="games-grid">
-                    <?php foreach ($games as $game): ?>
-                        <div class="game-card">
-                            <a href="game_details.php?id=<?php echo (int)$game['game_id']; ?>" class="game-link-wrapper">
-                                <div class="game-card__image-container">
-                                    <?php if ($game['game_image']): ?>
+                <div class="table-responsive card" style="margin-top: 1rem;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px; text-align: left;">Image</th>
+                                <th style="text-align: left;">Game Name</th>
+                                <th>Players</th>
+                                <th>Total Plays</th>
+                                <th>Last Played</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($games as $game): ?>
+                            <tr onclick="window.location='game_details.php?id=<?php echo (int)$game['game_id']; ?>'" class="table-row--link">
+                                <td data-label="Image">
+                                    <?php if (!empty($game['game_image'])): ?>
                                         <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'])); ?>" 
-                                             alt="<?php echo htmlspecialchars($game['game_name']); ?>" 
-                                             class="game-card__image" loading="lazy">
+                                             alt="" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px;" loading="lazy">
                                     <?php else: ?>
-                                        <div class="game-card__image-placeholder"></div>
+                                        <div style="width: 40px; height: 40px; background: var(--color-surface-muted, #334155); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">🎲</div>
                                     <?php endif; ?>
-                                </div>
-                                <div class="game-card__content">
-                                    <div class="game-name"><?php echo htmlspecialchars($game['game_name']); ?></div>
-                                    <div class="game-meta">
-                                        <span class="game-players"><?php echo htmlspecialchars((string)$game['min_players']) . '-' . htmlspecialchars((string)$game['max_players']); ?> Players</span>
-                                    </div>
-                                    <div class="game-card__stats">
-                                        <div class="game-card__stat-row">
-                                            <span class="game-card__stat-label">Plays</span>
-                                            <span class="game-card__stat-value"><?php echo (int)$game['plays']; ?></span>
-                                        </div>
-                                        <div class="game-card__stat-row">
-                                            <span class="game-card__stat-label">Last Played</span>
-                                            <span class="game-card__stat-value">
-                                                <?php echo $game['last_played'] ? htmlspecialchars(date('M j, Y', strtotime($game['last_played']))) : 'Never'; ?>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
-                    <?php endforeach; ?>
+                                </td>
+                                <td data-label="Game Name"><strong><?php echo htmlspecialchars($game['game_name']); ?></strong></td>
+                                <td data-label="Players"><?php echo htmlspecialchars((string)$game['min_players']) . '-' . htmlspecialchars((string)$game['max_players']); ?> Players</td>
+                                <td data-label="Total Plays"><?php echo (int)$game['plays']; ?></td>
+                                <td data-label="Last Played"><?php echo !empty($game['last_played']) ? htmlspecialchars(date('Y/m/d', strtotime($game['last_played']))) : 'Never'; ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
             <?php else: ?>
                 <div class="no-games">

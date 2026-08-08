@@ -215,8 +215,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $pdo->prepare('UPDATE team_game_results SET winner = ?, place_2 = ?, played_at = ?, duration = ?, notes = ? WHERE result_id = ?');
                     $stmt->execute([$team_winner_id, reset($team_losers) ?: null, $formatted_played_at, $duration, $notes, $result_id]);
                 } else {
-                    $stmt = $pdo->prepare('UPDATE game_results SET member_id = ?, winner = ?, place_2 = ?, played_at = ?, duration = ?, notes = ? WHERE result_id = ?');
-                    $stmt->execute([$winner_id, $winner_id, $second_place_id, $formatted_played_at, $duration, $notes, $result_id]);
+                    if ($game_type === 'ranked') {
+                        $places = array_pad(array_merge([$winner_id, $second_place_id], $additional_places), 8, null);
+                        $stmt = $pdo->prepare('UPDATE game_results SET member_id = ?, winner = ?, place_2 = ?, place_3 = ?, place_4 = ?, place_5 = ?, place_6 = ?, place_7 = ?, place_8 = ?, played_at = ?, duration = ?, notes = ? WHERE result_id = ?');
+                        $stmt->execute([$winner_id, $winner_id, $places[1], $places[2], $places[3], $places[4], $places[5], $places[6], $places[7], $formatted_played_at, $duration, $notes, $result_id]);
+                    } else {
+                        $stmt = $pdo->prepare('UPDATE game_results SET member_id = ?, winner = ?, place_2 = ?, played_at = ?, duration = ?, notes = ? WHERE result_id = ?');
+                        $stmt->execute([$winner_id, $winner_id, $second_place_id, $formatted_played_at, $duration, $notes, $result_id]);
+                    }
 
                     if ($game_type === 'winner_losers') {
                         $pdo->prepare("DELETE FROM game_result_losers WHERE result_id = ?")->execute([$result_id]);
@@ -295,6 +301,15 @@ $default_place_2_id = $is_edit ? (int)($existing_result['place_2'] ?? 0) : 0;
 $default_notes = $is_edit ? ($existing_result['notes'] ?? '') : '';
 $default_coop_outcome = $is_edit ? strtolower($existing_result['outcome'] ?? 'win') : 'win';
 
+$default_additional_places = [];
+if ($is_edit && $result_format === 'ranked') {
+    for ($p = 3; $p <= 8; $p++) {
+        if (!empty($existing_result["place_$p"])) {
+            $default_additional_places[] = (int)$existing_result["place_$p"];
+        }
+    }
+}
+
 $csrf_token = $security->generateCSRFToken();
 $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
 ?>
@@ -314,8 +329,8 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
             gap: var(--spacing-3, 0.75rem);
             padding: var(--spacing-3, 0.75rem);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-md, 8px);
+            border: 1.5px solid var(--color-border-strong);
+            border-radius: var(--radius-sm, 4px);
             background: var(--color-surface-muted);
         }
         .checkbox-item {
@@ -342,7 +357,7 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
     </div>
 
     <div class="container">
-        <div class="card">
+        <div id="add-result-form-wrapper" style="margin: 1rem 0 1.25rem 0; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 0.75rem); background: var(--color-surface-muted);">
             <?php if (isset($error)): ?>
                 <div class="message message--error"><?php echo htmlspecialchars($error); ?></div>
             <?php endif; ?>
@@ -440,7 +455,29 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div id="additional-places"></div>
+                    <div id="additional-places">
+                        <?php
+                        $place_ordinals = [3 => 'Third Place', 4 => 'Fourth Place', 5 => 'Fifth Place', 6 => 'Sixth Place', 7 => 'Seventh Place', 8 => 'Eighth Place'];
+                        foreach ($default_additional_places as $idx => $selected_member_id):
+                            $place_num = $idx + 3;
+                            $place_label = $place_ordinals[$place_num] ?? "{$place_num}th Place";
+                        ?>
+                            <div class="form-group additional-place-group" style="margin-bottom: 1rem;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+                                    <label class="form-label" style="margin:0;"><?php echo $place_label; ?>:</label>
+                                    <button type="button" class="btn btn--subtle btn--small remove-place-btn" style="padding:0.1rem 0.4rem; font-size:0.75rem; color:var(--color-danger, #ef4444);" onclick="this.closest('.additional-place-group').remove(); reindexAdditionalPlaces(); updateAddPlaceButtonState();">Remove</button>
+                                </div>
+                                <select name="additional_places[]" class="form-control">
+                                    <option value="">Select <?php echo $place_label; ?></option>
+                                    <?php foreach ($members as $member): ?>
+                                        <option value="<?php echo $member['id']; ?>" <?php echo ((int)$member['id'] === $selected_member_id) ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($member['name']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
                     <div class="form-group">
                         <button type="button" id="add-place" class="btn">Add Place</button>
                     </div>
@@ -499,7 +536,7 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
                 <div id="teams-section" style="display: none;">
                     <?php if (empty($teams)): ?>
                         <div class="message message--warning" style="margin-bottom: 1rem;">
-                            No teams found for this club. Please <a href="club_teams.php?club_id=<?php echo $club_id; ?>">create teams</a> first.
+                            No teams found for this club. Please <a href="manage_teams.php?club_id=<?php echo $club_id; ?>">create teams</a> first.
                         </div>
                     <?php else: ?>
                         <div class="form-group">
@@ -605,10 +642,179 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
             coopSection.style.display = 'none';
             if (teamsSection) teamsSection.style.display = 'none';
         }
+
+        updateSelections();
+    }
+
+    function updateSelections() {
+        const gameTypeRadio = document.querySelector('input[name="game_type"]:checked');
+        const gameType = gameTypeRadio ? gameTypeRadio.value : 'winner_losers';
+
+        if (gameType === 'winner_losers') {
+            const winnerId = document.getElementById('winner_id')?.value;
+            const loserCheckboxes = document.querySelectorAll('.loser-checkbox');
+
+            loserCheckboxes.forEach(cb => {
+                const item = cb.closest('.checkbox-item');
+                if (winnerId && cb.value === winnerId) {
+                    if (cb.checked) {
+                        cb.checked = false;
+                        cb.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    if (item) item.style.display = 'none';
+                } else {
+                    if (item) item.style.display = 'flex';
+                }
+            });
+        } else if (gameType === 'teams') {
+            const winningTeamId = document.getElementById('team_winner_id')?.value;
+            const teamLoserCheckboxes = document.querySelectorAll('.team-loser-checkbox');
+
+            teamLoserCheckboxes.forEach(cb => {
+                const item = cb.closest('.checkbox-item');
+                if (winningTeamId && cb.value === winningTeamId) {
+                    if (cb.checked) {
+                        cb.checked = false;
+                        cb.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    if (item) item.style.display = 'none';
+                } else {
+                    if (item) item.style.display = 'flex';
+                }
+            });
+        } else if (gameType === 'ranked') {
+            const rankedSelects = [];
+            const wSelect = document.getElementById('winner_id');
+            const sSelect = document.getElementById('second_place_id');
+            if (wSelect) rankedSelects.push(wSelect);
+            if (sSelect) rankedSelects.push(sSelect);
+
+            const addSelects = document.querySelectorAll('#additional-places select');
+            addSelects.forEach(s => rankedSelects.push(s));
+
+            const selectedValues = [];
+
+            rankedSelects.forEach(selectEl => {
+                const currentVal = selectEl.value;
+
+                Array.from(selectEl.options).forEach(opt => {
+                    if (!opt.value) return;
+                    const isSelectedEarlier = selectedValues.includes(opt.value);
+
+                    if (isSelectedEarlier) {
+                        opt.hidden = true;
+                        opt.disabled = true;
+                        if (opt.value === currentVal) {
+                            selectEl.value = "";
+                            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    } else {
+                        opt.hidden = false;
+                        opt.disabled = false;
+                    }
+                });
+
+                if (selectEl.value) {
+                    selectedValues.push(selectEl.value);
+                }
+            });
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function() {
         toggleGameType();
+
+        const wSelect = document.getElementById('winner_id');
+        const sSelect = document.getElementById('second_place_id');
+        const twSelect = document.getElementById('team_winner_id');
+
+        if (wSelect) wSelect.addEventListener('change', updateSelections);
+        if (sSelect) sSelect.addEventListener('change', updateSelections);
+        if (twSelect) twSelect.addEventListener('change', updateSelections);
+
+        const membersData = <?php echo json_encode($members); ?>;
+        const addPlaceBtn = document.getElementById('add-place');
+        const additionalPlacesContainer = document.getElementById('additional-places');
+        const placeOrdinals = { 3: 'Third Place', 4: 'Fourth Place', 5: 'Fifth Place', 6: 'Sixth Place', 7: 'Seventh Place', 8: 'Eighth Place' };
+
+        window.reindexAdditionalPlaces = function() {
+            if (!additionalPlacesContainer) return;
+            const groups = additionalPlacesContainer.querySelectorAll('.additional-place-group');
+            groups.forEach(function(group, index) {
+                const placeNum = index + 3;
+                const placeLabel = placeOrdinals[placeNum] || (placeNum + 'th Place');
+                const labelEl = group.querySelector('.form-label');
+                if (labelEl) labelEl.textContent = placeLabel + ':';
+                const selectEl = group.querySelector('select');
+                if (selectEl) {
+                    const firstOpt = selectEl.querySelector('option[value=""]');
+                    if (firstOpt) firstOpt.textContent = 'Select ' + placeLabel;
+                }
+            });
+            updateSelections();
+        };
+
+        window.updateAddPlaceButtonState = function() {
+            if (!addPlaceBtn || !additionalPlacesContainer) return;
+            const count = additionalPlacesContainer.querySelectorAll('.additional-place-group').length;
+            if (count + 3 > 8) {
+                addPlaceBtn.style.display = 'none';
+            } else {
+                addPlaceBtn.style.display = 'inline-block';
+            }
+        };
+
+        if (addPlaceBtn && additionalPlacesContainer) {
+            updateAddPlaceButtonState();
+            addPlaceBtn.addEventListener('click', function() {
+                const count = additionalPlacesContainer.querySelectorAll('.additional-place-group').length;
+                const placeNum = count + 3;
+                if (placeNum > 8) return;
+
+                const placeLabel = placeOrdinals[placeNum] || (placeNum + 'th Place');
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'form-group additional-place-group';
+                groupDiv.style.marginBottom = '1rem';
+
+                let optionsHtml = '<option value="">Select ' + placeLabel + '</option>';
+                membersData.forEach(function(m) {
+                    optionsHtml += '<option value="' + m.id + '">' + escapeHtml(m.name) + '</option>';
+                });
+
+                groupDiv.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+                        <label class="form-label" style="margin:0;">${placeLabel}:</label>
+                        <button type="button" class="btn btn--subtle btn--small remove-place-btn" style="padding:0.1rem 0.4rem; font-size:0.75rem; color:var(--color-danger, #ef4444);">Remove</button>
+                    </div>
+                    <select name="additional_places[]" class="form-control">
+                        ${optionsHtml}
+                    </select>
+                `;
+
+                additionalPlacesContainer.appendChild(groupDiv);
+
+                const newSelect = groupDiv.querySelector('select');
+                if (newSelect) {
+                    newSelect.addEventListener('change', updateSelections);
+                }
+
+                groupDiv.querySelector('.remove-place-btn').addEventListener('click', function() {
+                    groupDiv.remove();
+                    reindexAdditionalPlaces();
+                    updateAddPlaceButtonState();
+                    updateSelections();
+                });
+
+                updateAddPlaceButtonState();
+                updateSelections();
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
         const isEdit = <?php echo $is_edit ? 'true' : 'false'; ?>;
         const form = document.getElementById('result-form');

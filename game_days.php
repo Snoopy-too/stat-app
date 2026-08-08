@@ -10,25 +10,16 @@ date_default_timezone_set('UTC');
 $dates = [];
 try {
     $stmt = $pdo->prepare("
- SELECT DISTINCT DATE(gr.played_at) as play_date
- FROM game_results gr
- JOIN games g ON gr.game_id = g.game_id
- WHERE g.club_id = ?
- ORDER BY gr.played_at DESC
-");
-$stmt->execute([$club_id]);
-$dates1 = $stmt->fetchAll(PDO::FETCH_COLUMN);
-$stmt = $pdo->prepare("
- SELECT DISTINCT DATE(tgr.played_at) as play_date
- FROM team_game_results tgr
- JOIN games g ON tgr.game_id = g.game_id
- WHERE g.club_id = ?
- ORDER BY tgr.played_at DESC
-");
-$stmt->execute([$club_id]);
-$dates2 = $stmt->fetchAll(PDO::FETCH_COLUMN);
-    $dates = array_unique(array_merge($dates1, $dates2));
-    rsort($dates);
+        SELECT DISTINCT play_date FROM (
+            SELECT DATE(gr.played_at) as play_date FROM game_results gr JOIN games g ON gr.game_id = g.game_id WHERE g.club_id = ?
+            UNION ALL
+            SELECT DATE(tgr.played_at) as play_date FROM team_game_results tgr JOIN games g ON tgr.game_id = g.game_id WHERE g.club_id = ?
+            UNION ALL
+            SELECT DATE(cgr.played_at) as play_date FROM cooperative_game_results cgr JOIN games g ON cgr.game_id = g.game_id WHERE g.club_id = ?
+        ) as all_dates ORDER BY play_date DESC
+    ");
+    $stmt->execute([$club_id, $club_id, $club_id]);
+    $dates = $stmt->fetchAll(PDO::FETCH_COLUMN);
 } catch (Exception $e) {
     $error = 'Error fetching game days: ' . $e->getMessage();
 }
@@ -73,7 +64,7 @@ $dates2 = $stmt->fetchAll(PDO::FETCH_COLUMN);
             <div class="games-grid">
                 <?php foreach ($dates as $date): ?>
                     <a href="game_days_results.php?date=<?php echo urlencode($date); ?>&id=<?php echo htmlspecialchars($club_id); ?>" class="game-card game-link">
-                        <?php echo htmlspecialchars(date('F j, Y', strtotime($date))); ?>
+                        <?php echo htmlspecialchars(date('Y/m/d', strtotime($date))); ?>
                     </a>
                 <?php endforeach; ?>
             </div>

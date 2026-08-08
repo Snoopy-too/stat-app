@@ -31,7 +31,7 @@ if ($club_count === 0) {
         header("Location: create_first_club.php");
         exit();
     }
-    header("Location: dashboard.php");
+    header("Location: account.php");
     exit();
 }
 
@@ -39,7 +39,7 @@ if ($club_count === 0) {
 if ($club_count === 1) {
     $_SESSION['current_club_id'] = (int)$clubs[0]['club_id'];
     $_SESSION['club_id'] = (int)$clubs[0]['club_id'];
-    header("Location: dashboard.php");
+    header("Location: club_new_results.php?club_id=" . (int)$clubs[0]['club_id']);
     exit();
 }
 
@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['success'] = "Club selected and saved as your default club.";
         }
 
-        header("Location: dashboard.php");
+        header("Location: club_new_results.php?club_id=" . $selected_club_id);
         exit();
     } else {
         $_SESSION['error'] = "Please select a valid club.";

@@ -35,30 +35,30 @@ if ($game_id > 0) {
         $results_stmt = $pdo->prepare("
             (SELECT
                 gr.result_id,
-                m.nickname,
+                CONVERT(m.nickname USING utf8mb4) as nickname,
                 gr.position,
                 gr.played_at,
-                'individual' as game_type
+                CONVERT('individual' USING utf8mb4) as game_type
             FROM game_results gr
             JOIN members m ON gr.member_id = m.member_id
             WHERE gr.game_id = ?)
             UNION ALL
             (SELECT
                 tgr.result_id,
-                t.team_name as nickname,
+                CONVERT(t.team_name USING utf8mb4) as nickname,
                 tgr.position,
                 tgr.played_at,
-                'team' as game_type
+                CONVERT('team' USING utf8mb4) as game_type
             FROM team_game_results tgr
             JOIN teams t ON tgr.team_id = t.team_id
             WHERE tgr.game_id = ?)
             UNION ALL
             (SELECT
                 cgr.result_id,
-                CONCAT(UPPER(cgr.outcome), ' - Co-op') as nickname,
+                CONVERT(CONCAT(UPPER(cgr.outcome), ' - Co-op') USING utf8mb4) as nickname,
                 CASE cgr.outcome WHEN 'win' THEN 1 ELSE 0 END as position,
                 cgr.played_at,
-                'cooperative' as game_type
+                CONVERT('cooperative' USING utf8mb4) as game_type
             FROM cooperative_game_results cgr
             WHERE cgr.game_id = ?)
             ORDER BY $sort $order");
@@ -143,11 +143,7 @@ if ($game_id > 0) {
                         <tbody>
                             <?php foreach ($results as $result): ?>
                                 <?php
-                                $detail_url = match($result['game_type']) {
-                                    'team' => 'team_game_play_details.php',
-                                    'cooperative' => 'cooperative_game_play_details.php',
-                                    default => 'game_play_details.php'
-                                };
+                                $detail_url = 'game_play_details.php';
                                 ?>
                                 <tr onclick="window.location='<?php echo $detail_url; ?>?result_id=<?php echo $result['result_id']; ?>'" class="table-row--link">
                                     <td>
@@ -166,7 +162,7 @@ if ($game_id > 0) {
                                         <?php endif; ?>
                                     </td>
                                     <td><?php echo ucfirst($result['game_type']); ?></td>
-                                    <td><?php echo date('F j, Y', strtotime($result['played_at'])); ?></td>
+                                    <td><?php echo date('Y/m/d', strtotime($result['played_at'])); ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>

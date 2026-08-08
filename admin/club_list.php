@@ -126,7 +126,7 @@ $clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="card">
                 <div class="empty-state">
                     <p>You don't have any clubs yet.</p>
-                    <a href="manage_clubs.php" class="btn">Create a Club</a>
+                    <a href="account.php" class="btn">Create a Club</a>
                 </div>
             </div>
         <?php else: ?>

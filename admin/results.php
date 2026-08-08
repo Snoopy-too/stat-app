@@ -205,6 +205,89 @@ usort($results, function($a, $b) use ($sort, $order) {
     return ($order === 'asc') ? $cmp : -$cmp;
 });
 
+// Calculate Analytics & Trends for Results
+$game_play_counts = [];
+$indiv_winners = [];
+$ranked_winners = [];
+$team_winners = [];
+$coop_outcomes = ['Victory' => 0, 'Defeat' => 0];
+$selected_game_labels = [];
+$selected_game_data = [];
+$selected_game_title = "";
+
+if ($game_id && !empty($game)) {
+    // Specific Game Filter Active
+    $gType = strtolower($game['game_type'] ?? 'winner_losers');
+    $selected_game_title = "Win Rate for " . $game['game_name'];
+
+    if ($gType === 'cooperative') {
+        $cWins = 0;
+        $cLosses = 0;
+        foreach ($results as $res) {
+            if (stripos($res['winner_name'], 'WIN') !== false || stripos($res['winner_name'], 'VICTORY') !== false) {
+                $cWins++;
+            } else {
+                $cLosses++;
+            }
+        }
+        $selected_game_labels = ['Victory', 'Defeat'];
+        $selected_game_data = [$cWins, $cLosses];
+    } else {
+        $wCounts = [];
+        foreach ($results as $res) {
+            $wName = str_replace(' (Team)', '', $res['winner_name'] ?: 'Unknown');
+            $wCounts[$wName] = ($wCounts[$wName] ?? 0) + 1;
+        }
+        arsort($wCounts);
+        $selected_game_labels = array_slice(array_keys($wCounts), 0, 6);
+        $selected_game_data = array_slice(array_values($wCounts), 0, 6);
+    }
+} else {
+    // All Games View
+    foreach ($results as $res) {
+        $gName = !empty($res['game_name']) ? $res['game_name'] : 'Unknown Game';
+        $game_play_counts[$gName] = ($game_play_counts[$gName] ?? 0) + 1;
+
+        $t = strtolower($res['game_type'] ?? 'winner_losers');
+        $w = $res['winner_name'] ?: 'Unknown';
+
+        if (strpos($t, 'coop') !== false) {
+            if (stripos($w, 'WIN') !== false || stripos($w, 'VICTORY') !== false) {
+                $coop_outcomes['Victory']++;
+            } else {
+                $coop_outcomes['Defeat']++;
+            }
+        } elseif (strpos($t, 'team') !== false) {
+            $cleanTeam = str_replace(' (Team)', '', $w);
+            $team_winners[$cleanTeam] = ($team_winners[$cleanTeam] ?? 0) + 1;
+        } elseif (strpos($t, 'rank') !== false) {
+            $ranked_winners[$w] = ($ranked_winners[$w] ?? 0) + 1;
+        } else {
+            $indiv_winners[$w] = ($indiv_winners[$w] ?? 0) + 1;
+        }
+    }
+
+    arsort($game_play_counts);
+    $all_games_labels = array_keys($game_play_counts);
+    $all_games_data = array_values($game_play_counts);
+
+    arsort($indiv_winners);
+    $indiv_labels = array_slice(array_keys($indiv_winners), 0, 6);
+    $indiv_data = array_slice(array_values($indiv_winners), 0, 6);
+
+    arsort($ranked_winners);
+    $ranked_labels = array_slice(array_keys($ranked_winners), 0, 6);
+    $ranked_data = array_slice(array_values($ranked_winners), 0, 6);
+
+    arsort($team_winners);
+    $team_labels = array_slice(array_keys($team_winners), 0, 6);
+    $team_data = array_slice(array_values($team_winners), 0, 6);
+
+    $filtered_coop = array_filter($coop_outcomes, function($v) { return $v > 0; });
+    $coop_labels = array_keys($filtered_coop);
+    $coop_data = array_values($filtered_coop);
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -213,6 +296,7 @@ usort($results, function($a, $b) use ($sort, $order) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Results - <?php echo htmlspecialchars($club_name); ?></title>
     <link rel="stylesheet" href="../css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../js/dark-mode.js"></script>
 </head>
 <body class="has-sidebar">
@@ -220,21 +304,90 @@ usort($results, function($a, $b) use ($sort, $order) {
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
-        <?php NavigationHelper::renderCompactHeader('Manage Results' . ($club_name ? ' (' . $club_name . ')' : '')); ?>
+        <?php NavigationHelper::renderCompactHeader('Manage ' . ($club_name ?: 'Club') . ' Results (' . count($results) . ')'); ?>
     </div>
 
     <div class="container">
         <?php display_session_message('success'); ?>
         <?php display_session_message('error'); ?>
 
-        <div class="card">
-            <div class="card-header">
-                <h2>Results (<?php echo count($results); ?>)</h2>
+        <?php if (!empty($game_id) ? !empty($selected_game_labels) : !empty($all_games_labels)): ?>
+        <details class="card" style="margin-bottom: 1.5rem;" id="results-analytics-accordion">
+            <summary style="cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; user-select: none; padding: 0.25rem 0;">
+                <h2 style="margin: 0; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.25rem;">
+                    <span class="material-symbols-outlined" style="font-size: 1.35rem;">monitoring</span>
+                    <span>Analytics & Trends</span>
+                </h2>
+                <span class="material-symbols-outlined accordion-icon" style="transition: transform 0.2s ease;">expand_more</span>
+            </summary>
+            <div style="margin-top: 1rem; border-top: 1px solid var(--color-border); padding-top: 1rem;">
+                <?php if ($game_id && !empty($game)): ?>
+                    <!-- Selected Game Only -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 1.25rem;">
+                        <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem;">
+                            <h3 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; text-align: center;"><?php echo htmlspecialchars($selected_game_title); ?></h3>
+                            <div style="position: relative; height: 220px;">
+                                <canvas id="selectedGameWinChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <!-- All Games Overview -->
+                    <div style="margin-bottom: 2rem;">
+                        <h3 style="font-size: 1rem; margin-bottom: 0.75rem; text-align: center;">Most Played Games (All Games)</h3>
+                        <div style="position: relative; height: 260px;">
+                            <canvas id="mostPlayedGamesChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 style="font-size: 1rem; margin-bottom: 1rem; text-align: center;">Win Rates by Game Type</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 1.25rem;">
+                            <?php if (!empty($indiv_labels)): ?>
+                            <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem;">
+                                <h4 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; text-align: center;">Winner/Losers Games</h4>
+                                <div style="position: relative; height: 220px;">
+                                    <canvas id="indivWinChart"></canvas>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <?php if (!empty($ranked_labels)): ?>
+                            <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem;">
+                                <h4 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; text-align: center;">Ranked Games (1st Place)</h4>
+                                <div style="position: relative; height: 220px;">
+                                    <canvas id="rankedWinChart"></canvas>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <?php if (!empty($team_labels)): ?>
+                            <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem;">
+                                <h4 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; text-align: center;">Team Games</h4>
+                                <div style="position: relative; height: 220px;">
+                                    <canvas id="teamWinChart"></canvas>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <?php if (!empty($coop_labels)): ?>
+                            <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem;">
+                                <h4 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; text-align: center;">Cooperative Games</h4>
+                                <div style="position: relative; height: 220px;">
+                                    <canvas id="coopWinChart"></canvas>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </div>
+        </details>
+        <?php endif; ?>
 
             <div class="card-toolbar">
                 <a href="club_new_results.php?club_id=<?php echo $club_id; ?>" class="btn btn--primary">
-                    <span style="color: white; font-weight: bold; margin-right: 0.35rem;">+</span>New Result
+                    Add Result
                 </a>
                 <form method="GET" class="toolbar-group" id="filter-form">
                     <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
@@ -265,14 +418,6 @@ usort($results, function($a, $b) use ($sort, $order) {
                     <thead>
                         <tr>
                             <th style="width: 40px;"><input type="checkbox" id="select-all" class="form-check-input"></th>
-                            <th>
-                                <a href="?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game_id; ?>&sort=played_at&order=<?php echo ($sort === 'played_at' && $order === 'asc') ? 'desc' : 'asc'; ?>" class="table-sort-link sort-link">
-                                    <span>Date Played</span>
-                                    <?php if ($sort === 'played_at'): ?>
-                                        <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
-                                    <?php endif; ?>
-                                </a>
-                            </th>
                             <?php if (!$game_id): ?>
                                 <th>
                                     <a href="?club_id=<?php echo $club_id; ?>&sort=game_name&order=<?php echo ($sort === 'game_name' && $order === 'asc') ? 'desc' : 'asc'; ?>" class="table-sort-link sort-link">
@@ -283,6 +428,14 @@ usort($results, function($a, $b) use ($sort, $order) {
                                     </a>
                                 </th>
                             <?php endif; ?>
+                            <th>
+                                <a href="?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game_id; ?>&sort=played_at&order=<?php echo ($sort === 'played_at' && $order === 'asc') ? 'desc' : 'asc'; ?>" class="table-sort-link sort-link">
+                                    <span>Date Played</span>
+                                    <?php if ($sort === 'played_at'): ?>
+                                        <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
+                                    <?php endif; ?>
+                                </a>
+                            </th>
                             <th>
                                 <a href="?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game_id; ?>&sort=winner_name&order=<?php echo ($sort === 'winner_name' && $order === 'asc') ? 'desc' : 'asc'; ?>" class="table-sort-link sort-link">
                                     <span>Winner / Outcome</span>
@@ -315,7 +468,6 @@ usort($results, function($a, $b) use ($sort, $order) {
                                     <input type="checkbox" name="selected_results[]" form="bulk-form"
                                            value="<?php echo $result['game_type'] . ':' . $result['result_id']; ?>" class="form-check-input result-checkbox">
                                 </td>
-                                <td data-label="Date Played"><?php echo date('M j, Y', strtotime($result['played_at'])); ?></td>
                                 <?php if (!$game_id): ?>
                                     <td data-label="Game">
                                         <a href="results.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $result['game_id']; ?>" style="font-weight: 600; text-decoration: none; color: var(--color-primary);">
@@ -323,6 +475,7 @@ usort($results, function($a, $b) use ($sort, $order) {
                                         </a>
                                     </td>
                                 <?php endif; ?>
+                                <td data-label="Date Played"><?php echo date('Y/m/d', strtotime($result['played_at'])); ?></td>
                                 <td data-label="Winner / Outcome"><?php echo htmlspecialchars($result['winner_name']); ?></td>
                                 <td data-label="Type">
                                     <span class="club-stat-pill" style="text-transform: capitalize; font-size: 0.8rem; background: var(--color-surface-muted); color: var(--color-text);">
@@ -347,9 +500,7 @@ usort($results, function($a, $b) use ($sort, $order) {
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
-                </table>
             </div>
-        </div>
     </div>
 
     <script src="../js/sidebar.js"></script>
@@ -403,6 +554,122 @@ usort($results, function($a, $b) use ($sort, $order) {
                 });
             }
         }
+
+        // Initialize Analytics & Trends Charts for Results
+        (function() {
+            function getStyleVal(prop) {
+                return getComputedStyle(document.documentElement).getPropertyValue(prop).trim();
+            }
+
+            function getThemeColors() {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark' || 
+                               (!document.documentElement.hasAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                return {
+                    primary: getStyleVal('--color-primary') || '#6366f1',
+                    accent: getStyleVal('--color-accent') || '#8b5cf6',
+                    text: getStyleVal('--color-text') || (isDark ? '#f1f5f9' : '#1e293b'),
+                    border: getStyleVal('--color-border') || (isDark ? '#334155' : '#e2e8f0'),
+                    grid: getStyleVal('--color-border') || (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)')
+                };
+            }
+
+            const colors = getThemeColors();
+            const palette = [
+                colors.primary,
+                colors.accent,
+                getStyleVal('--color-success-border') || '#10b981',
+                getStyleVal('--color-warning-text') || '#f59e0b',
+                '#ec4899',
+                '#3b82f6'
+            ];
+
+            const gamesLabels = <?php echo json_encode($all_games_labels); ?>;
+            const gamesData = <?php echo json_encode($all_games_data); ?>;
+
+            let charts = [];
+
+            const ctxGames = document.getElementById('mostPlayedGamesChart');
+            if (ctxGames && gamesLabels.length > 0) {
+                charts.push(new Chart(ctxGames, {
+                    type: 'bar',
+                    data: {
+                        labels: gamesLabels,
+                        datasets: [{
+                            label: 'Plays',
+                            data: gamesData,
+                            backgroundColor: colors.primary,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: colors.text }, grid: { color: colors.grid } },
+                            y: { ticks: { color: colors.text, stepSize: 1 }, grid: { color: colors.grid }, beginAtZero: true }
+                        }
+                    }
+                }));
+            }
+
+            function makePieChart(id, labels, data) {
+                const ctx = document.getElementById(id);
+                if (ctx && labels.length > 0) {
+                    charts.push(new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: data,
+                                backgroundColor: palette.slice(0, labels.length),
+                                borderWidth: 2,
+                                borderColor: colors.border
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'bottom',
+                                    labels: { color: colors.text, font: { size: 11 } }
+                                }
+                            }
+                        }
+                    }));
+                }
+            }
+
+            makePieChart('selectedGameWinChart', <?php echo json_encode($selected_game_labels ?? []); ?>, <?php echo json_encode($selected_game_data ?? []); ?>);
+            makePieChart('indivWinChart', <?php echo json_encode($indiv_labels ?? []); ?>, <?php echo json_encode($indiv_data ?? []); ?>);
+            makePieChart('rankedWinChart', <?php echo json_encode($ranked_labels ?? []); ?>, <?php echo json_encode($ranked_data ?? []); ?>);
+            makePieChart('teamWinChart', <?php echo json_encode($team_labels ?? []); ?>, <?php echo json_encode($team_data ?? []); ?>);
+            makePieChart('coopWinChart', <?php echo json_encode($coop_labels ?? []); ?>, <?php echo json_encode($coop_data ?? []); ?>);
+
+            const accordion = document.getElementById('results-analytics-accordion');
+            if (accordion) {
+                const savedState = sessionStorage.getItem('results_analytics_open');
+                if (savedState === 'true') {
+                    accordion.open = true;
+                    setTimeout(() => {
+                        charts.forEach(c => c && c.resize());
+                    }, 50);
+                } else if (savedState === 'false') {
+                    accordion.open = false;
+                }
+
+                accordion.addEventListener('toggle', function() {
+                    sessionStorage.setItem('results_analytics_open', this.open ? 'true' : 'false');
+                    if (this.open) {
+                        setTimeout(() => {
+                            charts.forEach(c => c && c.resize());
+                        }, 50);
+                    }
+                });
+            }
+        })();
     </script>
 </body>
 </html>

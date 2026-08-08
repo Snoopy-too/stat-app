@@ -39,7 +39,7 @@ if (!$club_id) {
 
 if (!$club_id) {
     $_SESSION['error'] = "Please create a club first.";
-    header("Location: dashboard.php");
+    header("Location: account.php");
     exit();
 }
 
@@ -64,7 +64,7 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
 
 if (!$club) {
     $_SESSION['error'] = "Club not found or access denied.";
-    header("Location: dashboard.php");
+    header("Location: account.php");
     exit();
 }
 
@@ -72,7 +72,8 @@ if (!$club) {
 $stmt = $pdo->prepare("
     SELECT g.*,
            (SELECT COUNT(DISTINCT session_id) FROM game_results WHERE game_id = g.game_id) +
-           (SELECT COUNT(DISTINCT session_id) FROM team_game_results WHERE game_id = g.game_id) as play_count
+           (SELECT COUNT(DISTINCT session_id) FROM team_game_results WHERE game_id = g.game_id) +
+           (SELECT COUNT(DISTINCT session_id) FROM cooperative_game_results WHERE game_id = g.game_id) as play_count
     FROM games g
     WHERE g.club_id = ?
     ORDER BY g.game_name ASC
@@ -189,7 +190,7 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: var(--spacing-4);">
             <?php if (!empty($games)): ?>
                 <div style="flex: 1; min-width: 200px; max-width: 350px;">
-                    <input type="text" id="gameSearchInput" class="form-control" placeholder="🔍 Search games..." aria-label="Search games">
+                    <input type="text" id="gameSearchInput" class="form-control" placeholder="Search games..." aria-label="Search games">
                 </div>
             <?php endif; ?>
             <a href="manage_games.php?club_id=<?php echo $club_id; ?>&action=add" class="btn btn--primary">

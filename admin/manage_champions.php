@@ -209,18 +209,13 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
-        <?php NavigationHelper::renderCompactHeader('Manage Champions (' . $club['club_name'] . ')'); ?>
+        <?php NavigationHelper::renderCompactHeader('Manage ' . $club['club_name'] . ' Champions (' . count($champions) . ')'); ?>
 
     </div>
 
     <div class="container container--wide">
         <?php display_session_message('success'); ?>
         <?php display_session_message('error'); ?>
-
-        <div class="card">
-            <div class="card-header">
-                <h2>Champions (<?php echo count($champions); ?>)</h2>
-            </div>
 
             <div id="add-champion-form-wrapper" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? '' : 'display:none;'; ?> margin: 1rem 0 1.25rem 0; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 0.75rem); background: var(--color-surface-muted);">
                 <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);">Add New Champion</h3>
@@ -327,7 +322,7 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                                        value="<?php echo $champion['ID']; ?>" class="form-check-input champion-checkbox">
                             </td>
                             <td data-label="Member Name"><?php echo htmlspecialchars($champion['member_name']); ?></td>
-                            <td data-label="Date"><?php echo date('F j Y', strtotime($champion['date'])); ?></td>
+                            <td data-label="Date"><?php echo date('Y/m/d', strtotime($champion['date'])); ?></td>
                             <td data-label="Comments"><?php echo htmlspecialchars($champion['champ_comments']); ?></td>
                             <td data-label="Actions">
                                 <div style="display:flex; gap:0.5rem; align-items:center;">
@@ -337,9 +332,7 @@ $htmlThemeAttrs = $themeParam ? 'data-club-theme="' . htmlspecialchars($themePar
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
-                </table>
             </div>
-        </div>
 
         </div>
     </div>

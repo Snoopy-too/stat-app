@@ -144,7 +144,7 @@ $csrf_token = $security->generateCSRFToken();
             </div>
             <div class="form-actions">
                 <button type="submit" class="btn btn--primary">Update Trophy Image</button>
-                <a href="dashboard.php" class="btn btn--subtle">Cancel</a>
+                <a href="account.php" class="btn btn--subtle">Cancel</a>
             </div>
         </form>
     </div>

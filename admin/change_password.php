@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$hashed_password, $_SESSION['admin_id']]);
 
             $_SESSION['success'] = "Password updated successfully";
-            header("Location: dashboard.php");
+            header("Location: account.php");
             exit();
         } else {
             $_SESSION['error'] = "Current password is incorrect";
@@ -66,7 +66,7 @@ $csrf_token = $security->generateCSRFToken();
             <h1>Change Password</h1>
             <p class="header-subtitle">Update your administrator credentials</p>
         </div>
-        <a href="dashboard.php" class="btn btn--secondary">Back to Dashboard</a>
+        <a href="account.php" class="btn btn--secondary">Back to Account</a>
     </div>
     <div class="container container--narrow">
         <div class="card">
@@ -101,7 +101,7 @@ $csrf_token = $security->generateCSRFToken();
                 
                 <div class="form-actions">
                     <button type="submit" class="btn btn--primary">Change Password</button>
-                    <a href="dashboard.php" class="btn btn--subtle">Cancel</a>
+                    <a href="account.php" class="btn btn--subtle">Cancel</a>
                 </div>
             </form>
         </div>

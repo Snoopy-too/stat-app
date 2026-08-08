@@ -16,7 +16,8 @@ $stmt = $pdo->prepare("
            (SELECT COUNT(*) FROM members WHERE club_id = c.club_id) as member_count,
            (SELECT COUNT(*) FROM games WHERE club_id = c.club_id) as game_count,
            (COALESCE((SELECT COUNT(DISTINCT session_id) FROM game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0) +
-            COALESCE((SELECT COUNT(DISTINCT session_id) FROM team_game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0)) as games_played
+            COALESCE((SELECT COUNT(DISTINCT session_id) FROM team_game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0) +
+            COALESCE((SELECT COUNT(DISTINCT session_id) FROM cooperative_game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0)) as games_played
     FROM clubs c
     JOIN club_admins ca ON c.club_id = ca.club_id
     WHERE c.club_id = ? AND ca.admin_id = ?
@@ -25,7 +26,7 @@ $stmt->execute([$club_id, $_SESSION['admin_id']]);
 $club = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$club) {
-    header("Location: dashboard.php");
+    header("Location: account.php");
     exit();
 }
 
@@ -125,7 +126,7 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="container">
         <div class="club-info">
             <h2>Club Information</h2>
-            <p><strong>Created:</strong> <?php echo date('F j, Y', strtotime($club['created_at'])); ?></p>
+            <p><strong>Created:</strong> <?php echo date('Y/m/d', strtotime($club['created_at'])); ?></p>
 
             <div class="stats-grid">
                 <div class="stat-card">
@@ -151,7 +152,7 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <li>
                             <?php echo htmlspecialchars($game['game_name']); ?> - 
                             <?php echo $game['participant_count']; ?> <?php echo $game['type'] === 'individual' ? 'players' : 'teams'; ?> - 
-                            <?php echo date('M j, Y', strtotime($game['played_at'])); ?>
+                            <?php echo date('Y/m/d', strtotime($game['played_at'])); ?>
                         </li>
                     <?php endforeach; ?>
                 </ul>
@@ -180,7 +181,7 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <?php if ($club['admin_role'] === 'owner'): ?>
                 <a href="edit_club.php?id=<?php echo $club_id; ?>" class="btn btn--primary">Edit Club</a>
             <?php endif; ?>
-            <a href="dashboard.php" class="btn btn--subtle">Back to Dashboard</a>
+            <a href="account.php" class="btn btn--subtle">Back to Account</a>
         </div>
     </div>
     <script src="../js/sidebar.js"></script>

@@ -115,6 +115,10 @@ class SidebarHelper {
             } catch (Throwable $e) {}
         }
 
+        if (!empty($_GET['theme'])) {
+            $clubTheme = $_GET['theme'];
+        }
+
         if ($clubTheme) {
             echo '<script>if(!document.documentElement.hasAttribute("data-theme-locked")){document.documentElement.setAttribute("data-club-theme", ' . json_encode($clubTheme) . ');}</script>';
         }
@@ -199,7 +203,8 @@ class SidebarHelper {
 
         echo '<div class="sidebar__header" style="padding:1.25rem 0.5rem 1rem 0.5rem;border-bottom:1px solid var(--color-border, #334155);flex-shrink:0;">';
         echo '<a href="index.php" class="sidebar__logo" style="display:flex;align-items:center;gap:0.75rem;text-decoration:none;color:var(--color-heading, #f1f5f9);font-weight:700;font-size:1.125rem;padding:0.25rem 0.5rem;margin-bottom:0.75rem;">';
-        if (!empty($clubLogo)) {
+        $isDemoMode = isset($_GET['demo']) || isset($_GET['preview']);
+        if (!empty($clubLogo) && !$isDemoMode) {
             echo '<img src="images/club_logos/' . htmlspecialchars($clubLogo) . '" alt="" style="width:36px;height:36px;border-radius:0.75rem;object-fit:cover;flex-shrink:0;">';
         } else {
             echo '<span class="sidebar__logo-icon" style="width:36px;height:36px;background:linear-gradient(135deg,var(--color-primary, #6366f1),var(--color-accent, #8b5cf6));border-radius:0.75rem;display:flex;align-items:center;justify-content:center;font-size:1.25rem;color:white;flex-shrink:0;"><span class="material-symbols-outlined" style="font-size:1.4rem;">casino</span></span>';
@@ -361,6 +366,10 @@ class SidebarHelper {
             } catch (Throwable $e) {}
         }
 
+        if (!empty($_GET['theme'])) {
+            $clubTheme = $_GET['theme'];
+        }
+
         if ($clubTheme) {
             echo '<script>if(!document.documentElement.hasAttribute("data-theme-locked")){document.documentElement.setAttribute("data-club-theme", ' . json_encode($clubTheme) . ');}</script>';
         }
@@ -410,7 +419,8 @@ class SidebarHelper {
 
         echo '<div class="sidebar__header" style="padding:1rem 0.75rem;border-bottom:1px solid var(--color-border, #334155);flex-shrink:0;">';
         echo '<a href="account.php" class="sidebar__logo" style="display:flex;align-items:center;gap:0.75rem;text-decoration:none;color:var(--color-heading, #f1f5f9);font-weight:700;font-size:1.125rem;padding:0.25rem 0.25rem;">';
-        if (!empty($clubLogo)) {
+        $isDemoMode = isset($_GET['demo']) || isset($_GET['preview']);
+        if (!empty($clubLogo) && !$isDemoMode) {
             echo '<img src="../images/club_logos/' . htmlspecialchars($clubLogo) . '" alt="" style="width:36px;height:36px;border-radius:0.75rem;object-fit:cover;flex-shrink:0;">';
         } else {
             echo '<span class="sidebar__logo-icon" style="width:36px;height:36px;background:linear-gradient(135deg,var(--color-primary, #6366f1),var(--color-accent, #8b5cf6));border-radius:0.75rem;display:flex;align-items:center;justify-content:center;font-size:1.25rem;color:white;flex-shrink:0;"><span class="material-symbols-outlined" style="font-size:1.4rem;">casino</span></span>';
@@ -424,7 +434,7 @@ class SidebarHelper {
         // Single Row Action Bar: +New Result | Gear (Settings) | Logout
         echo '<div style="display:flex;align-items:center;gap:0.35rem;margin:0 0.25rem 0.75rem 0.25rem;">';
         
-        $newResultActive = ($currentPage === 'new_result');
+        $newResultActive = in_array($currentPage, ['new_result', 'add_result'], true);
         $newResultStyle = 'flex:1;display:flex;align-items:center;justify-content:center;gap:0.35rem;padding:0.55rem 0.6rem;font-size:0.85rem;border-radius:0.5rem;text-decoration:none;transition:all 0.2s ease;';
         if ($newResultActive) {
             $newResultStyle .= 'color:var(--color-primary, #a5b4fc);background:var(--color-primary-soft, rgba(99,102,241,0.25));border:1px solid var(--color-primary, #6366f1);font-weight:600;';

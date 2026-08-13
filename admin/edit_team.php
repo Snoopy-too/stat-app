@@ -85,7 +85,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$team_name, $member1, $member2, $member3, $member4, $team_id]);
             
-            $pdo->commit();
+            save_team_members($pdo, $team_id, $selected_members);
+            
+            if ($pdo->inTransaction()) {
+                $pdo->commit();
+            }
             $_SESSION['success'] = "Team updated successfully!";
             header("Location: manage_teams.php?club_id=" . $club_id);
             exit();
@@ -163,12 +167,7 @@ $csrf_token = $security->generateCSRFToken();
                     </div>
 
                         <?php
-                        $current_team_members = array_values(array_filter([
-                            (int)($team['member1_id'] ?? 0),
-                            (int)($team['member2_id'] ?? 0),
-                            (int)($team['member3_id'] ?? 0),
-                            (int)($team['member4_id'] ?? 0)
-                        ]));
+                        $current_team_members = get_team_member_ids($pdo, (int)$team_id);
                         ?>
                         <div class="form-group" style="grid-column: 1 / -1;">
                             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
@@ -187,12 +186,6 @@ $csrf_token = $security->generateCSRFToken();
                                 <?php endforeach; ?>
                             </div>
                         </div>
-                </div>
-
-                <div style="margin-top: 0.75rem;">
-                    <button type="button" id="add-member-btn" class="btn btn--secondary btn--small" onclick="addMemberField()" style="<?php echo ($has_m3 && $has_m4) ? 'display: none;' : ''; ?>">
-                        ➕ Add Member
-                    </button>
                 </div>
 
                 <div class="form-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-start; flex-wrap: wrap;">
@@ -217,62 +210,8 @@ $csrf_token = $security->generateCSRFToken();
                 <input type="hidden" name="action" value="delete">
             </form>
         </div>
+
         <script>
-        function addMemberField() {
-            const group3 = document.getElementById('group-member3');
-            const group4 = document.getElementById('group-member4');
-            const btn = document.getElementById('add-member-btn');
-
-            if (group3.style.display === 'none') {
-                group3.style.display = 'block';
-            } else if (group4.style.display === 'none') {
-                group4.style.display = 'block';
-                btn.style.display = 'none';
-            }
-            updateMemberDropdowns();
-        }
-
-        function removeMemberField(num) {
-            const group = document.getElementById('group-member' + num);
-            const select = document.getElementById('member' + num);
-            const btn = document.getElementById('add-member-btn');
-
-            if (group) {
-                group.style.display = 'none';
-                if (select) select.value = '';
-            }
-            btn.style.display = 'inline-flex';
-            updateMemberDropdowns();
-        }
-
-        function updateMemberDropdowns() {
-            const selects = [
-                document.getElementById('member1'),
-                document.getElementById('member2'),
-                document.getElementById('member3'),
-                document.getElementById('member4')
-            ];
-            const selected = selects.map(sel => sel.value).filter(v => v !== '');
-            selects.forEach(sel => {
-                Array.from(sel.options).forEach(opt => {
-                    if (opt.value === '') {
-                        opt.disabled = false;
-                    } else {
-                        opt.disabled = selected.includes(opt.value) && sel.value !== opt.value;
-                    }
-                });
-            });
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            const selects = [
-                document.getElementById('member1'),
-                document.getElementById('member2'),
-                document.getElementById('member3'),
-                document.getElementById('member4')
-            ];
-            selects.forEach(sel => {
-                sel.addEventListener('change', updateMemberDropdowns);
-            });
         function toggleAllCheckboxes(selector, checkedState) {
             document.querySelectorAll(selector).forEach(cb => {
                 const item = cb.closest('.checkbox-item');

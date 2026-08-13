@@ -9,7 +9,7 @@ $csrfToken = $security->generateCSRFToken();
 $security->cleanExpiredTokens();
 
 $pageTitle = 'Register Administrator - Board Game Club StatApp';
-$htmlAttributes = 'data-club-theme="light" data-theme="light"';
+$htmlAttributes = 'data-club-theme="light" data-theme="light" data-theme-locked';
 require_once 'includes/templates/header.php';
 ?>
 

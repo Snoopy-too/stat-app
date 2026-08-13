@@ -50,6 +50,16 @@ $stmt = $pdo->prepare($query);
 $stmt->execute($params);
 $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+if (!empty($teams)) {
+    $teamMembersMap = get_team_members_map($pdo, $teams);
+    foreach ($teams as &$t) {
+        if (isset($teamMembersMap[$t['team_id']])) {
+            $t['members_list'] = array_column($teamMembersMap[$t['team_id']], 'nickname');
+        }
+    }
+    unset($t);
+}
+
 $base_url_param = !empty($club['slug']) ? 'slug=' . urlencode($club['slug']) : 'id=' . $club_id;
 ?>
 <!DOCTYPE html>
@@ -60,6 +70,7 @@ $base_url_param = !empty($club['slug']) ? 'slug=' . urlencode($club['slug']) : '
     <title>Teams - <?php echo htmlspecialchars($club_name); ?></title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/dark-mode.js"></script>
+    <script src="js/sidebar.js"></script>
 </head>
 <body class="has-sidebar">
     <?php NavigationHelper::renderSidebar('teams', $club_id, $club_name); ?>

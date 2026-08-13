@@ -108,12 +108,16 @@ $stmt = $pdo->prepare($query);
 $stmt->execute($params);
 $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+if ($demo) {
+    $members = get_demo_data('members');
+}
+
 // Aggregate member stats for multi-layered stacked bar chart
 $chart_member_names = [];
 $chart_individual_wins = [];
 $chart_team_wins = [];
 
-if (!$demo && $club_id) {
+if ($club_id) {
     try {
         $stmt_stats = $pdo->prepare("
             SELECT m.member_id,
@@ -145,10 +149,19 @@ if (!$demo && $club_id) {
     } catch (Exception $e) {}
 }
 
+if ($demo && empty($chart_member_names)) {
+    foreach ($members as $idx => $m) {
+        $name = !empty($m['nickname']) ? $m['nickname'] : (!empty($m['member_name']) ? $m['member_name'] : 'Member ' . ($idx + 1));
+        $chart_member_names[] = $name;
+        $chart_individual_wins[] = max(1, 8 - ($idx * 2));
+        $chart_team_wins[] = max(0, 4 - $idx);
+    }
+}
+
 // Fetch Wins Over Time Per Member for line chart
 $wot_labels = [];
 $wot_datasets = [];
-if (!$demo && $club_id) {
+if ($club_id) {
     try {
         $stmt_months = $pdo->prepare("
             SELECT DISTINCT DATE_FORMAT(gr.played_at, '%Y-%m') as month_key
@@ -198,11 +211,71 @@ if (!$demo && $club_id) {
     } catch (Exception $e) {}
 }
 
+if ($demo && empty($wot_labels)) {
+    $wot_labels = ['Apr', 'May', 'Jun', 'Jul', 'Aug'];
+    $demo_wins = [[1,2,2,3,4],[0,1,2,2,3],[0,0,1,2,2],[0,1,1,1,2]];
+    foreach ($members as $idx => $m) {
+        $name = !empty($m['nickname']) ? $m['nickname'] : (!empty($m['member_name']) ? $m['member_name'] : 'Member ' . ($idx + 1));
+        $wot_datasets[] = ['name' => $name, 'data' => $demo_wins[$idx] ?? array_fill(0, 5, 0)];
+        if ($idx >= 3) break;
+    }
+}
+
 // Handle member creation/deletion and bulk actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
         $_SESSION['error'] = "Invalid security token. Please try again.";
         header("Location: manage_members.php?club_id=" . $club_id);
+        exit();
+    }
+
+    // Single member deletion
+    if (isset($_POST['action']) && $_POST['action'] === 'delete' && !empty($_POST['member_id'])) {
+        $del_member_id = (int)$_POST['member_id'];
+        $target_club_id = !empty($_POST['club_id']) ? (int)$_POST['club_id'] : (int)$club_id;
+        if (delete_member_by_id($pdo, $del_member_id, $target_club_id)) {
+            $_SESSION['success'] = "Member deleted successfully!";
+        } else {
+            $_SESSION['error'] = "Member not found or already deleted.";
+        }
+        header("Location: manage_members.php?club_id=" . $target_club_id);
+        exit();
+    }
+
+    // Bulk member actions
+    if (isset($_POST['bulk_action']) && !empty($_POST['selected_members']) && is_array($_POST['selected_members'])) {
+        $bulk_action = $_POST['bulk_action'];
+        $selected_members = array_filter(array_map('intval', $_POST['selected_members']));
+        $target_club_id = !empty($_POST['club_id']) ? (int)$_POST['club_id'] : (int)$club_id;
+
+        if (!empty($selected_members)) {
+            $count = 0;
+            if ($bulk_action === 'bulk_delete') {
+                foreach ($selected_members as $m_id) {
+                    if (delete_member_by_id($pdo, $m_id, $target_club_id)) {
+                        $count++;
+                    }
+                }
+                $_SESSION['success'] = "$count member(s) deleted successfully!";
+            } elseif ($bulk_action === 'bulk_activate') {
+                $stmt = $pdo->prepare("UPDATE members SET status = 'active' WHERE member_id = ? AND club_id = ?");
+                foreach ($selected_members as $m_id) {
+                    if ($stmt->execute([$m_id, $target_club_id]) && $stmt->rowCount() > 0) {
+                        $count++;
+                    }
+                }
+                $_SESSION['success'] = "$count member(s) activated successfully!";
+            } elseif ($bulk_action === 'bulk_deactivate') {
+                $stmt = $pdo->prepare("UPDATE members SET status = 'inactive' WHERE member_id = ? AND club_id = ?");
+                foreach ($selected_members as $m_id) {
+                    if ($stmt->execute([$m_id, $target_club_id]) && $stmt->rowCount() > 0) {
+                        $count++;
+                    }
+                }
+                $_SESSION['success'] = "$count member(s) deactivated successfully!";
+            }
+        }
+        header("Location: manage_members.php?club_id=" . $target_club_id);
         exit();
     }
 
@@ -250,7 +323,7 @@ $baseUrl = 'manage_members.php?club_id=' . $club_id;
         <?php display_session_message('success'); ?>
         <?php display_session_message('error'); ?>
 
-        <?php TableHelper::renderMembersAnalytics($chart_member_names, $chart_individual_wins, $chart_team_wins, $wot_labels, $wot_datasets, ['is_admin' => true]); ?>
+        <?php TableHelper::renderMembersAnalytics($chart_member_names, $chart_individual_wins, $chart_team_wins, $wot_labels, $wot_datasets, ['is_admin' => true, 'open' => true]); ?>
 
         <div id="add-member-form-wrapper" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? '' : 'display:none;'; ?> margin: 1rem 0 1.25rem 0; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 0.75rem); background: var(--color-surface-muted);">
             <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);">Add New Member</h3>
@@ -303,7 +376,57 @@ $baseUrl = 'manage_members.php?club_id=' . $club_id;
             if (btn) btn.style.visibility = isHidden ? 'hidden' : 'visible';
         }
     </script>
+    <?php if (!empty($demo)): ?>
+    <style>
+    html, body, body * {
+        pointer-events: none !important;
+        user-select: none !important;
+        cursor: default !important;
+    }
+    img {
+        display: none !important;
+    }
+    *:hover, *:active, *:focus, *:focus-within {
+        background: inherit !important;
+        background-color: inherit !important;
+        color: inherit !important;
+        border-color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+        transition: none !important;
+        animation: none !important;
+        outline: none !important;
+        opacity: inherit !important;
+    }
+    .sidebar__nav a:hover, .sidebar__nav a:active, .sidebar__nav a:focus,
+    .data-table tr:hover, .data-table tr:active, .data-table td:hover,
+    .btn:hover, .btn:active, .btn:focus, button:hover, button:active,
+    .form-control:hover, .form-control:active, .form-control:focus,
+    a:hover, a:active, a:focus {
+        background: transparent !important;
+        background-color: transparent !important;
+        color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+    </style>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('a, button, input, select, textarea, details, summary').forEach(el => {
+            el.setAttribute('tabindex', '-1');
+            if (el.tagName === 'BUTTON' || el.tagName === 'INPUT' || el.tagName === 'SELECT') {
+                el.setAttribute('disabled', 'disabled');
+            }
+        });
+    });
+    document.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); }, true);
+    document.addEventListener('mouseover', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseenter', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseleave', function(e) { e.stopPropagation(); }, true);
+    </script>
+    <?php endif; ?>
     <script src="../js/sidebar.js"></script>
+    <script src="../js/confirmations.js"></script>
     <script src="../js/form-loading.js"></script>
 </body>
 </html>

@@ -9,77 +9,57 @@ require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/NavigationHelper.php';
 
-// Ensure user is logged in
-if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
+$demo = isset($_GET['demo']) || isset($_GET['preview']);
+if (!$demo && (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
     header("Location: login.php");
     exit();
 }
 
 $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
-if (!$club_id && !empty($_SESSION['current_club_id'])) {
-    $club_id = (int)$_SESSION['current_club_id'];
-}
-if (!$club_id && !empty($_SESSION['club_id'])) {
-    $club_id = (int)$_SESSION['club_id'];
-}
 
-// Auto-resolve club_id if missing
-if (!$club_id && isset($_SESSION['admin_id'])) {
-    try {
-        $stmt = $pdo->prepare("SELECT c.club_id FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ? ORDER BY c.club_name ASC LIMIT 1");
-        $stmt->execute([$_SESSION['admin_id']]);
-        $club_id = (int)$stmt->fetchColumn();
-    } catch (Throwable $e) {}
-}
-if (!$club_id) {
-    try {
-        $club_id = (int)$pdo->query("SELECT club_id FROM clubs ORDER BY club_id ASC LIMIT 1")->fetchColumn();
-    } catch (Throwable $e) {}
-}
+if ($demo) {
+    $club_id = 1;
+    $club = get_demo_data('club');
+    $games = get_demo_data('games');
+} else {
+    if (!$club_id && !empty($_SESSION['current_club_id'])) {
+        $club_id = (int)$_SESSION['current_club_id'];
+    }
+    if (!$club_id && !empty($_SESSION['club_id'])) {
+        $club_id = (int)$_SESSION['club_id'];
+    }
 
-if (!$club_id) {
-    $_SESSION['error'] = "Please create a club first.";
-    header("Location: account.php");
-    exit();
-}
+    if (!$club_id) {
+        $_SESSION['error'] = "Please create a club first.";
+        header("Location: account.php");
+        exit();
+    }
 
-$_SESSION['current_club_id'] = $club_id;
-$_SESSION['club_id'] = $club_id;
-
-// Verify admin has access to this club
-$club = null;
-if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
     $stmt = $pdo->prepare("SELECT * FROM clubs WHERE club_id = ?");
     $stmt->execute([$club_id]);
     $club = $stmt->fetch(PDO::FETCH_ASSOC);
-} else {
-    $stmt = $pdo->prepare("
-        SELECT c.* FROM clubs c
-        JOIN club_admins ca ON c.club_id = ca.club_id
-        WHERE c.club_id = ? AND ca.admin_id = ?
-    ");
-    $stmt->execute([$club_id, $_SESSION['admin_id'] ?? 0]);
-    $club = $stmt->fetch(PDO::FETCH_ASSOC);
-}
 
-if (!$club) {
-    $_SESSION['error'] = "Club not found or access denied.";
-    header("Location: account.php");
-    exit();
-}
+    if (!$club) {
+        $_SESSION['error'] = "Club not found or access denied.";
+        header("Location: account.php");
+        exit();
+    }
 
-// Get games for this club
-$stmt = $pdo->prepare("
-    SELECT g.*,
-           (SELECT COUNT(DISTINCT session_id) FROM game_results WHERE game_id = g.game_id) +
-           (SELECT COUNT(DISTINCT session_id) FROM team_game_results WHERE game_id = g.game_id) +
-           (SELECT COUNT(DISTINCT session_id) FROM cooperative_game_results WHERE game_id = g.game_id) as play_count
-    FROM games g
-    WHERE g.club_id = ?
-    ORDER BY g.game_name ASC
-");
-$stmt->execute([$club_id]);
-$games = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $games = [];
+    try {
+        $stmt = $pdo->prepare("
+            SELECT g.*,
+                   (SELECT COUNT(DISTINCT session_id) FROM game_results WHERE game_id = g.game_id) +
+                   (SELECT COUNT(DISTINCT session_id) FROM team_game_results WHERE game_id = g.game_id) +
+                   (SELECT COUNT(DISTINCT session_id) FROM cooperative_game_results WHERE game_id = g.game_id) as play_count
+            FROM games g
+            WHERE g.club_id = ?
+            ORDER BY g.game_name ASC
+        ");
+        $stmt->execute([$club_id]);
+        $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {}
+}
 ?>
 
 <!DOCTYPE html>
@@ -204,7 +184,7 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <div style="font-size: 3rem; margin-bottom: 1rem;">🎲</div>
                     <h3 style="margin: 0 0 0.5rem;">No Games Yet</h3>
                     <p style="color: var(--text-secondary); margin: 0 0 1.5rem;">Add some games to your club before recording results.</p>
-                    <a href="manage_games.php?club_id=<?php echo $club_id; ?>" class="btn">Add Games</a>
+                    <a href="manage_games.php?club_id=<?php echo $club_id; ?>&action=add" class="btn">Add Games</a>
                 </div>
             </div>
         <?php else: ?>
@@ -213,7 +193,7 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <a href="add_result.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game['game_id']; ?>" class="game-card">
                         <div class="game-card__image">
                             <?php if (!empty($game['game_image'])): ?>
-                                <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'], '../')); ?>" alt="<?php echo htmlspecialchars($game['game_name']); ?>" loading="lazy">
+                                <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'], '../')); ?>" alt="<?php echo htmlspecialchars($game['game_name']); ?>" loading="lazy" style="width:100%;height:100%;object-fit:cover;">
                             <?php else: ?>
                                 <span class="game-card__placeholder">🎲</span>
                             <?php endif; ?>
@@ -257,5 +237,53 @@ $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
         });
     </script>
+    <?php if (!empty($demo)): ?>
+    <style>
+    html, body, body * {
+        pointer-events: none !important;
+        user-select: none !important;
+        cursor: default !important;
+    }
+    img:not(.game-card__image img) {
+        display: none !important;
+    }
+    *:hover, *:active, *:focus, *:focus-within {
+        background: inherit !important;
+        background-color: inherit !important;
+        color: inherit !important;
+        border-color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+        transition: none !important;
+        animation: none !important;
+        outline: none !important;
+        opacity: inherit !important;
+    }
+    .sidebar__nav a:hover, .sidebar__nav a:active, .sidebar__nav a:focus,
+    .btn:hover, .btn:active, .btn:focus, button:hover, button:active,
+    .form-control:hover, .form-control:active, .form-control:focus,
+    a:hover, a:active, a:focus, .game-card:hover {
+        background: transparent !important;
+        background-color: transparent !important;
+        color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+    </style>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('a, button, input, select, textarea, details, summary').forEach(el => {
+            el.setAttribute('tabindex', '-1');
+            if (el.tagName === 'BUTTON' || el.tagName === 'INPUT' || el.tagName === 'SELECT') {
+                el.setAttribute('disabled', 'disabled');
+            }
+        });
+    });
+    document.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); }, true);
+    document.addEventListener('mouseover', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseenter', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseleave', function(e) { e.stopPropagation(); }, true);
+    </script>
+    <?php endif; ?>
 </body>
 </html>

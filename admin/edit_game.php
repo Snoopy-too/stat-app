@@ -421,6 +421,7 @@ $csrf_token = $security->generateCSRFToken();
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                     <input type="hidden" name="action" value="delete">
                     <input type="hidden" name="game_id" value="<?php echo $game_id; ?>">
+                    <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
                 </form>
                 <?php endif; ?>
         </div>

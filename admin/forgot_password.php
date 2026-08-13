@@ -78,39 +78,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit();
 }
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forgot Password - Board Game Club StatApp</title>
-    <link rel="stylesheet" href="../css/styles.css">
-    <script src="../js/dark-mode.js"></script>
-</head>
-<body>
-    <div class="header">
-        <div class="header-title-group">
-            <h1>Board Game Club StatApp</h1>
-            <p class="header-subtitle">Password Recovery</p>
-        </div>
-        <a href="login.php" class="btn btn--secondary">&larr; Back to Login</a>
-    </div>
+<?php
+$pageTitle = 'Forgot Password - Board Game Club StatApp';
+$htmlAttributes = 'data-club-theme="light" data-theme="light" data-theme-locked';
+require_once '../includes/templates/header.php';
+?>
 
-    <div class="container container--narrow auth-shell">
+<header class="landing-header">
+    <a href="../index.php" class="logo-brand">
+        <span>🎲</span> StatApp
+    </a>
+</header>
+
+<div class="landing-hero">
+    <!-- Background Wave & Grid Contour Overlays -->
+    <div class="hero-contour-waves"></div>
+
+    <div class="landing-hero-content landing-hero-content--compact">
+        <h1>Forgot <span class="highlight">Password</span></h1>
+        <p class="landing-hero-subtitle">Enter your email address and we'll send you a link to reset your password.</p>
+
         <?php display_session_message('success'); ?>
         <?php display_session_message('error'); ?>
-        <div class="card auth-card">
-            <p class="text-muted mb-4">Enter your email address and we'll send you a link to reset your password.</p>
 
-            <form method="POST" class="stack">
+        <div class="landing-card landing-card--compact">
+            <!-- Corner Contour Brackets -->
+            <div class="card-corner-bracket card-corner-bracket--tl"></div>
+            <div class="card-corner-bracket card-corner-bracket--tr"></div>
+            <div class="card-corner-bracket card-corner-bracket--bl"></div>
+            <div class="card-corner-bracket card-corner-bracket--br"></div>
+
+            <form method="POST" action="forgot_password.php" class="stack">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+
                 <div class="form-group">
-                    <label for="email">Email Address:</label>
-                    <input type="email" id="email" name="email" required class="form-control" autofocus>
+                    <label for="email" class="form-label form-label--required">Email Address</label>
+                    <div class="input-with-icon">
+                        <span class="input-icon">✉️</span>
+                        <input type="email" id="email" name="email" required class="form-control" placeholder="Enter your registered email" autofocus autocomplete="email">
+                    </div>
                 </div>
-                <button type="submit" class="btn btn--block">Send Reset Link</button>
+
+                <div style="display: flex; gap: 0.75rem; width: 100%; margin-top: 1rem;">
+                    <button type="submit" class="btn btn--primary" style="flex: 1; text-align: center; justify-content: center;">Send Reset Link</button>
+                    <a href="login.php" class="btn btn--secondary" style="flex: 1; text-align: center; display: inline-flex; align-items: center; justify-content: center;">Back to Login</a>
+                </div>
             </form>
         </div>
     </div>
-</body>
-</html>
+</div>
+
+<?php
+$extraScripts = '<script src="../js/form-loading.js"></script>';
+require_once '../includes/templates/footer.php';
+?>

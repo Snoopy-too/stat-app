@@ -5,7 +5,8 @@ require_once '../includes/helpers.php';
 require_once '../includes/NavigationHelper.php';
 require_once '../includes/SecurityUtils.php';
 
-if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
+$demo = isset($_GET['demo']) || isset($_GET['preview']);
+if (!$demo && (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
     header("Location: login.php");
     exit();
 }
@@ -39,12 +40,12 @@ if ($club_id > 0) {
 }
 
 $club = null;
-if ($club_id) {
+if ($club_id && !$demo) {
     $stmt = $pdo->prepare("SELECT * FROM clubs WHERE club_id = ?");
     $stmt->execute([$club_id]);
     $club = $stmt->fetch(PDO::FETCH_ASSOC);
 }
-$club_name = $club['club_name'] ?? 'StatApp Admin';
+$club_name = ($club && !empty($club['club_name'])) ? $club['club_name'] : 'Meeple & Dice Club';
 
 // Optional game_id filter
 $game_id = (isset($_GET['game_id']) && $_GET['game_id'] !== '') ? (int)$_GET['game_id'] : null;
@@ -86,18 +87,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_action']) && !em
         $deleted_count = 0;
         foreach ($selected_results as $item) {
             $parts = explode(':', $item, 2);
-            if (count($parts) === 2) {
-                $type = $parts[0];
-                $res_id = (int)$parts[1];
-                if ($type === 'individual') {
+            $type = count($parts) === 2 ? $parts[0] : '';
+            $res_id = count($parts) === 2 ? (int)$parts[1] : (int)$parts[0];
+
+            if ($res_id > 0) {
+                if (in_array($type, ['individual', 'winner_losers', 'ranked'], true)) {
                     $stmt = $pdo->prepare("DELETE gr FROM game_results gr JOIN games g ON gr.game_id = g.game_id WHERE gr.result_id = ? AND g.club_id = ?");
-                    if ($stmt->execute([$res_id, $club_id])) $deleted_count++;
-                } elseif ($type === 'team') {
+                    $stmt->execute([$res_id, $club_id]);
+                    if ($stmt->rowCount() > 0) $deleted_count++;
+                } elseif (in_array($type, ['team', 'teams'], true)) {
                     $stmt = $pdo->prepare("DELETE tgr FROM team_game_results tgr JOIN games g ON tgr.game_id = g.game_id WHERE tgr.result_id = ? AND g.club_id = ?");
-                    if ($stmt->execute([$res_id, $club_id])) $deleted_count++;
+                    $stmt->execute([$res_id, $club_id]);
+                    if ($stmt->rowCount() > 0) $deleted_count++;
                 } elseif ($type === 'cooperative') {
                     $stmt = $pdo->prepare("DELETE cgr FROM cooperative_game_results cgr JOIN games g ON cgr.game_id = g.game_id WHERE cgr.result_id = ? AND g.club_id = ?");
-                    if ($stmt->execute([$res_id, $club_id])) $deleted_count++;
+                    $stmt->execute([$res_id, $club_id]);
+                    if ($stmt->rowCount() > 0) $deleted_count++;
+                } else {
+                    $stmt = $pdo->prepare("DELETE gr FROM game_results gr JOIN games g ON gr.game_id = g.game_id WHERE gr.result_id = ? AND g.club_id = ?");
+                    $stmt->execute([$res_id, $club_id]);
+                    if ($stmt->rowCount() > 0) {
+                        $deleted_count++;
+                    } else {
+                        $stmt = $pdo->prepare("DELETE tgr FROM team_game_results tgr JOIN games g ON tgr.game_id = g.game_id WHERE tgr.result_id = ? AND g.club_id = ?");
+                        $stmt->execute([$res_id, $club_id]);
+                        if ($stmt->rowCount() > 0) {
+                            $deleted_count++;
+                        } else {
+                            $stmt = $pdo->prepare("DELETE cgr FROM cooperative_game_results cgr JOIN games g ON cgr.game_id = g.game_id WHERE cgr.result_id = ? AND g.club_id = ?");
+                            $stmt->execute([$res_id, $club_id]);
+                            if ($stmt->rowCount() > 0) {
+                                $deleted_count++;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -188,6 +211,11 @@ try {
     $results = [];
 }
 
+if ($demo) {
+    $all_games = get_demo_data('games');
+    $results = get_demo_data('results');
+}
+
 // Sort results array
 usort($results, function($a, $b) use ($sort, $order) {
     $valA = $a[$sort] ?? '';
@@ -224,7 +252,7 @@ $baseUrl = 'manage_results.php?club_id=' . $club_id;
         <?php display_session_message('success'); ?>
         <?php display_session_message('error'); ?>
 
-        <?php TableHelper::renderResultsAnalytics($results, $all_games, $game_id, ['is_admin' => true]); ?>
+        <?php TableHelper::renderResultsAnalytics($results, $all_games, $game_id, ['is_admin' => true, 'open' => true]); ?>
 
         <?php
         TableHelper::renderResultsTable($results, $all_games, [
@@ -237,8 +265,57 @@ $baseUrl = 'manage_results.php?club_id=' . $club_id;
             'csrf_token' => $csrf_token
         ]);
         ?>
-    </div>
+    <?php if (!empty($demo)): ?>
+    <style>
+    html, body, body * {
+        pointer-events: none !important;
+        user-select: none !important;
+        cursor: default !important;
+    }
+    img {
+        display: none !important;
+    }
+    *:hover, *:active, *:focus, *:focus-within {
+        background: inherit !important;
+        background-color: inherit !important;
+        color: inherit !important;
+        border-color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+        transition: none !important;
+        animation: none !important;
+        outline: none !important;
+        opacity: inherit !important;
+    }
+    .sidebar__nav a:hover, .sidebar__nav a:active, .sidebar__nav a:focus,
+    .data-table tr:hover, .data-table tr:active, .data-table td:hover,
+    .btn:hover, .btn:active, .btn:focus, button:hover, button:active,
+    .form-control:hover, .form-control:active, .form-control:focus,
+    a:hover, a:active, a:focus {
+        background: transparent !important;
+        background-color: transparent !important;
+        color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+    </style>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('a, button, input, select, textarea, details, summary').forEach(el => {
+            el.setAttribute('tabindex', '-1');
+            if (el.tagName === 'BUTTON' || el.tagName === 'INPUT' || el.tagName === 'SELECT') {
+                el.setAttribute('disabled', 'disabled');
+            }
+        });
+    });
+    document.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); }, true);
+    document.addEventListener('mouseover', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseenter', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseleave', function(e) { e.stopPropagation(); }, true);
+    </script>
+    <?php endif; ?>
     <script src="../js/sidebar.js"></script>
+    <script src="../js/confirmations.js"></script>
     <script src="../js/form-loading.js"></script>
 </body>
 </html>

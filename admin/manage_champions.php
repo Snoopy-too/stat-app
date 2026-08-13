@@ -36,12 +36,12 @@ if ($club_id > 0) {
     $_SESSION['club_id'] = $club_id;
 }
 
-$club_name = 'StatApp Admin';
-if ($club_id) {
+$club_name = 'Meeple & Dice Club';
+if ($club_id && !$demo) {
     try {
         $stmt = $pdo->prepare("SELECT club_name FROM clubs WHERE club_id = ?");
         $stmt->execute([$club_id]);
-        $club_name = $stmt->fetchColumn() ?: 'StatApp Admin';
+        $club_name = $stmt->fetchColumn() ?: 'Meeple & Dice Club';
     } catch (Exception $e) {}
 }
 
@@ -110,6 +110,10 @@ if ($sort === 'member_name' || $sort === 'nickname') {
 $stmt = $pdo->prepare($query);
 $stmt->execute($params);
 $champions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+if ($demo) {
+    $champions = get_demo_data('champions');
+}
 
 $baseUrl = 'manage_champions.php?club_id=' . $club_id;
 ?>
@@ -187,6 +191,55 @@ $baseUrl = 'manage_champions.php?club_id=' . $club_id;
             if (btn) btn.style.visibility = isHidden ? 'hidden' : 'visible';
         }
     </script>
+    <?php if (!empty($demo)): ?>
+    <style>
+    html, body, body * {
+        pointer-events: none !important;
+        user-select: none !important;
+        cursor: default !important;
+    }
+    img {
+        display: none !important;
+    }
+    *:hover, *:active, *:focus, *:focus-within {
+        background: inherit !important;
+        background-color: inherit !important;
+        color: inherit !important;
+        border-color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+        transition: none !important;
+        animation: none !important;
+        outline: none !important;
+        opacity: inherit !important;
+    }
+    .sidebar__nav a:hover, .sidebar__nav a:active, .sidebar__nav a:focus,
+    .data-table tr:hover, .data-table tr:active, .data-table td:hover,
+    .btn:hover, .btn:active, .btn:focus, button:hover, button:active,
+    .form-control:hover, .form-control:active, .form-control:focus,
+    a:hover, a:active, a:focus {
+        background: transparent !important;
+        background-color: transparent !important;
+        color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+    </style>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('a, button, input, select, textarea, details, summary').forEach(el => {
+            el.setAttribute('tabindex', '-1');
+            if (el.tagName === 'BUTTON' || el.tagName === 'INPUT' || el.tagName === 'SELECT') {
+                el.setAttribute('disabled', 'disabled');
+            }
+        });
+    });
+    document.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); }, true);
+    document.addEventListener('mouseover', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseenter', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseleave', function(e) { e.stopPropagation(); }, true);
+    </script>
+    <?php endif; ?>
     <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
 </body>

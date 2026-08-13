@@ -60,6 +60,7 @@ $base_url_param = !empty($club['slug']) ? 'slug=' . urlencode($club['slug']) : '
     <title>Champions - <?php echo htmlspecialchars($club_name); ?></title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/dark-mode.js"></script>
+    <script src="js/sidebar.js"></script>
 </head>
 <body class="has-sidebar">
     <?php NavigationHelper::renderSidebar('champions', $club_id, $club_name); ?>

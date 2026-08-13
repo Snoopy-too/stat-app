@@ -311,7 +311,12 @@ $csrf_token = $security->generateCSRFToken();
                 <input type="hidden" name="action" value="update">
 
                 <div class="form-group">
-                    <label for="club_name"><strong>Club Name:</strong></label>
+                    <label for="club_name" style="display:flex; align-items:baseline; gap:0.5rem; flex-wrap:wrap;">
+                        <strong>Club Name:</strong>
+                        <?php if (!empty($club['created_at'])): ?>
+                            <span style="font-size:0.8rem; font-weight:normal; color:var(--color-text-muted);">Created <?php echo date('Y/m/d', strtotime($club['created_at'])); ?></span>
+                        <?php endif; ?>
+                    </label>
                     <input type="text" id="club_name" name="club_name" class="form-control" required
                            value="<?php echo htmlspecialchars($club['club_name']); ?>">
                 </div>

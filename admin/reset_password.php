@@ -52,38 +52,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Password - Board Game Club StatApp</title>
-    <link rel="stylesheet" href="../css/styles.css">
-    <script src="../js/dark-mode.js"></script>
-</head>
-<body>
-    <div class="header">
-        <div class="header-title-group">
-            <h1>Board Game Club StatApp</h1>
-            <p class="header-subtitle">Reset Password</p>
-        </div>
-    </div>
+<?php
+$pageTitle = 'Reset Password - Board Game Club StatApp';
+$htmlAttributes = 'data-club-theme="light" data-theme="light" data-theme-locked';
+require_once '../includes/templates/header.php';
+?>
 
-    <div class="container container--narrow auth-shell">
+<header class="landing-header">
+    <a href="../index.php" class="logo-brand">
+        <span>🎲</span> StatApp
+    </a>
+</header>
+
+<div class="landing-hero">
+    <!-- Background Wave & Grid Contour Overlays -->
+    <div class="hero-contour-waves"></div>
+
+    <div class="landing-hero-content landing-hero-content--compact">
+        <h1>Reset <span class="highlight">Password</span></h1>
+        <p class="landing-hero-subtitle">Enter your new password below.</p>
+
+        <?php display_session_message('success'); ?>
         <?php display_session_message('error'); ?>
-        <div class="card auth-card">
+
+        <div class="landing-card landing-card--compact">
+            <!-- Corner Contour Brackets -->
+            <div class="card-corner-bracket card-corner-bracket--tl"></div>
+            <div class="card-corner-bracket card-corner-bracket--tr"></div>
+            <div class="card-corner-bracket card-corner-bracket--bl"></div>
+            <div class="card-corner-bracket card-corner-bracket--br"></div>
+
             <?php if ($valid_token): ?>
                 <form method="POST" class="stack">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+
                     <div class="form-group">
-                        <label for="password">New Password:</label>
-                        <input type="password" id="password" name="password" required class="form-control" minlength="8">
+                        <label for="password" class="form-label form-label--required">New Password</label>
+                        <div class="input-with-icon">
+                            <span class="input-icon">🔒</span>
+                            <input type="password" id="password" name="password" required class="form-control" placeholder="Enter new password" minlength="8" autofocus autocomplete="new-password">
+                        </div>
                     </div>
+
                     <div class="form-group">
-                        <label for="confirm_password">Confirm Password:</label>
-                        <input type="password" id="confirm_password" name="confirm_password" required class="form-control" minlength="8">
+                        <label for="confirm_password" class="form-label form-label--required">Confirm Password</label>
+                        <div class="input-with-icon">
+                            <span class="input-icon">🔑</span>
+                            <input type="password" id="confirm_password" name="confirm_password" required class="form-control" placeholder="Confirm new password" minlength="8" autocomplete="new-password">
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn--block">Reset Password</button>
+
+                    <div style="display: flex; gap: 0.75rem; width: 100%; margin-top: 1rem;">
+                        <button type="submit" class="btn btn--primary" style="flex: 1; text-align: center; justify-content: center;">Reset Password</button>
+                    </div>
                 </form>
             <?php else: ?>
                 <div class="message message--error">
@@ -92,5 +113,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
         </div>
     </div>
-</body>
-</html>
+</div>
+
+<?php
+$extraScripts = '<script src="../js/form-loading.js"></script>';
+require_once '../includes/templates/footer.php';
+?>

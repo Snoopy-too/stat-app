@@ -36,12 +36,12 @@ if ($club_id > 0) {
     $_SESSION['club_id'] = $club_id;
 }
 
-$club_name = 'StatApp Admin';
-if ($club_id) {
+$club_name = 'Meeple & Dice Club';
+if ($club_id && !$demo) {
     try {
         $stmt = $pdo->prepare("SELECT club_name FROM clubs WHERE club_id = ?");
         $stmt->execute([$club_id]);
-        $club_name = $stmt->fetchColumn() ?: 'StatApp Admin';
+        $club_name = $stmt->fetchColumn() ?: 'Meeple & Dice Club';
     } catch (Exception $e) {}
 }
 
@@ -63,21 +63,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (isset($_POST['action']) && $_POST['action'] === 'create_team') {
         $team_name = trim($_POST['team_name'] ?? '');
-        $m1 = (int)($_POST['member1_id'] ?? 0);
-        $m2 = (int)($_POST['member2_id'] ?? 0);
-        $m3 = !empty($_POST['member3_id']) ? (int)$_POST['member3_id'] : null;
-        $m4 = !empty($_POST['member4_id']) ? (int)$_POST['member4_id'] : null;
+        $selected_members = [];
+        if (!empty($_POST['team_members']) && is_array($_POST['team_members'])) {
+            $selected_members = array_values(array_filter(array_map('intval', $_POST['team_members'])));
+        } elseif (!empty($_POST['members']) && is_array($_POST['members'])) {
+            $selected_members = array_values(array_filter(array_map('intval', $_POST['members'])));
+        } else {
+            $m1 = (int)($_POST['member1_id'] ?? 0);
+            $m2 = (int)($_POST['member2_id'] ?? 0);
+            $m3 = !empty($_POST['member3_id']) ? (int)$_POST['member3_id'] : null;
+            $m4 = !empty($_POST['member4_id']) ? (int)$_POST['member4_id'] : null;
+            $selected_members = array_values(array_filter([$m1, $m2, $m3, $m4]));
+        }
 
-        if (!empty($team_name) && $m1 > 0 && $m2 > 0 && $m1 !== $m2) {
+        $m1 = $selected_members[0] ?? 0;
+        $m2 = $selected_members[1] ?? 0;
+        $m3 = $selected_members[2] ?? null;
+        $m4 = $selected_members[3] ?? null;
+
+        if (!empty($team_name) && !empty($selected_members)) {
             try {
+                $m1 = $selected_members[0] ?? null;
+                $m2 = $selected_members[1] ?? null;
+                $m3 = $selected_members[2] ?? null;
+                $m4 = $selected_members[3] ?? null;
                 $stmt = $pdo->prepare("INSERT INTO teams (club_id, team_name, member1_id, member2_id, member3_id, member4_id) VALUES (?, ?, ?, ?, ?, ?)");
                 $stmt->execute([$club_id, $team_name, $m1, $m2, $m3, $m4]);
+                $team_id = (int)$pdo->lastInsertId();
+                save_team_members($pdo, $team_id, $selected_members);
                 $_SESSION['success'] = "Team created successfully!";
             } catch (PDOException $e) {
                 $_SESSION['error'] = "Error creating team: " . $e->getMessage();
             }
         } else {
-            $_SESSION['error'] = "Team name and at least two distinct members are required.";
+            $_SESSION['error'] = "Team name and at least one member are required.";
         }
         header("Location: manage_teams.php?club_id=" . $club_id);
         exit();
@@ -115,6 +134,20 @@ $stmt = $pdo->prepare($query);
 $stmt->execute($params);
 $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+if ($demo) {
+    $teams = get_demo_data('teams');
+}
+
+if (!empty($teams)) {
+    $teamMembersMap = get_team_members_map($pdo, $teams);
+    foreach ($teams as &$t) {
+        if (isset($teamMembersMap[$t['team_id']])) {
+            $t['members_list'] = array_column($teamMembersMap[$t['team_id']], 'nickname');
+        }
+    }
+    unset($t);
+}
+
 $baseUrl = 'manage_teams.php?club_id=' . $club_id;
 ?>
 <!DOCTYPE html>
@@ -143,46 +176,27 @@ $baseUrl = 'manage_teams.php?club_id=' . $club_id;
             <form method="POST" class="form">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <input type="hidden" name="action" value="create_team">
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
-                    <div class="form-group" style="margin-bottom:0;">
+                <div style="margin-bottom: 1.25rem;">
+                    <div class="form-group" style="margin-bottom: 1rem;">
                         <label for="team_name">Team Name <span style="color:var(--color-error,#ef4444);">*</span></label>
-                        <input type="text" id="team_name" name="team_name" placeholder="Team Name" required class="form-control">
+                        <input type="text" id="team_name" name="team_name" placeholder="Team Name" required class="form-control" style="max-width: 400px;">
                     </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label for="member1_id">Member 1 <span style="color:var(--color-error,#ef4444);">*</span></label>
-                        <select id="member1_id" name="member1_id" required class="form-control">
-                            <option value="">Select Member</option>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
+                            <label class="form-label" style="margin:0;">Select Team Members: <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                            <div style="display:flex; gap:0.5rem;">
+                                <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.team-member-checkbox', true)">Select All</button>
+                                <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.team-member-checkbox', false)">Uncheck All</button>
+                            </div>
+                        </div>
+                        <div id="team-members-checkbox-list" class="checkbox-grid">
                             <?php foreach ($club_members as $m): ?>
-                                <option value="<?php echo $m['member_id']; ?>"><?php echo htmlspecialchars($m['nickname'] ?: $m['member_name']); ?></option>
+                                <label for="team_member_<?php echo $m['member_id']; ?>" class="form-check checkbox-item">
+                                    <input type="checkbox" name="team_members[]" id="team_member_<?php echo $m['member_id']; ?>" value="<?php echo $m['member_id']; ?>" class="form-check-input team-member-checkbox">
+                                    <span class="form-check-label"><?php echo htmlspecialchars($m['nickname'] ?: $m['member_name']); ?></span>
+                                </label>
                             <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label for="member2_id">Member 2 <span style="color:var(--color-error,#ef4444);">*</span></label>
-                        <select id="member2_id" name="member2_id" required class="form-control">
-                            <option value="">Select Member</option>
-                            <?php foreach ($club_members as $m): ?>
-                                <option value="<?php echo $m['member_id']; ?>"><?php echo htmlspecialchars($m['nickname'] ?: $m['member_name']); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label for="member3_id">Member 3 (Optional)</label>
-                        <select id="member3_id" name="member3_id" class="form-control">
-                            <option value="">None</option>
-                            <?php foreach ($club_members as $m): ?>
-                                <option value="<?php echo $m['member_id']; ?>"><?php echo htmlspecialchars($m['nickname'] ?: $m['member_name']); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label for="member4_id">Member 4 (Optional)</label>
-                        <select id="member4_id" name="member4_id" class="form-control">
-                            <option value="">None</option>
-                            <?php foreach ($club_members as $m): ?>
-                                <option value="<?php echo $m['member_id']; ?>"><?php echo htmlspecialchars($m['nickname'] ?: $m['member_name']); ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                        </div>
                     </div>
                 </div>
                 <div class="form-group" style="display:flex; gap:0.5rem; margin-bottom:0;">
@@ -211,7 +225,61 @@ $baseUrl = 'manage_teams.php?club_id=' . $club_id;
             wrapper.style.display = isHidden ? 'block' : 'none';
             if (btn) btn.style.visibility = isHidden ? 'hidden' : 'visible';
         }
+        function toggleAllCheckboxes(selector, checkedState) {
+            document.querySelectorAll(selector).forEach(cb => {
+                cb.checked = checkedState;
+            });
+        }
     </script>
+    <?php if (!empty($demo)): ?>
+    <style>
+    html, body, body * {
+        pointer-events: none !important;
+        user-select: none !important;
+        cursor: default !important;
+    }
+    img {
+        display: none !important;
+    }
+    *:hover, *:active, *:focus, *:focus-within {
+        background: inherit !important;
+        background-color: inherit !important;
+        color: inherit !important;
+        border-color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+        transition: none !important;
+        animation: none !important;
+        outline: none !important;
+        opacity: inherit !important;
+    }
+    .sidebar__nav a:hover, .sidebar__nav a:active, .sidebar__nav a:focus,
+    .data-table tr:hover, .data-table tr:active, .data-table td:hover,
+    .btn:hover, .btn:active, .btn:focus, button:hover, button:active,
+    .form-control:hover, .form-control:active, .form-control:focus,
+    a:hover, a:active, a:focus {
+        background: transparent !important;
+        background-color: transparent !important;
+        color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+    </style>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('a, button, input, select, textarea, details, summary').forEach(el => {
+            el.setAttribute('tabindex', '-1');
+            if (el.tagName === 'BUTTON' || el.tagName === 'INPUT' || el.tagName === 'SELECT') {
+                el.setAttribute('disabled', 'disabled');
+            }
+        });
+    });
+    document.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); }, true);
+    document.addEventListener('mouseover', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseenter', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseleave', function(e) { e.stopPropagation(); }, true);
+    </script>
+    <?php endif; ?>
     <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
 </body>

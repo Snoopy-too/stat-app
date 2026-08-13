@@ -225,22 +225,24 @@ $coop_win_rate = $coop_total > 0 ? number_format(($coop_wins / $coop_total) * 10
                 <div class="form-actions" style="margin-top: 1.5rem; display: flex; gap: 0.5rem; justify-content: flex-start; flex-wrap: wrap;">
                     <button type="submit" class="btn btn--primary">Update Member</button>
                     <a href="manage_members.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle">Cancel</a>
-                    <form method="POST" action="manage_members.php?club_id=<?php echo $club_id; ?>" style="display:inline; margin:0;" id="delete-member-form">
-                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                        <input type="hidden" name="action" value="delete">
-                        <input type="hidden" name="member_id" value="<?php echo $member_id; ?>">
-                        <button type="button" class="btn btn--danger" style="margin-left: auto;"
-                                onclick="showConfirmDialog(event, {
-                                    title: '⚠️ Delete Member',
-                                    message: 'Are you sure you want to delete <strong><?php echo addslashes(htmlspecialchars($member['member_name'])); ?></strong>?',
-                                    confirmText: 'Delete Member',
-                                    cancelText: 'Cancel',
-                                    type: 'danger',
-                                    warningMessage: 'This action is permanent and cannot be undone.',
-                                    onConfirm: () => document.getElementById('delete-member-form').submit()
-                                })">Delete Member</button>
-                    </form>
+                    <button type="button" class="btn btn--danger" style="margin-left: auto;"
+                            onclick="showConfirmDialog(event, {
+                                title: '⚠️ Delete Member',
+                                message: 'Are you sure you want to delete <strong><?php echo addslashes(htmlspecialchars($member['member_name'])); ?></strong>?',
+                                confirmText: 'Delete Member',
+                                cancelText: 'Cancel',
+                                type: 'danger',
+                                warningMessage: 'This action is permanent and cannot be undone.',
+                                onConfirm: () => document.getElementById('delete-member-form').submit()
+                            })">Delete Member</button>
                 </div>
+            </form>
+
+            <form method="POST" action="manage_members.php?club_id=<?php echo $club_id; ?>" style="display:none;" id="delete-member-form">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="member_id" value="<?php echo $member_id; ?>">
+                <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
             </form>
         </div>
 

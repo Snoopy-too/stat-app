@@ -21,7 +21,7 @@ if (isset($_SESSION['club_id'])) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en" data-club-theme="light" data-theme="light">
+<html lang="en" data-theme="light" data-club-theme="light" data-theme-locked>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -117,15 +117,27 @@ if (isset($_SESSION['club_id'])) {
                 <div class="gallery-scroll" id="galleryScroll">
                     <div class="gallery-item">
                         <div class="gallery-item-preview">
-                            <iframe src="admin/manage_teams.php?demo=1&theme=arcade" title="Teams" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+                            <iframe src="admin/club_new_results.php?demo=1&theme=arcade" title="Add New Result" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
                         </div>
-                        <div class="gallery-item-caption">Teams</div>
+                        <div class="gallery-item-caption">Add New Result</div>
+                    </div>
+                    <div class="gallery-item">
+                        <div class="gallery-item-preview">
+                            <iframe src="admin/manage_results.php?demo=1&theme=arcade" title="Results" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+                        </div>
+                        <div class="gallery-item-caption">Results</div>
                     </div>
                     <div class="gallery-item">
                         <div class="gallery-item-preview">
                             <iframe src="admin/manage_members.php?demo=1&theme=arcade" title="Members" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
                         </div>
                         <div class="gallery-item-caption">Members</div>
+                    </div>
+                    <div class="gallery-item">
+                        <div class="gallery-item-preview">
+                            <iframe src="admin/manage_teams.php?demo=1&theme=arcade" title="Teams" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+                        </div>
+                        <div class="gallery-item-caption">Teams</div>
                     </div>
                     <div class="gallery-item">
                         <div class="gallery-item-preview">
@@ -163,6 +175,19 @@ if (isset($_SESSION['club_id'])) {
         <p>&copy; <?php echo date('Y'); ?> StatApp. Built for board game lovers.</p>
     </footer>
 
+    <!-- Preview Modal -->
+    <div class="preview-modal-overlay" id="previewModal" aria-hidden="true">
+        <div class="preview-modal-container">
+            <div class="preview-modal-header">
+                <h3 id="previewModalTitle">Preview</h3>
+                <button type="button" class="preview-modal-close" id="previewModalClose" aria-label="Close">&times;</button>
+            </div>
+            <div class="preview-modal-body">
+                <iframe id="previewModalIframe" src="" title="Preview Modal" loading="lazy"></iframe>
+            </div>
+        </div>
+    </div>
+
     <script>
     // Gallery navigation
     const gallery = document.getElementById('galleryScroll');
@@ -178,6 +203,54 @@ if (isset($_SESSION['club_id'])) {
             gallery.scrollBy({ left: scrollAmount, behavior: 'smooth' });
         });
     }
+
+    // Modal preview behavior
+    const previewModal = document.getElementById('previewModal');
+    const previewModalIframe = document.getElementById('previewModalIframe');
+    const previewModalTitle = document.getElementById('previewModalTitle');
+    const previewModalClose = document.getElementById('previewModalClose');
+
+    function openPreviewModal(url, title) {
+        if (!previewModal || !previewModalIframe) return;
+        previewModalIframe.src = url;
+        if (previewModalTitle) previewModalTitle.textContent = title;
+        previewModal.classList.add('is-active');
+        previewModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closePreviewModal() {
+        if (!previewModal || !previewModalIframe) return;
+        previewModal.classList.remove('is-active');
+        previewModal.setAttribute('aria-hidden', 'true');
+        previewModalIframe.src = '';
+        document.body.style.overflow = '';
+    }
+
+    if (previewModalClose) {
+        previewModalClose.addEventListener('click', closePreviewModal);
+    }
+    if (previewModal) {
+        previewModal.addEventListener('click', (e) => {
+            if (e.target === previewModal) closePreviewModal();
+        });
+    }
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && previewModal && previewModal.classList.contains('is-active')) {
+            closePreviewModal();
+        }
+    });
+
+    document.querySelectorAll('.gallery-item-preview').forEach(previewEl => {
+        previewEl.addEventListener('click', () => {
+            const iframe = previewEl.querySelector('iframe');
+            const item = previewEl.closest('.gallery-item');
+            const captionEl = item ? item.querySelector('.gallery-item-caption') : null;
+            const url = iframe ? iframe.getAttribute('src') : '';
+            const title = captionEl ? captionEl.textContent.trim() : 'Preview';
+            if (url) openPreviewModal(url, title);
+        });
+    });
 
     // Club search
     const searchInput = document.getElementById('clubSearch');

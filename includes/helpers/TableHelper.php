@@ -15,7 +15,7 @@ class TableHelper {
             return;
         }
         ?>
-        <details class="card" style="margin-bottom: 1.5rem;" id="analytics-accordion">
+        <details class="card" style="margin-bottom: 1.5rem;" id="analytics-accordion" <?php echo (!isset($options['open']) || $options['open']) ? 'open' : ''; ?>>
             <summary style="cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; user-select: none; padding: 0.25rem 0;">
                 <h2 style="margin: 0; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.25rem;">
                     <span class="material-symbols-outlined" style="font-size: 1.35rem;">monitoring</span>
@@ -287,7 +287,7 @@ class TableHelper {
 
         if (empty($game_id) && empty($all_games_labels)) return;
         ?>
-        <details class="card" style="margin-bottom: 1.5rem;" id="results-analytics-accordion">
+        <details class="card" style="margin-bottom: 1.5rem;" id="results-analytics-accordion" <?php echo (!isset($options['open']) || $options['open']) ? 'open' : ''; ?>>
             <summary style="cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; user-select: none; padding: 0.25rem 0;">
                 <h2 style="margin: 0; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.25rem;">
                     <span class="material-symbols-outlined" style="font-size: 1.35rem;">monitoring</span>
@@ -378,12 +378,18 @@ class TableHelper {
 
             const colors = getThemeColors();
             const palette = [
-                colors.primary,
-                colors.accent,
-                getStyleVal('--color-success-border') || '#10b981',
-                getStyleVal('--color-warning-text') || '#f59e0b',
-                '#ec4899',
-                '#3b82f6'
+                '#2563eb', // Blue
+                '#f97316', // Orange
+                '#16a34a', // Green
+                '#9333ea', // Purple
+                '#dc2626', // Red
+                '#06b6d4', // Cyan
+                '#eab308', // Yellow
+                '#ec4899', // Pink
+                '#84cc16', // Lime
+                '#b45309', // Brown
+                '#6366f1', // Indigo
+                '#0d9488'  // Teal
             ];
 
             const gamesLabels = <?php echo json_encode($all_games_labels ?? []); ?>;
@@ -491,15 +497,15 @@ class TableHelper {
 
         $oppositeOrder = ($order === 'asc') ? 'desc' : 'asc';
         ?>
-        <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+        <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: nowrap;">
             <?php if ($isAdmin): ?>
-                <button type="button" class="btn btn--primary" id="add-member-btn" onclick="toggleAddMemberForm()" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? 'visibility:hidden;' : ''; ?>">
+                <button type="button" class="btn btn--primary" id="add-member-btn" onclick="toggleAddMemberForm()" style="white-space: nowrap; flex-shrink: 0; <?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? 'visibility:hidden;' : ''; ?>">
                     Add a Member
                 </button>
             <?php else: ?>
                 <div></div>
             <?php endif; ?>
-            <form method="GET" class="toolbar-group" id="filter-form" action="<?php echo htmlspecialchars(parse_url($baseUrl, PHP_URL_PATH)); ?>" style="margin: 0 auto; display: flex; justify-content: center;">
+            <form method="GET" class="toolbar-group" id="filter-form" action="<?php echo htmlspecialchars(parse_url($baseUrl, PHP_URL_PATH)); ?>" style="display: flex; justify-content: center; flex: 1 1 auto; max-width: 420px;">
                 <?php
                 $urlParts = parse_url($baseUrl);
                 if (!empty($urlParts['query'])) {
@@ -513,7 +519,7 @@ class TableHelper {
                 ?>
                 <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
                 <input type="hidden" name="order" value="<?php echo htmlspecialchars($order); ?>">
-                <div class="input-group">
+                <div class="input-group" style="width: 100%;">
                     <input type="text" name="search" placeholder="Search members..." value="<?php echo htmlspecialchars($search); ?>" class="form-control" oninput="clearTimeout(window.searchTimer); window.searchTimer=setTimeout(()=>this.form.submit(), 350)" <?php echo $search !== '' ? 'autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length)"' : ''; ?>>
                     <select name="status" id="status-filter" class="form-control form-control--sm" onchange="this.form.submit()">
                         <option value="all" <?php echo $statusFilter === 'all' ? 'selected' : ''; ?>>All Status</option>
@@ -523,7 +529,7 @@ class TableHelper {
                 </div>
             </form>
             <?php if ($isAdmin): ?>
-                <form method="POST" id="bulk-action-form" style="display:inline-block;">
+                <form method="POST" id="bulk-action-form" style="display: inline-block; flex-shrink: 0;">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($options['csrf_token'] ?? ''); ?>">
                     <input type="hidden" name="club_id" value="<?php echo $clubId; ?>">
                     <select name="bulk_action" id="bulk-action-select" class="form-control form-control--sm" onchange="executeBulkAction(this)">
@@ -573,7 +579,7 @@ class TableHelper {
                         </th>
                         <th>
                             <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'championships_count', 'order' => ($sort === 'championships_count' ? $oppositeOrder : 'desc'), 'search' => $search, 'status' => $statusFilter]); ?>" class="table-sort-link sort-link">
-                                <span>Championships</span>
+                                <span>Trophies</span>
                                 <?php if ($sort === 'championships_count'): ?>
                                     <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
                                 <?php endif; ?>
@@ -600,7 +606,7 @@ class TableHelper {
                                 <td data-label="Nickname"><strong><?php echo htmlspecialchars($m['nickname'] ?: 'Member'); ?></strong></td>
                                 <td data-label="Teams"><?php echo htmlspecialchars($m['member_teams'] ?? '—'); ?></td>
                                 <td data-label="Total Wins"><span class="badge badge--success"><?php echo (int)($m['total_wins'] ?? 0); ?> wins</span></td>
-                                <td data-label="Championships"><?php echo (int)($m['championships_count'] ?? 0) > 0 ? '🏆 ' . (int)$m['championships_count'] : '—'; ?></td>
+                                <td data-label="Trophies"><?php echo (int)($m['championships_count'] ?? 0) > 0 ? '🏆 ' . (int)$m['championships_count'] : '—'; ?></td>
                                 <td data-label="Status">
                                     <?php if (($m['status'] ?? 'active') === 'active'): ?>
                                         <span class="badge badge--success">Active</span>
@@ -636,23 +642,58 @@ class TableHelper {
             if (!action) return;
             const checked = document.querySelectorAll('.member-checkbox:checked');
             if (checked.length === 0) {
-                alert('Please select at least one member.');
-                selectEl.value = '';
+                if (typeof showConfirmDialog === 'function') {
+                    showConfirmDialog(null, {
+                        title: 'Selection Required',
+                        message: 'Please select at least one member to perform this action.',
+                        confirmText: 'OK',
+                        type: 'primary',
+                        onConfirm: () => { selectEl.value = ''; },
+                        onCancel: () => { selectEl.value = ''; }
+                    });
+                } else {
+                    alert('Please select at least one member.');
+                    selectEl.value = '';
+                }
                 return;
             }
-            if (action === 'bulk_delete' && !confirm('Are you sure you want to delete the selected member(s)?')) {
-                selectEl.value = '';
-                return;
+            const submitBulkAction = () => {
+                const form = document.getElementById('bulk-action-form');
+                checked.forEach(cb => {
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'selected_members[]';
+                    hidden.value = cb.value;
+                    form.appendChild(hidden);
+                });
+                form.submit();
+            };
+
+            if (action === 'bulk_delete') {
+                const count = checked.length;
+                if (typeof showConfirmDialog === 'function') {
+                    showConfirmDialog(null, {
+                        title: '⚠️ Confirm Bulk Delete',
+                        message: `Are you sure you want to delete ${count} selected member${count > 1 ? 's' : ''}?`,
+                        warningMessage: 'This action is permanent and cannot be undone.',
+                        confirmText: 'Delete Selected',
+                        cancelText: 'Cancel',
+                        type: 'danger',
+                        onConfirm: () => {
+                            submitBulkAction();
+                        },
+                        onCancel: () => {
+                            selectEl.value = '';
+                        }
+                    });
+                } else if (confirm('Are you sure you want to delete the selected member(s)?')) {
+                    submitBulkAction();
+                } else {
+                    selectEl.value = '';
+                }
+            } else {
+                submitBulkAction();
             }
-            const form = document.getElementById('bulk-action-form');
-            checked.forEach(cb => {
-                const hidden = document.createElement('input');
-                hidden.type = 'hidden';
-                hidden.name = 'selected_members[]';
-                hidden.value = cb.value;
-                form.appendChild(hidden);
-            });
-            form.submit();
         }
         </script>
         <?php endif; ?>
@@ -717,12 +758,19 @@ class TableHelper {
                     <?php else: ?>
                         <?php foreach ($teams as $team): ?>
                             <?php
-                            $members_list = array_filter([
+                            $raw_list = $team['members_list'] ?? [
                                 $team['member1_nickname'] ?? $team['m1_nick'] ?? null,
                                 $team['member2_nickname'] ?? $team['m2_nick'] ?? null,
                                 $team['member3_nickname'] ?? $team['m3_nick'] ?? null,
                                 $team['member4_nickname'] ?? $team['m4_nick'] ?? null,
-                            ]);
+                            ];
+                            $members_list = [];
+                            foreach ($raw_list as $item) {
+                                $nick = is_array($item) ? ($item['nickname'] ?? '') : (string)$item;
+                                if ($nick !== '') {
+                                    $members_list[] = $nick;
+                                }
+                            }
                             ?>
                             <tr>
                                 <td data-label="Team Name"><strong><?php echo htmlspecialchars($team['team_name']); ?></strong></td>
@@ -894,7 +942,7 @@ class TableHelper {
         ?>
         <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
             <?php if ($isAdmin): ?>
-                <button type="button" class="btn btn--primary" id="add-game-btn" onclick="toggleAddGameForm()" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? 'visibility:hidden;' : ''; ?>">
+                <button type="button" class="btn btn--primary" id="add-game-btn" onclick="toggleAddGameForm()" style="<?php echo ((isset($_POST['action']) && $_POST['action'] === 'create') || (isset($_GET['action']) && $_GET['action'] === 'add')) ? 'visibility:hidden;' : ''; ?>">
                     Add a Game
                 </button>
             <?php else: ?>
@@ -973,11 +1021,14 @@ class TableHelper {
                         <?php foreach ($games as $game): ?>
                             <tr>
                                 <td data-label="Image">
-                                    <?php if (!empty($game['game_image'])): ?>
+                                    <?php
+                                    $isDemoMode = isset($_GET['demo']) || isset($_GET['preview']);
+                                    if (!empty($game['game_image']) && !$isDemoMode):
+                                    ?>
                                         <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'], $imagePrefix)); ?>" alt="" class="game-thumbnail" loading="lazy" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
                                         <div class="game-thumbnail game-thumbnail--skeleton" style="display:none;" title="No image uploaded">🎲</div>
                                     <?php else: ?>
-                                        <div class="game-thumbnail game-thumbnail--skeleton" title="No image uploaded">🎲</div>
+                                        <div class="game-thumbnail game-thumbnail--skeleton" title="Game">🎲</div>
                                     <?php endif; ?>
                                 </td>
                                 <td data-label="Game Name" style="text-align: left;"><strong><?php echo htmlspecialchars($game['game_name']); ?></strong></td>
@@ -1147,7 +1198,7 @@ class TableHelper {
                             <?php if ($isAdmin): ?>
                                 <td data-label="Actions">
                                     <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                        <a href="edit_result.php?result_id=<?php echo $result['result_id']; ?>&type=<?php echo $result['game_type']; ?>" class="btn btn--small btn--secondary">View/Edit</a>
+                                        <a href="add_result.php?result_id=<?php echo $result['result_id']; ?>&type=<?php echo $result['game_type']; ?>" class="btn btn--small btn--secondary">View/Edit</a>
                                     </div>
                                 </td>
                             <?php endif; ?>
@@ -1171,31 +1222,65 @@ class TableHelper {
             if (!action) return;
             const checked = document.querySelectorAll('.result-checkbox:checked');
             if (checked.length === 0) {
-                alert('Please select at least one result.');
-                selectEl.value = '';
+                if (typeof showConfirmDialog === 'function') {
+                    showConfirmDialog(null, {
+                        title: 'Selection Required',
+                        message: 'Please select at least one result to perform this action.',
+                        confirmText: 'OK',
+                        type: 'primary',
+                        onConfirm: () => { selectEl.value = ''; },
+                        onCancel: () => { selectEl.value = ''; }
+                    });
+                } else {
+                    alert('Please select at least one result.');
+                    selectEl.value = '';
+                }
                 return;
             }
             if (action === 'bulk_delete') {
-                const pwd = prompt('Enter admin password to confirm bulk delete:');
-                if (!pwd) {
-                    selectEl.value = '';
-                    return;
-                }
-                const form = document.getElementById('bulk-results-form');
-                const pwdInput = document.createElement('input');
-                pwdInput.type = 'hidden';
-                pwdInput.name = 'password';
-                pwdInput.value = pwd;
-                form.appendChild(pwdInput);
+                const count = checked.length;
+                const processSubmit = (pwd) => {
+                    const form = document.getElementById('bulk-results-form');
+                    const pwdInput = document.createElement('input');
+                    pwdInput.type = 'hidden';
+                    pwdInput.name = 'password';
+                    pwdInput.value = pwd || '';
+                    form.appendChild(pwdInput);
 
-                checked.forEach(cb => {
-                    const hidden = document.createElement('input');
-                    hidden.type = 'hidden';
-                    hidden.name = 'selected_results[]';
-                    hidden.value = cb.value;
-                    form.appendChild(hidden);
-                });
-                form.submit();
+                    checked.forEach(cb => {
+                        const hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.name = 'selected_results[]';
+                        hidden.value = cb.value;
+                        form.appendChild(hidden);
+                    });
+                    form.submit();
+                };
+
+                if (typeof showConfirmDialog === 'function') {
+                    showConfirmDialog(null, {
+                        title: '⚠️ Confirm Bulk Delete',
+                        message: `Are you sure you want to delete ${count} selected result${count > 1 ? 's' : ''}?`,
+                        warningMessage: 'This action is permanent and cannot be undone.',
+                        confirmText: 'Delete Selected',
+                        cancelText: 'Cancel',
+                        type: 'danger',
+                        requirePassword: true,
+                        onConfirm: (pwd) => {
+                            processSubmit(pwd);
+                        },
+                        onCancel: () => {
+                            selectEl.value = '';
+                        }
+                    });
+                } else {
+                    const pwd = prompt('Enter admin password to confirm bulk delete:');
+                    if (!pwd) {
+                        selectEl.value = '';
+                        return;
+                    }
+                    processSubmit(pwd);
+                }
             }
         }
         </script>

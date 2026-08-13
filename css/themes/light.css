@@ -20,4 +20,5 @@ html[data-club-theme="light"] {
     --color-header-text: #1e293b;
     --sidebar-bg: #ffffff;
     --sidebar-border: #e2e8f0;
+    --select-caret-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%230f172a' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
 }

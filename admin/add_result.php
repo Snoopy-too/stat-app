@@ -9,7 +9,8 @@ require_once __DIR__ . '/../includes/NavigationHelper.php';
 require_once __DIR__ . '/../includes/helpers.php';
 ensure_game_type_column_exists($pdo);
 
-if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
+$demo = isset($_GET['demo']) || isset($_GET['preview']);
+if (!$demo && (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
     header('Location: login.php');
     exit();
 }
@@ -86,27 +87,65 @@ $stmt = $pdo->prepare('SELECT * FROM games WHERE game_id = ? AND club_id = ?');
 $stmt->execute([$game_id, $club_id]);
 $game = $stmt->fetch(PDO::FETCH_ASSOC);
 
+if (!$game && $demo) {
+    try {
+        $stmt = $pdo->query("SELECT * FROM games ORDER BY game_id ASC LIMIT 1");
+        $game = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
+    } catch (Throwable $e) {}
+    if (!$game) {
+        $game = [
+            'game_id' => 1,
+            'club_id' => 1,
+            'game_name' => 'Catan',
+            'game_type' => 'winner_losers',
+            'min_players' => 3,
+            'max_players' => 4,
+            'game_image' => ''
+        ];
+    }
+    $club_id = (int)$game['club_id'];
+    $game_id = (int)$game['game_id'];
+}
+
 if (!$game && !$is_edit) {
     header('Location: manage_games.php');
     exit();
 }
 
-$club_name = NavigationHelper::getClubName($pdo, $club_id);
+$club_name = ($demo || !NavigationHelper::getClubName($pdo, $club_id)) ? 'Meeple & Dice Club' : NavigationHelper::getClubName($pdo, $club_id);
 
 // Fetch all games for switcher dropdown
-$stmt = $pdo->prepare('SELECT game_id, game_name FROM games WHERE club_id = ? ORDER BY game_name ASC');
-$stmt->execute([$club_id]);
-$all_club_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $stmt = $pdo->prepare('SELECT game_id, game_name FROM games WHERE club_id = ? ORDER BY game_name ASC');
+    $stmt->execute([$club_id]);
+    $all_club_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    $all_club_games = [];
+}
 
 // Fetch active members
-$stmt = $pdo->prepare('SELECT m.member_id as id, m.nickname as name FROM members m WHERE m.club_id = ? AND m.status = "active" ORDER BY m.nickname ASC');
-$stmt->execute([$club_id]);
-$members = $stmt->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $stmt = $pdo->prepare('SELECT m.member_id as id, m.nickname as name FROM members m WHERE m.club_id = ? AND (m.status IS NULL OR m.status = "active") ORDER BY m.nickname ASC');
+    $stmt->execute([$club_id]);
+    $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    $members = [];
+}
 
 // Fetch active teams
-$stmt = $pdo->prepare('SELECT t.team_id as id, t.team_name as name FROM teams t WHERE t.club_id = ? ORDER BY t.team_name ASC');
-$stmt->execute([$club_id]);
-$teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $stmt = $pdo->prepare('SELECT t.team_id as id, t.team_name as name FROM teams t WHERE t.club_id = ? ORDER BY t.team_name ASC');
+    $stmt->execute([$club_id]);
+    $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    $teams = [];
+}
+
+if ($demo) {
+    $all_club_games = get_demo_data('games');
+    $members = get_demo_data('members');
+    $teams = get_demo_data('teams');
+}
 
 // Load supplementary data for edit mode
 $edit_losers = [];
@@ -212,8 +251,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $insert_stmt->execute([$result_id, $pid]);
                     }
                 } elseif ($game_type === 'teams') {
-                    $stmt = $pdo->prepare('UPDATE team_game_results SET winner = ?, place_2 = ?, played_at = ?, duration = ?, notes = ? WHERE result_id = ?');
-                    $stmt->execute([$team_winner_id, reset($team_losers) ?: null, $formatted_played_at, $duration, $notes, $result_id]);
+                    $stmt = $pdo->prepare('UPDATE team_game_results SET team_id = ?, winner = ?, place_2 = ?, played_at = ?, duration = ?, notes = ? WHERE result_id = ?');
+                    $stmt->execute([$team_winner_id, $team_winner_id, reset($team_losers) ?: null, $formatted_played_at, $duration, $notes, $result_id]);
                 } else {
                     if ($game_type === 'ranked') {
                         $places = array_pad(array_merge([$winner_id, $second_place_id], $additional_places), 8, null);
@@ -249,8 +288,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $insert_stmt->execute([$new_id, $pid]);
                     }
                 } elseif ($game_type === 'teams') {
-                    $stmt = $pdo->prepare('INSERT INTO team_game_results (game_id, session_id, winner, place_2, played_at, duration, notes) VALUES (?, ?, ?, ?, ?, ?, ?)');
-                    $stmt->execute([$game_id, $session_id, $team_winner_id, reset($team_losers) ?: null, $formatted_played_at, $duration, $notes]);
+                    $stmt = $pdo->prepare('INSERT INTO team_game_results (game_id, session_id, team_id, winner, place_2, played_at, duration, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+                    $stmt->execute([$game_id, $session_id, $team_winner_id, $team_winner_id, reset($team_losers) ?: null, $formatted_played_at, $duration, $notes]);
                 } else {
                     $places = array_pad(array_merge([$winner_id, $second_place_id], $additional_places), 8, null);
                     $stmt = $pdo->prepare('INSERT INTO game_results (game_id, session_id, member_id, winner, place_2, place_3, place_4, place_5, place_6, place_7, place_8, played_at, duration, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
@@ -349,7 +388,7 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
     </style>
 </head>
 <body class="has-sidebar">
-    <?php NavigationHelper::renderAdminSidebar('results', $club_id, $club_name); ?>
+    <?php NavigationHelper::renderAdminSidebar('new_result', $club_id, $club_name); ?>
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
@@ -580,7 +619,7 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
                     <button type="submit" class="btn btn--primary"><?php echo $is_edit ? 'Save Changes' : 'Save Result'; ?></button>
                     <a href="manage_results.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle">Back to Results</a>
                     <?php if ($is_edit): ?>
-                        <button type="button" class="btn btn--danger" style="margin-left: auto;" onclick="if(confirm('Are you sure you want to delete this result?')) document.getElementById('delete-form').submit()">Delete Result</button>
+                        <button type="button" class="btn btn--danger" style="margin-left: auto;" onclick="if (typeof showConfirmDialog === 'function') { showConfirmDialog(event, { title: '⚠️ Delete Result?', message: 'Are you sure you want to delete this result? This action cannot be undone.', confirmText: 'Delete Result', cancelText: 'Cancel', type: 'danger', onConfirm: () => document.getElementById('delete-form').submit() }); } else if (confirm('Are you sure you want to delete this result?')) { document.getElementById('delete-form').submit(); }">Delete Result</button>
                     <?php endif; ?>
                 </div>
             </form>
@@ -843,7 +882,58 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
             form.addEventListener('change', checkChanges);
         }
     });
+
     </script>
+    <?php if (!empty($demo)): ?>
+    <style>
+    html, body, body * {
+        pointer-events: none !important;
+        user-select: none !important;
+        cursor: default !important;
+    }
+    img {
+        display: none !important;
+    }
+    *:hover, *:active, *:focus, *:focus-within {
+        background: inherit !important;
+        background-color: inherit !important;
+        color: inherit !important;
+        border-color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+        transition: none !important;
+        animation: none !important;
+        outline: none !important;
+        opacity: inherit !important;
+    }
+    .sidebar__nav a:hover, .sidebar__nav a:active, .sidebar__nav a:focus,
+    .data-table tr:hover, .data-table tr:active, .data-table td:hover,
+    .btn:hover, .btn:active, .btn:focus, button:hover, button:active,
+    .form-control:hover, .form-control:active, .form-control:focus,
+    a:hover, a:active, a:focus {
+        background: transparent !important;
+        background-color: transparent !important;
+        color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+    </style>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('a, button, input, select, textarea, details, summary').forEach(el => {
+            el.setAttribute('tabindex', '-1');
+            if (el.tagName === 'BUTTON' || el.tagName === 'INPUT' || el.tagName === 'SELECT') {
+                el.setAttribute('disabled', 'disabled');
+            }
+        });
+    });
+    document.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); }, true);
+    document.addEventListener('mouseover', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseenter', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseleave', function(e) { e.stopPropagation(); }, true);
+    </script>
+    <?php endif; ?>
+    <script src="../js/confirmations.js"></script>
     <script src="../js/sidebar.js"></script>
 </body>
 </html>

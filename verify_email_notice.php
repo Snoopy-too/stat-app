@@ -7,9 +7,11 @@ if (!isset($_SESSION['registration_success'])) {
     exit;
 }
 
-// Get the message and clear it from session
+// Get the message and email, then clear them from session
 $message = $_SESSION['registration_success'];
+$email = $_SESSION['registration_email'] ?? '';
 unset($_SESSION['registration_success']);
+unset($_SESSION['registration_email']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -30,11 +32,18 @@ unset($_SESSION['registration_success']);
         <i class="fas fa-check-circle success-icon"></i>
         <h2 class="success-title">Registration Successful!</h2>
         <p class="success-message"><?php echo htmlspecialchars($message); ?></p>
-        <a href="admin/login.php" class="btn">Go to Login</a>
+        <?php if ($email): ?>
+        <p class="email-note">
+            <i class="fas fa-envelope"></i>
+            A verification email has been sent to <strong><?php echo htmlspecialchars($email); ?></strong>. Please check your inbox (and spam folder) for the verification link.
+        </p>
+        <?php else: ?>
         <p class="email-note">
             <i class="fas fa-envelope"></i>
             Please check your email for the verification link.
         </p>
+        <?php endif; ?>
+        <a href="admin/login.php" class="btn">Go to Login</a>
     </div>
 </body>
 </html>

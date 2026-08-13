@@ -117,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <?php
 $pageTitle = 'Admin Login - Board Game Club StatApp';
-$htmlAttributes = 'data-club-theme="light" data-theme="light"';
+$htmlAttributes = 'data-club-theme="light" data-theme="light" data-theme-locked';
 require_once '../includes/templates/header.php';
 ?>
 
@@ -125,9 +125,6 @@ require_once '../includes/templates/header.php';
     <a href="../index.php" class="logo-brand">
         <span>🎲</span> StatApp
     </a>
-    <div class="header-actions">
-        <a href="../register.php" class="btn btn--secondary btn--sm">Register</a>
-    </div>
 </header>
 
 <div class="landing-hero">

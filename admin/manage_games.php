@@ -36,12 +36,12 @@ if ($club_id > 0) {
     $_SESSION['club_id'] = $club_id;
 }
 
-$club_name = 'StatApp Admin';
-if ($club_id) {
+$club_name = 'Meeple & Dice Club';
+if ($club_id && !$demo) {
     try {
         $stmt = $pdo->prepare("SELECT club_name FROM clubs WHERE club_id = ?");
         $stmt->execute([$club_id]);
-        $club_name = $stmt->fetchColumn() ?: 'StatApp Admin';
+        $club_name = $stmt->fetchColumn() ?: 'Meeple & Dice Club';
     } catch (Exception $e) {}
 }
 
@@ -52,6 +52,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
         $_SESSION['error'] = "Invalid security token. Please try again.";
         header("Location: manage_games.php" . ($club_id ? "?club_id=$club_id" : ""));
+        exit();
+    }
+
+    if (isset($_POST['action']) && $_POST['action'] === 'delete' && !empty($_POST['game_id'])) {
+        $del_game_id = (int)$_POST['game_id'];
+        $post_club_id = !empty($_POST['club_id']) ? (int)$_POST['club_id'] : (int)$club_id;
+
+        try {
+            $stmt = $pdo->prepare("
+                SELECT (SELECT COUNT(*) FROM game_results WHERE game_id = ?) +
+                       (SELECT COUNT(*) FROM team_game_results WHERE game_id = ?) +
+                       (SELECT COUNT(*) FROM cooperative_game_results WHERE game_id = ?) AS total_plays
+            ");
+            $stmt->execute([$del_game_id, $del_game_id, $del_game_id]);
+            $total_plays = (int)$stmt->fetchColumn();
+
+            if ($total_plays > 0) {
+                $_SESSION['error'] = "Cannot delete game because it has existing match results.";
+            } else {
+                $stmt = $pdo->prepare("SELECT game_image FROM games WHERE game_id = ? AND club_id = ?");
+                $stmt->execute([$del_game_id, $post_club_id]);
+                $img_name = $stmt->fetchColumn();
+
+                $stmt = $pdo->prepare("DELETE FROM games WHERE game_id = ? AND club_id = ?");
+                $stmt->execute([$del_game_id, $post_club_id]);
+
+                if ($img_name && !filter_var($img_name, FILTER_VALIDATE_URL)) {
+                    $img_path = '../images/game_images/' . $img_name;
+                    if (file_exists($img_path)) {
+                        $check_img = $pdo->prepare("SELECT COUNT(*) FROM games WHERE game_image = ?");
+                        $check_img->execute([$img_name]);
+                        if ((int)$check_img->fetchColumn() === 0) {
+                            @unlink($img_path);
+                        }
+                    }
+                }
+
+                $_SESSION['success'] = "Game deleted successfully!";
+            }
+        } catch (Throwable $e) {
+            $_SESSION['error'] = "Error deleting game: " . $e->getMessage();
+        }
+        header("Location: manage_games.php" . ($post_club_id ? "?club_id=$post_club_id" : ""));
         exit();
     }
 
@@ -182,6 +225,10 @@ $stmt = $pdo->prepare($query);
 $stmt->execute($params);
 $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+if ($demo) {
+    $games = get_demo_data('games');
+}
+
 $baseUrl = 'manage_games.php?club_id=' . $club_id;
 ?>
 <!DOCTYPE html>
@@ -205,7 +252,7 @@ $baseUrl = 'manage_games.php?club_id=' . $club_id;
         <?php display_session_message('success'); ?>
         <?php display_session_message('error'); ?>
 
-        <div id="add-game-form-wrapper" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? '' : 'display:none;'; ?> margin: 1rem 0 1.25rem 0; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 0.75rem); background: var(--color-surface-muted);">
+        <div id="add-game-form-wrapper" style="<?php echo ((isset($_POST['action']) && $_POST['action'] === 'create') || (isset($_GET['action']) && $_GET['action'] === 'add')) ? '' : 'display:none;'; ?> margin: 1rem 0 1.25rem 0; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 0.75rem); background: var(--color-surface-muted);">
             <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);">Add a Game</h3>
             <form method="POST" enctype="multipart/form-data" class="form">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
@@ -214,7 +261,7 @@ $baseUrl = 'manage_games.php?club_id=' . $club_id;
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
                     <div class="form-group" style="margin-bottom:0;">
                         <label for="game_name">Game Name <span style="color:var(--color-error,#ef4444);">*</span></label>
-                        <input type="text" id="game_name" name="game_name" required placeholder="Game Name" class="form-control">
+                        <input type="text" id="game_name" name="game_name" required placeholder="Game Name" class="form-control"<?php echo ((isset($_POST['action']) && $_POST['action'] === 'create') || (isset($_GET['action']) && $_GET['action'] === 'add')) ? ' autofocus' : ''; ?>>
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
                         <label for="game_type">Game Type</label>
@@ -286,6 +333,55 @@ $baseUrl = 'manage_games.php?club_id=' . $club_id;
             }
         });
     </script>
+    <?php if (!empty($demo)): ?>
+    <style>
+    html, body, body * {
+        pointer-events: none !important;
+        user-select: none !important;
+        cursor: default !important;
+    }
+    img {
+        display: none !important;
+    }
+    *:hover, *:active, *:focus, *:focus-within {
+        background: inherit !important;
+        background-color: inherit !important;
+        color: inherit !important;
+        border-color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+        transition: none !important;
+        animation: none !important;
+        outline: none !important;
+        opacity: inherit !important;
+    }
+    .sidebar__nav a:hover, .sidebar__nav a:active, .sidebar__nav a:focus,
+    .data-table tr:hover, .data-table tr:active, .data-table td:hover,
+    .btn:hover, .btn:active, .btn:focus, button:hover, button:active,
+    .form-control:hover, .form-control:active, .form-control:focus,
+    a:hover, a:active, a:focus {
+        background: transparent !important;
+        background-color: transparent !important;
+        color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+    </style>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('a, button, input, select, textarea, details, summary').forEach(el => {
+            el.setAttribute('tabindex', '-1');
+            if (el.tagName === 'BUTTON' || el.tagName === 'INPUT' || el.tagName === 'SELECT') {
+                el.setAttribute('disabled', 'disabled');
+            }
+        });
+    });
+    document.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); }, true);
+    document.addEventListener('mouseover', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseenter', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseleave', function(e) { e.stopPropagation(); }, true);
+    </script>
+    <?php endif; ?>
     <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
 </body>

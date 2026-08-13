@@ -56,7 +56,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['success'] = "Default club preference cleared.";
         }
         
-        $redirect_url = "account.php" . (!empty($_GET['club_id']) ? "?club_id=" . (int)$_GET['club_id'] : "");
+        $active_ref = !empty($_POST['active_club_id']) ? (int)$_POST['active_club_id'] : (!empty($_GET['club_id']) ? (int)$_GET['club_id'] : 0);
+        $redirect_url = "account.php" . ($active_ref > 0 ? "?club_id=" . $active_ref : "");
         header("Location: " . $redirect_url);
         exit();
     }
@@ -390,34 +391,20 @@ $csrf_token = $security->generateCSRFToken();
                     <thead>
                         <tr>
                             <th>Club Name</th>
-                            <th class="hide-on-mobile">Created</th>
+
                             <th class="th-sideways"><span class="th-sideways-inner">Results</span></th>
                             <th class="th-sideways"><span class="th-sideways-inner">Members</span></th>
                             <th class="th-sideways"><span class="th-sideways-inner">Teams</span></th>
                             <th class="th-sideways"><span class="th-sideways-inner">Champs</span></th>
                             <th class="th-sideways"><span class="th-sideways-inner">Games</span></th>
-                            <?php if ($club_count > 1): ?>
-                                <th style="text-align:center; vertical-align:bottom; padding-bottom:0.5rem;">
-                                    <?php if ($current_default_club_id > 0): ?>
-                                        <form method="POST" style="margin:0; display:inline-block;">
-                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                                            <input type="hidden" name="action" value="set_default_club">
-                                            <input type="hidden" name="default_club_id" value="0">
-                                            <button type="submit" class="btn btn--subtle btn--small" style="font-size:0.7rem; padding:0.15rem 0.35rem; line-height:1.1; border:1px dashed var(--color-border); white-space:nowrap;" title="Uncheck default club preference">
-                                                ✖ Clear
-                                            </button>
-                                        </form>
-                                    <?php endif; ?>
-                                </th>
-                            <?php endif; ?>
-                            <th style="text-align:right;">Actions</th>
+                            <th class="actions-header"></th>
+                            <th class="th-sideways"><span class="th-sideways-inner">Default</span></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($clubs as $club): ?>
                             <?php 
                             $is_active = ($club['club_id'] == $active_club_id);
-                            $is_default = ($club['club_id'] == $current_default_club_id);
                             ?>
                             <tr class="club-row <?php echo $is_active ? 'club-row--active' : ''; ?>">
                                 <td class="club-name-cell" data-label="Club Name">
@@ -429,11 +416,11 @@ $csrf_token = $security->generateCSRFToken();
                                         <?php endif; ?>
                                         <div style="display:flex;flex-direction:column;gap:0.15rem;">
                                             <span style="font-weight:600;color:var(--color-heading);"><?php echo htmlspecialchars($club['club_name']); ?></span>
-                                            <span class="show-on-mobile-only text-xs text-muted" style="display:none;"><?php echo date('Y/m/d', strtotime($club['created_at'])); ?></span>
+
                                         </div>
                                     </div>
                                 </td>
-                                <td class="hide-on-mobile" data-label="Created" style="font-size:0.85rem;color:var(--color-text-muted);"><?php echo date('Y/m/d', strtotime($club['created_at'])); ?></td>
+
                                 <td style="text-align:center;" data-label="Results">
                                     <span class="club-stat-pill"><?php echo $club['total_plays'] ?: 0; ?></span>
                                 </td>
@@ -449,24 +436,6 @@ $csrf_token = $security->generateCSRFToken();
                                 <td style="text-align:center;" data-label="Games">
                                     <span class="club-stat-pill"><?php echo $club['game_count']; ?></span>
                                 </td>
-                                <?php if ($club_count > 1): ?>
-                                    <td style="text-align:center;" data-label="Default">
-                                        <form method="POST" style="margin:0; display:inline-flex; align-items:center; justify-content:center;" title="<?php echo $is_default ? 'Click to uncheck default club' : 'Set as default active club after login'; ?>">
-                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                                            <input type="hidden" name="action" value="set_default_club">
-                                            <input type="hidden" name="default_club_id" value="<?php echo $is_default ? 0 : $club['club_id']; ?>">
-                                            <label style="cursor:pointer; margin:0; display:inline-flex; align-items:center; gap:0.3rem; font-size:0.85rem; color:<?php echo $is_default ? 'var(--color-primary)' : 'var(--color-text-muted)'; ?>; font-weight:<?php echo $is_default ? '600' : 'normal'; ?>;">
-                                                <input type="radio" 
-                                                       name="default_club_radio" 
-                                                       value="<?php echo $club['club_id']; ?>" 
-                                                       <?php echo $is_default ? 'checked' : ''; ?>
-                                                       onclick="this.form.submit()"
-                                                       style="cursor:pointer; width:15px; height:15px; accent-color: var(--color-primary);">
-                                                Default
-                                            </label>
-                                        </form>
-                                    </td>
-                                <?php endif; ?>
                                 <td class="actions-cell" data-label="Actions" style="text-align:right;">
                                     <div style="display:flex;align-items:center;justify-content:flex-end;gap:0.5rem;">
                                         <?php if ($is_active): ?>
@@ -484,6 +453,21 @@ $csrf_token = $security->generateCSRFToken();
                                         <?php endif; ?>
                                     </div>
                                 </td>
+                                <td style="text-align:center;" data-label="Default">
+                                    <?php $is_default = ((int)$club['club_id'] === $current_default_club_id); ?>
+                                    <form method="POST" style="margin:0; display:inline-flex; align-items:center; justify-content:center;">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                                        <input type="hidden" name="action" value="set_default_club">
+                                        <input type="hidden" name="default_club_id" value="<?php echo $club['club_id']; ?>">
+                                        <input type="hidden" name="active_club_id" value="<?php echo $active_club_id; ?>">
+                                        <input type="checkbox" 
+                                               class="default-club-checkbox"
+                                               <?php echo $is_default ? 'checked' : ''; ?> 
+                                               onchange="toggleDefaultClub(this, <?php echo (int)$club['club_id']; ?>)"
+                                               title="<?php echo $is_default ? 'Uncheck to unset default' : 'Check to set as default'; ?>"
+                                               style="cursor:pointer; width:16px; height:16px; accent-color: var(--color-primary);">
+                                    </form>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -491,13 +475,13 @@ $csrf_token = $security->generateCSRFToken();
                     <tfoot>
                         <tr>
                             <td>Total (<?php echo $club_count; ?> <?php echo $club_count === 1 ? 'Club' : 'Clubs'; ?>)</td>
-                            <td class="hide-on-mobile"></td>
-                            <td style="text-align:center;"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_plays; ?></span></td>
-                            <td style="text-align:center;"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_members; ?></span></td>
-                            <td style="text-align:center;"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_teams; ?></span></td>
-                            <td style="text-align:center;"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_champions; ?></span></td>
-                            <td style="text-align:center;"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_games; ?></span></td>
-                            <td colspan="<?php echo $club_count > 1 ? 2 : 1; ?>"></td>
+                            <td style="text-align:center;" data-label="Total Results"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_plays; ?></span></td>
+                            <td style="text-align:center;" data-label="Total Members"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_members; ?></span></td>
+                            <td style="text-align:center;" data-label="Total Teams"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_teams; ?></span></td>
+                            <td style="text-align:center;" data-label="Total Champions"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_champions; ?></span></td>
+                            <td style="text-align:center;" data-label="Total Games"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_games; ?></span></td>
+                            <td></td>
+                            <td></td>
                         </tr>
                     </tfoot>
                     <?php endif; ?>
@@ -843,6 +827,18 @@ $csrf_token = $security->generateCSRFToken();
                 wrapper.style.display = 'none';
                 if (btn) btn.style.visibility = 'visible';
             }
+        }
+
+        function toggleDefaultClub(checkbox, clubId) {
+            if (checkbox.checked) {
+                document.querySelectorAll('.default-club-checkbox').forEach(cb => {
+                    if (cb !== checkbox) cb.checked = false;
+                });
+                checkbox.form.querySelector('input[name="default_club_id"]').value = clubId;
+            } else {
+                checkbox.form.querySelector('input[name="default_club_id"]').value = 0;
+            }
+            checkbox.form.submit();
         }
     </script>
     <script src="../js/dark-mode.js"></script>

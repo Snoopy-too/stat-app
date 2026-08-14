@@ -37,14 +37,6 @@ $query = "
     WHERE t.club_id = ?
 ";
 $params = [$club_id];
-if ($search !== '') {
-    $query .= " AND (t.team_name LIKE ? OR m1.nickname LIKE ? OR m2.nickname LIKE ? OR m3.nickname LIKE ? OR m4.nickname LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-}
 $query .= " ORDER BY wins DESC, t.team_name ASC";
 $stmt = $pdo->prepare($query);
 $stmt->execute($params);

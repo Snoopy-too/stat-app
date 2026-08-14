@@ -167,16 +167,17 @@ class SidebarHelper {
             .has-sidebar .header{margin-left:260px!important;width:calc(100% - 260px)!important}
             .has-sidebar .container{margin-left:calc(260px + max(1rem, (100% - 260px - var(--container-max, 75rem)) / 2))!important;margin-right:max(1rem, (100% - 260px - var(--container-max, 75rem)) / 2)!important;width:auto!important;max-width:calc(100% - 260px - 2rem)!important;}
             .has-sidebar .container--narrow{margin-left:calc(260px + max(1rem, (100% - 260px - 42rem) / 2))!important;margin-right:max(1rem, (100% - 260px - 42rem) / 2)!important;width:auto!important;}
+            .has-sidebar .container--medium{margin-left:calc(260px + max(1rem, (100% - 260px - 64rem) / 2))!important;margin-right:max(1rem, (100% - 260px - 64rem) / 2)!important;width:auto!important;}
             .has-sidebar .container--wide{margin-left:calc(260px + max(1rem, (100% - 260px - var(--container-wide, 85rem)) / 2))!important;margin-right:max(1rem, (100% - 260px - var(--container-wide, 85rem)) / 2)!important;width:auto!important;}
             .sidebar-toggle{display:none!important;background:rgba(255,255,255,0.1)!important;border:1px solid rgba(255,255,255,0.25)!important;color:#f1f5f9!important}
             .sidebar__close{display:none!important}
             .sidebar-overlay{display:none!important;position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;background:rgba(15,23,42,.5)!important;z-index:1050!important}
-            @media(max-width:768px){
+            @media(max-width:768px), (max-height:500px){
                 .sidebar{transform:translateX(-100%)!important;width:280px!important;box-shadow:4px 0 20px rgba(0,0,0,.25)!important}
                 .sidebar.sidebar--open{transform:translateX(0)!important}
                 .sidebar__close{display:flex!important}
                 .sidebar-toggle{display:flex!important}
-                .has-sidebar .header,.has-sidebar .container{margin-left:0!important;width:100%!important;max-width:100%!important}
+                .has-sidebar .header,.has-sidebar .container,.has-sidebar .container--narrow,.has-sidebar .container--medium,.has-sidebar .container--wide{margin-left:0!important;margin-right:0!important;width:100%!important;max-width:100%!important}
                 body.sidebar-open{overflow:hidden!important}
                 .sidebar-overlay.sidebar-overlay--visible{display:block!important;opacity:1!important}
             }
@@ -276,7 +277,7 @@ class SidebarHelper {
      * Render sidebar toggle button for mobile
      */
     public static function renderSidebarToggle() {
-        echo '<button class="sidebar-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar" style="align-items:center;justify-content:center;width:40px;height:40px;background:transparent;border:1px solid #e2e8f0;border-radius:0.75rem;color:#0f172a;cursor:pointer;flex-shrink:0;">';
+        echo '<button class="sidebar-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar" style="align-items:center;justify-content:center;width:40px;height:40px;background:var(--color-surface-muted, rgba(255,255,255,0.1));border:1px solid var(--color-border, rgba(255,255,255,0.2));border-radius:0.75rem;color:var(--color-heading, var(--color-text, #0f172a));cursor:pointer;flex-shrink:0;">';
         echo '<span class="sidebar-toggle__icon" style="width:20px;height:20px;display:flex;flex-direction:column;justify-content:center;gap:4px;">';
         echo '<span class="sidebar-toggle__bar" style="width:100%;height:2px;background:currentColor;border-radius:1px;"></span>';
         echo '<span class="sidebar-toggle__bar" style="width:100%;height:2px;background:currentColor;border-radius:1px;"></span>';
@@ -294,16 +295,17 @@ class SidebarHelper {
             .has-sidebar .header{margin-left:260px!important;width:calc(100% - 260px)!important}
             .has-sidebar .container{margin-left:calc(260px + max(1rem, (100% - 260px - var(--container-max, 75rem)) / 2))!important;margin-right:max(1rem, (100% - 260px - var(--container-max, 75rem)) / 2)!important;width:auto!important;max-width:calc(100% - 260px - 2rem)!important;}
             .has-sidebar .container--narrow{margin-left:calc(260px + max(1rem, (100% - 260px - 42rem) / 2))!important;margin-right:max(1rem, (100% - 260px - 42rem) / 2)!important;width:auto!important;}
+            .has-sidebar .container--medium{margin-left:calc(260px + max(1rem, (100% - 260px - 64rem) / 2))!important;margin-right:max(1rem, (100% - 260px - 64rem) / 2)!important;width:auto!important;}
             .has-sidebar .container--wide{margin-left:calc(260px + max(1rem, (100% - 260px - var(--container-wide, 85rem)) / 2))!important;margin-right:max(1rem, (100% - 260px - var(--container-wide, 85rem)) / 2)!important;width:auto!important;}
             .sidebar-toggle{display:none!important;background:rgba(255,255,255,0.1)!important;border:1px solid rgba(255,255,255,0.25)!important;color:#f1f5f9!important}
             .sidebar__close{display:none!important}
             .sidebar-overlay{display:none!important;position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;background:rgba(15,23,42,.5)!important;z-index:1050!important}
-            @media(max-width:768px){
+            @media(max-width:768px), (max-height:500px){
                 .sidebar{transform:translateX(-100%)!important;width:280px!important;box-shadow:4px 0 20px rgba(0,0,0,.25)!important}
                 .sidebar.sidebar--open{transform:translateX(0)!important}
                 .sidebar__close{display:flex!important}
                 .sidebar-toggle{display:flex!important}
-                .has-sidebar .header,.has-sidebar .container{margin-left:0!important;width:100%!important;max-width:100%!important}
+                .has-sidebar .header,.has-sidebar .container,.has-sidebar .container--narrow,.has-sidebar .container--medium,.has-sidebar .container--wide{margin-left:0!important;margin-right:0!important;width:100%!important;max-width:100%!important}
                 body.sidebar-open{overflow:hidden!important}
                 .sidebar-overlay.sidebar-overlay--visible{display:block!important;opacity:1!important}
             }

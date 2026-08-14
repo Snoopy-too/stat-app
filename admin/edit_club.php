@@ -399,8 +399,8 @@ $csrf_token = $security->generateCSRFToken();
                 </div>
                 <div class="form-actions" style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
                     <button type="submit" class="btn btn--primary">Save Changes</button>
-                    <button type="button" class="btn btn--danger" onclick="openDeleteModal()">Delete Club</button>
                     <a href="<?php echo (!empty($_GET['from']) && $_GET['from'] === 'account') ? 'account.php' : 'view_club.php?id=' . $club_id; ?>" class="btn btn--subtle">Cancel</a>
+                    <button type="button" class="btn btn--danger" style="margin-left: auto;" onclick="openDeleteModal()">Delete Club</button>
                 </div>
             </form>
         </div>

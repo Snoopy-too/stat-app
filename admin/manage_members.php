@@ -85,11 +85,6 @@ $query = "
 
 $params = [$club_id];
 
-if ($search !== '') {
-    $query .= " AND (m.member_name LIKE ? OR m.nickname LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-}
 
 if ($status_filter !== 'all') {
     $query .= " AND m.status = ?";
@@ -134,7 +129,7 @@ if ($club_id) {
                         WHERE (t.member1_id = m.member_id OR t.member2_id = m.member_id OR t.member3_id = m.member_id OR t.member4_id = m.member_id)
                     ) as tm_wins
             FROM members m
-            WHERE m.club_id = ? AND (m.status IS NULL OR m.status != 'inactive')
+            WHERE m.club_id = ? AND (m.status IS NULL OR m.status != 'inactive') AND m.member_name NOT IN ('Unknown', 'Unknown Member') AND (m.nickname IS NULL OR m.nickname NOT IN ('Unknown', 'Unknown Member'))
             ORDER BY (ind_wins + tm_wins) DESC, name ASC
             LIMIT 12
         ");
@@ -319,7 +314,7 @@ $baseUrl = 'manage_members.php?club_id=' . $club_id;
         <?php NavigationHelper::renderCompactHeader('Manage ' . $club['club_name'] . ' Members (' . count($members) . ')'); ?>
     </div>
 
-    <div class="container container--wide">
+    <div class="container container--medium">
         <?php display_session_message('success'); ?>
         <?php display_session_message('error'); ?>
 

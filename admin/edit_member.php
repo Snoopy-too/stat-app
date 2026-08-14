@@ -176,7 +176,7 @@ $coop_win_rate = $coop_total > 0 ? number_format(($coop_wins / $coop_total) * 10
         <?php NavigationHelper::renderCompactHeader('View/Edit Member', htmlspecialchars($member['member_name'])); ?>
     </div>
 
-    <div class="container container--narrow">
+    <div class="container">
         <?php display_session_message('error'); ?>
 
         <div class="card">
@@ -249,26 +249,26 @@ $coop_win_rate = $coop_total > 0 ? number_format(($coop_wins / $coop_total) * 10
         <!-- Player Statistics Summary -->
         <div style="margin-top: 1.5rem;">
             <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--color-heading);">Player Statistics</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem;">
-                <div class="card" style="padding: 1rem; text-align: center;">
-                    <div style="font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; font-weight: 600;">Total Wins</div>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--color-primary); margin-top: 0.25rem;"><?php echo $total_wins; ?></div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; align-items: stretch;">
+                <div class="card" style="padding: 0.65rem 0.5rem; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0;">
+                    <div style="font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; font-weight: 600; line-height: 1.2; white-space: nowrap;">Total Wins</div>
+                    <div style="font-size: 1.35rem; font-weight: 700; color: var(--color-primary); margin-top: 0.2rem; line-height: 1.2;"><?php echo $total_wins; ?></div>
                 </div>
-                <div class="card" style="padding: 1rem; text-align: center;">
-                    <div style="font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; font-weight: 600;">Avg. Finish</div>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--color-heading); margin-top: 0.25rem;"><?php echo $average_finish; ?></div>
+                <div class="card" style="padding: 0.65rem 0.5rem; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0;">
+                    <div style="font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; font-weight: 600; line-height: 1.2; white-space: nowrap;">Avg. Finish</div>
+                    <div style="font-size: 1.35rem; font-weight: 700; color: var(--color-heading); margin-top: 0.2rem; line-height: 1.2;"><?php echo $average_finish; ?></div>
                 </div>
-                <div class="card" style="padding: 1rem; text-align: center;">
-                    <div style="font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; font-weight: 600;">Games Played</div>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--color-heading); margin-top: 0.25rem;"><?php echo count($game_history); ?></div>
+                <div class="card" style="padding: 0.65rem 0.5rem; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0;">
+                    <div style="font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; font-weight: 600; line-height: 1.2; white-space: nowrap;">Games Played</div>
+                    <div style="font-size: 1.35rem; font-weight: 700; color: var(--color-heading); margin-top: 0.2rem; line-height: 1.2;"><?php echo count($game_history); ?></div>
                 </div>
-                <div class="card" style="padding: 1rem; text-align: center;">
-                    <div style="font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; font-weight: 600;">Co-op Win Rate</div>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--color-heading); margin-top: 0.25rem;"><?php echo $coop_win_rate; ?></div>
+                <div class="card" style="padding: 0.65rem 0.5rem; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0;">
+                    <div style="font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; font-weight: 600; line-height: 1.2; white-space: nowrap;">Co-op Win Rate</div>
+                    <div style="font-size: 1.35rem; font-weight: 700; color: var(--color-heading); margin-top: 0.2rem; line-height: 1.2;"><?php echo $coop_win_rate; ?></div>
                 </div>
-                <div class="card" style="padding: 1rem; text-align: center;">
-                    <div style="font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; font-weight: 600;">Championships</div>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: #d97706; margin-top: 0.25rem;">🏆 <?php echo $championship_count; ?></div>
+                <div class="card" style="padding: 0.65rem 0.5rem; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0;">
+                    <div style="font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; font-weight: 600; line-height: 1.2; white-space: nowrap;">Championships</div>
+                    <div style="font-size: 1.35rem; font-weight: 700; color: #d97706; margin-top: 0.2rem; line-height: 1.2;">🏆 <?php echo $championship_count; ?></div>
                 </div>
             </div>
         </div>
@@ -315,13 +315,13 @@ $coop_win_rate = $coop_total > 0 ? number_format(($coop_wins / $coop_total) * 10
                                         } else {
                                             $pos = (int)$gh['position'];
                                             if ($pos === 1) {
-                                                echo '<span class="status-badge status-active">🥇 1st Place</span>';
+                                                echo '<span style="font-weight: 600;">🥇 1st Place</span>';
                                             } elseif ($pos === 2) {
                                                 echo '<span style="font-weight: 600;">🥈 2nd Place</span>';
                                             } elseif ($pos === 3) {
                                                 echo '<span style="font-weight: 600;">🥉 3rd Place</span>';
                                             } elseif ($pos > 0) {
-                                                echo $pos . 'th Place';
+                                                echo '<span style="font-weight: 600;">' . $pos . 'th Place</span>';
                                             } else {
                                                 echo '—';
                                             }

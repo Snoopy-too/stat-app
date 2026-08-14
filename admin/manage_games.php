@@ -205,11 +205,6 @@ $query = "SELECT g.*, c.club_name,
           WHERE g.club_id = ?";
 
 $params = [$club_id];
-if ($search !== '') {
-    $query .= " AND (g.game_name LIKE ? OR g.game_type LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-}
 
 $query .= " GROUP BY g.game_id, c.club_id, c.club_name, g.game_name, g.min_players, g.max_players, g.game_type";
 

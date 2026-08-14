@@ -98,7 +98,7 @@
 .clubs-table th {
     background: var(--color-surface-muted);
     color: var(--color-heading);
-    padding: 0.625rem 0.875rem;
+    padding: 0.5rem 0.625rem;
     font-weight: var(--font-weight-semibold);
     font-size: var(--font-size-xs);
     text-transform: uppercase;
@@ -121,7 +121,7 @@
 .game-results td,
 .results-table td,
 .clubs-table td {
-    padding: 0.625rem 0.875rem;
+    padding: 0.5rem 0.625rem;
     border-bottom: 1px solid var(--color-border);
     vertical-align: middle;
     font-size: var(--font-size-sm);

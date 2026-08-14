@@ -31,11 +31,6 @@ $query = "
     WHERE m.club_id = ?
 ";
 $params = [$club_id];
-if ($search !== '') {
-    $query .= " AND (m.nickname LIKE ? OR c.champ_comments LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-}
 
 $valid_sort_columns = ['nickname', 'member_name', 'date', 'champ_comments'];
 $sort = in_array($sort, $valid_sort_columns) ? $sort : 'date';

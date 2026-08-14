@@ -46,10 +46,6 @@ $query = "
 
 $params = [$club_id];
 
-if ($search !== '') {
-    $query .= " AND (m.nickname LIKE ?)";
-    $params[] = "%$search%";
-}
 
 if ($status_filter !== 'all') {
     $query .= " AND m.status = ?";
@@ -131,6 +127,7 @@ try {
             WHERE g.club_id = ?
               AND COALESCE(gr.winner, gr.member_id) = m.member_id
               AND (m.status IS NULL OR m.status != 'inactive')
+              AND m.member_name NOT IN ('Unknown', 'Unknown Member') AND (m.nickname IS NULL OR m.nickname NOT IN ('Unknown', 'Unknown Member'))
             GROUP BY m.member_id, month_key
             ORDER BY name, month_key
         ");
@@ -174,7 +171,7 @@ $base_url_param = !empty($club['slug']) ? 'slug=' . urlencode($club['slug']) : '
         <?php NavigationHelper::renderCompactHeader('Manage ' . $club_name . ' Members (' . count($members) . ')'); ?>
     </div>
 
-    <div class="container container--wide">
+    <div class="container container--medium">
         <?php TableHelper::renderMembersAnalytics($chart_member_names, $chart_individual_wins, $chart_team_wins, $wot_labels, $wot_datasets, ['is_admin' => false]); ?>
 
         <?php

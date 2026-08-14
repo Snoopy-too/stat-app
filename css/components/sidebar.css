@@ -433,14 +433,17 @@
     background: rgba(0, 0, 0, 0.6);
 }
 
-[data-theme="dark"] .sidebar-toggle {
-    background: rgba(255, 255, 255, 0.1) !important;
-    border-color: rgba(255, 255, 255, 0.2) !important;
-    color: #f1f5f9 !important;
+[data-theme="dark"] .sidebar-toggle,
+[data-club-theme] .sidebar-toggle {
+    background: var(--color-surface-muted, rgba(255, 255, 255, 0.1)) !important;
+    border-color: var(--color-border, rgba(255, 255, 255, 0.2)) !important;
+    color: var(--color-heading, var(--color-text, #f1f5f9)) !important;
 }
 
-[data-theme="dark"] .sidebar-toggle:hover {
-    background: rgba(255, 255, 255, 0.15) !important;
+[data-theme="dark"] .sidebar-toggle:hover,
+[data-club-theme] .sidebar-toggle:hover {
+    background: var(--color-surface-alt, rgba(255, 255, 255, 0.15)) !important;
+    color: var(--color-heading, #ffffff) !important;
 }
 
 /* ==================== */

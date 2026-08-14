@@ -191,6 +191,11 @@ class TableHelper {
      * Render Results Analytics Accordion & Charts
      */
     public static function renderResultsAnalytics(array $results, array $all_games, $game_id = null, array $options = []): void {
+        $results = array_values(array_filter($results, function($r) {
+            $w = trim(str_replace(' (Team)', '', $r['winner_name'] ?? ''));
+            return !empty($w) && !in_array($w, ['Unknown', 'Unknown Member', 'Unknown Team', 'Member'], true);
+        }));
+
         $game_play_counts = [];
         $indiv_winners = [];
         $ranked_winners = [];
@@ -229,7 +234,8 @@ class TableHelper {
                 $wCounts = [];
                 foreach ($results as $res) {
                     if (($res['member_status'] ?? 'active') === 'inactive') continue;
-                    $wName = str_replace(' (Team)', '', $res['winner_name'] ?: 'Unknown');
+                    $wName = str_replace(' (Team)', '', $res['winner_name'] ?? '');
+                    if (empty($wName) || in_array($wName, ['Unknown', 'Unknown Member', 'Unknown Team', 'Member'], true)) continue;
                     $wCounts[$wName] = ($wCounts[$wName] ?? 0) + 1;
                 }
                 arsort($wCounts);
@@ -242,7 +248,8 @@ class TableHelper {
                 $game_play_counts[$gName] = ($game_play_counts[$gName] ?? 0) + 1;
 
                 $t = strtolower($res['game_type'] ?? 'winner_losers');
-                $w = $res['winner_name'] ?: 'Unknown';
+                $w = trim($res['winner_name'] ?? '');
+                $isUnknown = empty($w) || in_array($w, ['Unknown', 'Unknown Member', 'Unknown Team', 'Member'], true);
 
                 if (strpos($t, 'coop') !== false) {
                     if (stripos($w, 'WIN') !== false || stripos($w, 'VICTORY') !== false) {
@@ -252,13 +259,16 @@ class TableHelper {
                     }
                 } elseif (strpos($t, 'team') !== false) {
                     $cleanTeam = str_replace(' (Team)', '', $w);
-                    $team_winners[$cleanTeam] = ($team_winners[$cleanTeam] ?? 0) + 1;
+                    $isUnknownTeam = empty($cleanTeam) || in_array($cleanTeam, ['Unknown', 'Unknown Member', 'Unknown Team', 'Member'], true);
+                    if (!$isUnknownTeam) {
+                        $team_winners[$cleanTeam] = ($team_winners[$cleanTeam] ?? 0) + 1;
+                    }
                 } elseif (strpos($t, 'rank') !== false) {
-                    if (($res['member_status'] ?? 'active') !== 'inactive') {
+                    if (($res['member_status'] ?? 'active') !== 'inactive' && !$isUnknown) {
                         $ranked_winners[$w] = ($ranked_winners[$w] ?? 0) + 1;
                     }
                 } else {
-                    if (($res['member_status'] ?? 'active') !== 'inactive') {
+                    if (($res['member_status'] ?? 'active') !== 'inactive' && !$isUnknown) {
                         $indiv_winners[$w] = ($indiv_winners[$w] ?? 0) + 1;
                     }
                 }
@@ -497,7 +507,7 @@ class TableHelper {
 
         $oppositeOrder = ($order === 'asc') ? 'desc' : 'asc';
         ?>
-        <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: nowrap;">
+        <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
             <?php if ($isAdmin): ?>
                 <button type="button" class="btn btn--primary" id="add-member-btn" onclick="toggleAddMemberForm()" style="white-space: nowrap; flex-shrink: 0; <?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? 'visibility:hidden;' : ''; ?>">
                     Add a Member
@@ -505,48 +515,50 @@ class TableHelper {
             <?php else: ?>
                 <div></div>
             <?php endif; ?>
-            <form method="GET" class="toolbar-group" id="filter-form" action="<?php echo htmlspecialchars(parse_url($baseUrl, PHP_URL_PATH)); ?>" style="display: flex; justify-content: center; flex: 1 1 auto; max-width: 420px;">
-                <?php
-                $urlParts = parse_url($baseUrl);
-                if (!empty($urlParts['query'])) {
-                    parse_str($urlParts['query'], $queryParams);
-                    foreach ($queryParams as $k => $v) {
-                        if (!in_array($k, ['sort', 'order', 'search', 'status'])) {
-                            echo '<input type="hidden" name="' . htmlspecialchars((string)$k) . '" value="' . htmlspecialchars((string)$v) . '">';
+
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-left: auto;">
+                <form method="GET" class="toolbar-group" id="filter-form" action="<?php echo htmlspecialchars(parse_url($baseUrl, PHP_URL_PATH)); ?>" style="display: flex; gap: 0.5rem; margin: 0;">
+                    <?php
+                    $urlParts = parse_url($baseUrl);
+                    if (!empty($urlParts['query'])) {
+                        parse_str($urlParts['query'], $queryParams);
+                        foreach ($queryParams as $k => $v) {
+                            if (!in_array($k, ['sort', 'order', 'search', 'status'])) {
+                                echo '<input type="hidden" name="' . htmlspecialchars((string)$k) . '" value="' . htmlspecialchars((string)$v) . '">';
+                            }
                         }
                     }
-                }
-                ?>
-                <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
-                <input type="hidden" name="order" value="<?php echo htmlspecialchars($order); ?>">
-                <div class="input-group" style="width: 100%;">
-                    <input type="text" name="search" placeholder="Search members..." value="<?php echo htmlspecialchars($search); ?>" class="form-control" oninput="clearTimeout(window.searchTimer); window.searchTimer=setTimeout(()=>this.form.submit(), 350)" <?php echo $search !== '' ? 'autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length)"' : ''; ?>>
-                    <select name="status" id="status-filter" class="form-control form-control--sm" onchange="this.form.submit()">
-                        <option value="all" <?php echo $statusFilter === 'all' ? 'selected' : ''; ?>>All Status</option>
-                        <option value="active" <?php echo $statusFilter === 'active' ? 'selected' : ''; ?>>Active</option>
-                        <option value="inactive" <?php echo $statusFilter === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
-                    </select>
-                </div>
-            </form>
-            <?php if ($isAdmin): ?>
-                <form method="POST" id="bulk-action-form" style="display: inline-block; flex-shrink: 0;">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($options['csrf_token'] ?? ''); ?>">
-                    <input type="hidden" name="club_id" value="<?php echo $clubId; ?>">
-                    <select name="bulk_action" id="bulk-action-select" class="form-control form-control--sm" onchange="executeBulkAction(this)">
-                        <option value="">Bulk Actions</option>
-                        <option value="bulk_activate">Activate Selected</option>
-                        <option value="bulk_deactivate">Deactivate Selected</option>
-                        <option value="bulk_email">Send Email to</option>
-                        <option value="bulk_delete">Delete Selected</option>
-                    </select>
+                    ?>
+                    <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
+                    <input type="hidden" name="order" value="<?php echo htmlspecialchars($order); ?>">
+                    <div class="input-group" style="display: flex; gap: 0;">
+                        <input type="text" name="search" placeholder="Search members..." value="<?php echo htmlspecialchars($search); ?>" class="form-control" style="width: 220px;" oninput="filterTableRows(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();filterTableRows(this);}" <?php echo $search !== '' ? 'autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length)"' : ''; ?>>
+                        <select name="status" id="status-filter" class="form-control form-control--sm" onchange="this.form.submit()" style="width: 120px;">
+                            <option value="all" <?php echo $statusFilter === 'all' ? 'selected' : ''; ?>>All Status</option>
+                            <option value="active" <?php echo $statusFilter === 'active' ? 'selected' : ''; ?>>Active</option>
+                            <option value="inactive" <?php echo $statusFilter === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
+                        </select>
+                    </div>
                 </form>
-            <?php else: ?>
-                <div></div>
-            <?php endif; ?>
+
+                <?php if ($isAdmin): ?>
+                    <form method="POST" id="bulk-action-form" style="display: inline-block; margin: 0;">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($options['csrf_token'] ?? ''); ?>">
+                        <input type="hidden" name="club_id" value="<?php echo $clubId; ?>">
+                        <select name="bulk_action" id="bulk-action-select" class="form-control form-control--sm" onchange="executeBulkAction(this)" style="width: 140px;">
+                            <option value="">Bulk Actions</option>
+                            <option value="bulk_activate">Activate Selected</option>
+                            <option value="bulk_deactivate">Deactivate Selected</option>
+                            <option value="bulk_email">Send Email to</option>
+                            <option value="bulk_delete">Delete Selected</option>
+                        </select>
+                    </form>
+                <?php endif; ?>
+            </div>
         </div>
 
         <div class="table-responsive">
-            <table class="data-table">
+            <table class="data-table members-table">
                 <thead>
                     <tr>
                         <?php if ($isAdmin): ?>
@@ -709,7 +721,7 @@ class TableHelper {
         $search = $options['search'] ?? '';
         $clubId = (int)($options['club_id'] ?? 0);
         ?>
-        <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+        <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
             <?php if ($isAdmin): ?>
                 <button type="button" class="btn btn--primary" id="toggle-add-team-btn" onclick="toggleAddTeamForm()" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create_team') ? 'visibility:hidden;' : ''; ?>">
                     Add a Team
@@ -717,23 +729,25 @@ class TableHelper {
             <?php else: ?>
                 <div></div>
             <?php endif; ?>
-            <form method="GET" class="toolbar-group" id="filter-form" action="<?php echo htmlspecialchars(parse_url($baseUrl, PHP_URL_PATH)); ?>" style="margin: 0 auto; display: flex; justify-content: center;">
-                <?php
-                $urlParts = parse_url($baseUrl);
-                if (!empty($urlParts['query'])) {
-                    parse_str($urlParts['query'], $queryParams);
-                    foreach ($queryParams as $k => $v) {
-                        if (!in_array($k, ['search'])) {
-                            echo '<input type="hidden" name="' . htmlspecialchars((string)$k) . '" value="' . htmlspecialchars((string)$v) . '">';
+
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-left: auto;">
+                <form method="GET" class="toolbar-group" id="filter-form" action="<?php echo htmlspecialchars(parse_url($baseUrl, PHP_URL_PATH)); ?>" style="display: flex; gap: 0.5rem; margin: 0;">
+                    <?php
+                    $urlParts = parse_url($baseUrl);
+                    if (!empty($urlParts['query'])) {
+                        parse_str($urlParts['query'], $queryParams);
+                        foreach ($queryParams as $k => $v) {
+                            if (!in_array($k, ['search'])) {
+                                echo '<input type="hidden" name="' . htmlspecialchars((string)$k) . '" value="' . htmlspecialchars((string)$v) . '">';
+                            }
                         }
                     }
-                }
-                ?>
-                <div class="input-group">
-                    <input type="text" name="search" placeholder="Search teams..." value="<?php echo htmlspecialchars($search); ?>" class="form-control" oninput="clearTimeout(window.searchTimer); window.searchTimer=setTimeout(()=>this.form.submit(), 350)" <?php echo $search !== '' ? 'autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length)"' : ''; ?>>
-                    <a href="<?php echo htmlspecialchars($baseUrl); ?>" class="btn btn--subtle btn--small">Reset</a>
-                </div>
-            </form>
+                    ?>
+                    <div class="input-group" style="display: flex; gap: 0;">
+                        <input type="text" name="search" placeholder="Search teams..." value="<?php echo htmlspecialchars($search); ?>" class="form-control" style="width: 220px;" oninput="filterTableRows(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();filterTableRows(this);}" <?php echo $search !== '' ? 'autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length)"' : ''; ?>>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <div class="table-responsive">
@@ -813,7 +827,7 @@ class TableHelper {
 
         $oppositeOrder = ($order === 'asc') ? 'desc' : 'asc';
         ?>
-        <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+        <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
             <?php if ($isAdmin): ?>
                 <button type="button" class="btn btn--primary" id="add-champion-btn" onclick="toggleAddChampionForm()" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? 'visibility:hidden;' : ''; ?>">
                     Add Champion
@@ -821,25 +835,27 @@ class TableHelper {
             <?php else: ?>
                 <div></div>
             <?php endif; ?>
-            <form method="GET" class="toolbar-group" id="filter-form" action="<?php echo htmlspecialchars(parse_url($baseUrl, PHP_URL_PATH)); ?>" style="margin: 0 auto; display: flex; justify-content: center;">
-                <?php
-                $urlParts = parse_url($baseUrl);
-                if (!empty($urlParts['query'])) {
-                    parse_str($urlParts['query'], $queryParams);
-                    foreach ($queryParams as $k => $v) {
-                        if (!in_array($k, ['sort', 'order', 'search'])) {
-                            echo '<input type="hidden" name="' . htmlspecialchars((string)$k) . '" value="' . htmlspecialchars((string)$v) . '">';
+
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-left: auto;">
+                <form method="GET" class="toolbar-group" id="filter-form" action="<?php echo htmlspecialchars(parse_url($baseUrl, PHP_URL_PATH)); ?>" style="display: flex; gap: 0.5rem; margin: 0;">
+                    <?php
+                    $urlParts = parse_url($baseUrl);
+                    if (!empty($urlParts['query'])) {
+                        parse_str($urlParts['query'], $queryParams);
+                        foreach ($queryParams as $k => $v) {
+                            if (!in_array($k, ['sort', 'order', 'search'])) {
+                                echo '<input type="hidden" name="' . htmlspecialchars((string)$k) . '" value="' . htmlspecialchars((string)$v) . '">';
+                            }
                         }
                     }
-                }
-                ?>
-                <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
-                <input type="hidden" name="order" value="<?php echo htmlspecialchars($order); ?>">
-                <div class="input-group">
-                    <input type="text" name="search" placeholder="Search champions..." value="<?php echo htmlspecialchars($search); ?>" class="form-control" oninput="clearTimeout(window.searchTimer); window.searchTimer=setTimeout(()=>this.form.submit(), 350)" <?php echo $search !== '' ? 'autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length)"' : ''; ?>>
-                    <a href="<?php echo htmlspecialchars($baseUrl); ?>" class="btn btn--subtle btn--small">Reset</a>
-                </div>
-            </form>
+                    ?>
+                    <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
+                    <input type="hidden" name="order" value="<?php echo htmlspecialchars($order); ?>">
+                    <div class="input-group" style="display: flex; gap: 0;">
+                        <input type="text" name="search" placeholder="Search champions..." value="<?php echo htmlspecialchars($search); ?>" class="form-control" style="width: 220px;" oninput="filterTableRows(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();filterTableRows(this);}" <?php echo $search !== '' ? 'autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length)"' : ''; ?>>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <div class="table-responsive">
@@ -940,7 +956,7 @@ class TableHelper {
 
         $oppositeOrder = ($order === 'asc') ? 'desc' : 'asc';
         ?>
-        <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+        <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
             <?php if ($isAdmin): ?>
                 <button type="button" class="btn btn--primary" id="add-game-btn" onclick="toggleAddGameForm()" style="<?php echo ((isset($_POST['action']) && $_POST['action'] === 'create') || (isset($_GET['action']) && $_GET['action'] === 'add')) ? 'visibility:hidden;' : ''; ?>">
                     Add a Game
@@ -948,25 +964,27 @@ class TableHelper {
             <?php else: ?>
                 <div></div>
             <?php endif; ?>
-            <form method="GET" class="toolbar-group" id="filter-form" action="<?php echo htmlspecialchars(parse_url($baseUrl, PHP_URL_PATH)); ?>" style="margin: 0 auto; display: flex; justify-content: center;">
-                <?php
-                $urlParts = parse_url($baseUrl);
-                if (!empty($urlParts['query'])) {
-                    parse_str($urlParts['query'], $queryParams);
-                    foreach ($queryParams as $k => $v) {
-                        if (!in_array($k, ['sort', 'order', 'search'])) {
-                            echo '<input type="hidden" name="' . htmlspecialchars((string)$k) . '" value="' . htmlspecialchars((string)$v) . '">';
+
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-left: auto;">
+                <form method="GET" class="toolbar-group" id="filter-form" action="<?php echo htmlspecialchars(parse_url($baseUrl, PHP_URL_PATH)); ?>" style="display: flex; gap: 0.5rem; margin: 0;">
+                    <?php
+                    $urlParts = parse_url($baseUrl);
+                    if (!empty($urlParts['query'])) {
+                        parse_str($urlParts['query'], $queryParams);
+                        foreach ($queryParams as $k => $v) {
+                            if (!in_array($k, ['sort', 'order', 'search'])) {
+                                echo '<input type="hidden" name="' . htmlspecialchars((string)$k) . '" value="' . htmlspecialchars((string)$v) . '">';
+                            }
                         }
                     }
-                }
-                ?>
-                <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
-                <input type="hidden" name="order" value="<?php echo htmlspecialchars($order); ?>">
-                <div class="input-group">
-                    <input type="text" name="search" placeholder="Search games..." value="<?php echo htmlspecialchars($search); ?>" class="form-control" oninput="clearTimeout(window.searchTimer); window.searchTimer=setTimeout(()=>this.form.submit(), 350)" <?php echo $search !== '' ? 'autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length)"' : ''; ?>>
-                    <a href="<?php echo htmlspecialchars($baseUrl); ?>" class="btn btn--subtle btn--small">Reset</a>
-                </div>
-            </form>
+                    ?>
+                    <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
+                    <input type="hidden" name="order" value="<?php echo htmlspecialchars($order); ?>">
+                    <div class="input-group" style="display: flex; gap: 0;">
+                        <input type="text" name="search" placeholder="Search games..." value="<?php echo htmlspecialchars($search); ?>" class="form-control" style="width: 220px;" oninput="filterTableRows(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();filterTableRows(this);}" <?php echo $search !== '' ? 'autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length)"' : ''; ?>>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <div class="table-responsive">
@@ -1057,6 +1075,11 @@ class TableHelper {
      * Render Results Table
      */
     public static function renderResultsTable(array $results, array $all_games, array $options = []): void {
+        $results = array_values(array_filter($results, function($r) {
+            $w = trim(str_replace(' (Team)', '', $r['winner_name'] ?? ''));
+            return !empty($w) && !in_array($w, ['Unknown', 'Unknown Member', 'Unknown Team', 'Member'], true);
+        }));
+
         $isAdmin = !empty($options['is_admin']);
         $baseUrl = $options['base_url'] ?? '';
         $sort = $options['sort'] ?? 'played_at';
@@ -1066,49 +1089,54 @@ class TableHelper {
 
         $oppositeOrder = ($order === 'asc') ? 'desc' : 'asc';
         ?>
-        <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+        <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
             <?php if ($isAdmin): ?>
-                <a href="<?php echo $gameId ? 'add_result.php?club_id=' . $clubId . '&game_id=' . $gameId : 'club_new_results.php?club_id=' . $clubId; ?>" class="btn btn--primary">
+                <a href="<?php echo $gameId ? 'add_result.php?club_id=' . $clubId . '&game_id=' . $gameId : 'club_new_results.php?club_id=' . $clubId; ?>" class="btn btn--primary" style="white-space: nowrap; flex-shrink: 0;">
                     Add Result
                 </a>
             <?php else: ?>
                 <div></div>
             <?php endif; ?>
-            <form method="GET" class="toolbar-group" id="filter-form" action="<?php echo htmlspecialchars(parse_url($baseUrl, PHP_URL_PATH)); ?>" style="margin: 0 auto; display: flex; justify-content: center;">
-                <?php
-                $urlParts = parse_url($baseUrl);
-                if (!empty($urlParts['query'])) {
-                    parse_str($urlParts['query'], $queryParams);
-                    foreach ($queryParams as $k => $v) {
-                        if (!in_array($k, ['game_id', 'sort', 'order'])) {
-                            echo '<input type="hidden" name="' . htmlspecialchars((string)$k) . '" value="' . htmlspecialchars((string)$v) . '">';
+
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-left: auto;">
+                <form method="GET" class="toolbar-group" id="filter-form" action="<?php echo htmlspecialchars(parse_url($baseUrl, PHP_URL_PATH)); ?>" style="display: flex; gap: 0.5rem; margin: 0;">
+                    <?php
+                    $urlParts = parse_url($baseUrl);
+                    if (!empty($urlParts['query'])) {
+                        parse_str($urlParts['query'], $queryParams);
+                        foreach ($queryParams as $k => $v) {
+                            if (!in_array($k, ['game_id', 'sort', 'order', 'search'])) {
+                                echo '<input type="hidden" name="' . htmlspecialchars((string)$k) . '" value="' . htmlspecialchars((string)$v) . '">';
+                            }
                         }
                     }
-                }
-                ?>
-                <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
-                <input type="hidden" name="order" value="<?php echo htmlspecialchars($order); ?>">
-                <select name="game_id" class="form-control form-control--sm" onchange="this.form.submit()" style="max-width: 220px;">
-                    <option value="">All Games</option>
-                    <?php foreach ($all_games as $g_opt): ?>
-                        <option value="<?php echo $g_opt['game_id']; ?>" <?php echo ($gameId == $g_opt['game_id']) ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($g_opt['game_name']); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </form>
-            <?php if ($isAdmin): ?>
-                <form method="POST" id="bulk-results-form" style="display:inline-block;">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($options['csrf_token'] ?? ''); ?>">
-                    <input type="hidden" name="club_id" value="<?php echo $clubId; ?>">
-                    <select name="bulk_action" id="bulk-results-select" class="form-control form-control--sm" onchange="executeBulkResultsAction(this)">
-                        <option value="">Bulk Actions</option>
-                        <option value="bulk_delete">Delete Selected</option>
-                    </select>
+                    ?>
+                    <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
+                    <input type="hidden" name="order" value="<?php echo htmlspecialchars($order); ?>">
+                    <div class="input-group" style="display: flex; gap: 0;">
+                        <input type="text" name="search" placeholder="Search results..." class="form-control" style="width: 220px;" oninput="filterTableRows(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();filterTableRows(this);}">
+                        <select name="game_id" class="form-control form-control--sm" onchange="this.form.submit()" style="width: 140px;">
+                            <option value="">All Games</option>
+                            <?php foreach ($all_games as $g_opt): ?>
+                                <option value="<?php echo $g_opt['game_id']; ?>" <?php echo ($gameId == $g_opt['game_id']) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($g_opt['game_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </form>
-            <?php else: ?>
-                <div></div>
-            <?php endif; ?>
+
+                <?php if ($isAdmin): ?>
+                    <form method="POST" id="bulk-results-form" style="display: inline-block; margin: 0;">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($options['csrf_token'] ?? ''); ?>">
+                        <input type="hidden" name="club_id" value="<?php echo $clubId; ?>">
+                        <select name="bulk_action" id="bulk-results-select" class="form-control form-control--sm" onchange="executeBulkResultsAction(this)" style="width: 140px;">
+                            <option value="">Bulk Actions</option>
+                            <option value="bulk_delete">Delete Selected</option>
+                        </select>
+                    </form>
+                <?php endif; ?>
+            </div>
         </div>
 
         <div class="table-responsive">
@@ -1308,3 +1336,26 @@ class TableHelper {
         return $path . (!empty($existing) ? '?' . http_build_query($existing) : '');
     }
 }
+?>
+<script>
+if (typeof filterTableRows !== 'function') {
+    function filterTableRows(input) {
+        const query = input.value.toLowerCase().trim();
+        const parent = input.closest('.card-toolbar')?.parentElement || input.closest('.card, .container, body') || document;
+        const table = parent.querySelector('.data-table, table');
+        if (!table) return;
+
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            if (row.cells.length === 1 && (row.cells[0].getAttribute('colspan') || row.classList.contains('no-results-row'))) return;
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
+        });
+    }
+}
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('input[name="search"]').forEach(input => {
+        if (input.value) filterTableRows(input);
+    });
+});
+</script>

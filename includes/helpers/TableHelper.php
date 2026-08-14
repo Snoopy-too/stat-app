@@ -14,8 +14,10 @@ class TableHelper {
         if (empty($chart_member_names)) {
             return;
         }
+        $isDemo = isset($_GET['demo']) || isset($_GET['preview']);
+        $isOpen = $isDemo || (!isset($options['open']) || $options['open']);
         ?>
-        <details class="card" style="margin-bottom: 1.5rem;" id="analytics-accordion" <?php echo (!isset($options['open']) || $options['open']) ? 'open' : ''; ?>>
+        <details class="card" style="margin-bottom: 1.5rem;" id="analytics-accordion" <?php echo $isOpen ? 'open' : ''; ?>>
             <summary style="cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; user-select: none; padding: 0.25rem 0;">
                 <h2 style="margin: 0; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.25rem;">
                     <span class="material-symbols-outlined" style="font-size: 1.35rem;">monitoring</span>
@@ -161,26 +163,37 @@ class TableHelper {
 
             const accordion = document.getElementById('analytics-accordion');
             if (accordion) {
-                const savedState = sessionStorage.getItem('member_analytics_open');
-                if (savedState === 'true') {
+                const isPreview = new URLSearchParams(window.location.search).has('demo') || 
+                                  new URLSearchParams(window.location.search).has('preview') || 
+                                  window.self !== window.top;
+                if (isPreview) {
                     accordion.open = true;
                     setTimeout(() => {
                         barChart && barChart.resize();
                         lineChart && lineChart.resize();
                     }, 50);
-                } else if (savedState === 'false') {
-                    accordion.open = false;
-                }
-
-                accordion.addEventListener('toggle', function() {
-                    sessionStorage.setItem('member_analytics_open', this.open ? 'true' : 'false');
-                    if (this.open) {
+                } else {
+                    const savedState = sessionStorage.getItem('member_analytics_open');
+                    if (savedState === 'true') {
+                        accordion.open = true;
                         setTimeout(() => {
                             barChart && barChart.resize();
                             lineChart && lineChart.resize();
                         }, 50);
+                    } else if (savedState === 'false') {
+                        accordion.open = false;
                     }
-                });
+
+                    accordion.addEventListener('toggle', function() {
+                        sessionStorage.setItem('member_analytics_open', this.open ? 'true' : 'false');
+                        if (this.open) {
+                            setTimeout(() => {
+                                barChart && barChart.resize();
+                                lineChart && lineChart.resize();
+                            }, 50);
+                        }
+                    });
+                }
             }
         })();
         </script>
@@ -296,8 +309,10 @@ class TableHelper {
         }
 
         if (empty($game_id) && empty($all_games_labels)) return;
+        $isDemo = isset($_GET['demo']) || isset($_GET['preview']);
+        $isOpen = $isDemo || (!isset($options['open']) || $options['open']);
         ?>
-        <details class="card" style="margin-bottom: 1.5rem;" id="results-analytics-accordion" <?php echo (!isset($options['open']) || $options['open']) ? 'open' : ''; ?>>
+        <details class="card" style="margin-bottom: 1.5rem;" id="results-analytics-accordion" <?php echo $isOpen ? 'open' : ''; ?>>
             <summary style="cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; user-select: none; padding: 0.25rem 0;">
                 <h2 style="margin: 0; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.25rem;">
                     <span class="material-symbols-outlined" style="font-size: 1.35rem;">monitoring</span>
@@ -469,24 +484,34 @@ class TableHelper {
 
             const accordion = document.getElementById('results-analytics-accordion');
             if (accordion) {
-                const savedState = sessionStorage.getItem('results_analytics_open');
-                if (savedState === 'true') {
+                const isPreview = new URLSearchParams(window.location.search).has('demo') || 
+                                  new URLSearchParams(window.location.search).has('preview') || 
+                                  window.self !== window.top;
+                if (isPreview) {
                     accordion.open = true;
                     setTimeout(() => {
                         charts.forEach(c => c && c.resize());
                     }, 50);
-                } else if (savedState === 'false') {
-                    accordion.open = false;
-                }
-
-                accordion.addEventListener('toggle', function() {
-                    sessionStorage.setItem('results_analytics_open', this.open ? 'true' : 'false');
-                    if (this.open) {
+                } else {
+                    const savedState = sessionStorage.getItem('results_analytics_open');
+                    if (savedState === 'true') {
+                        accordion.open = true;
                         setTimeout(() => {
                             charts.forEach(c => c && c.resize());
                         }, 50);
+                    } else if (savedState === 'false') {
+                        accordion.open = false;
                     }
-                });
+
+                    accordion.addEventListener('toggle', function() {
+                        sessionStorage.setItem('results_analytics_open', this.open ? 'true' : 'false');
+                        if (this.open) {
+                            setTimeout(() => {
+                                charts.forEach(c => c && c.resize());
+                            }, 50);
+                        }
+                    });
+                }
             }
         })();
         </script>

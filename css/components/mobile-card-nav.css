@@ -1,0 +1,155 @@
+/* Mobile Card Navigation */
+
+.mobile-card-nav {
+    display: none;
+    /* Hidden by default on desktop */
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--space-3);
+    padding: var(--space-4) 0;
+    margin-bottom: var(--space-4);
+}
+
+/* Show card nav on mobile, hide regular nav */
+@media (max-width: 768px) {
+    .mobile-card-nav {
+        display: grid;
+    }
+
+    .main-nav {
+        display: none;
+    }
+}
+
+.nav-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4) var(--space-3);
+    background: var(--surface-secondary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    min-height: 100px;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--primary);
+    transform: scaleX(0);
+    transition: transform 0.2s ease;
+}
+
+.nav-card:hover,
+.nav-card:focus {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.nav-card:hover::before,
+.nav-card:focus::before {
+    transform: scaleX(1);
+}
+
+.nav-card:active {
+    transform: translateY(0);
+}
+
+.nav-card--active {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    border-width: 3px;
+}
+
+.nav-card--active::before {
+    transform: scaleX(1);
+}
+
+.nav-card__icon {
+    font-size: 2rem;
+    margin-bottom: var(--space-2);
+    line-height: 1;
+}
+
+.nav-card__label {
+    font-size: var(--font-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: center;
+    line-height: 1.2;
+}
+
+.nav-card:hover .nav-card__label,
+.nav-card:focus .nav-card__label {
+    color: var(--primary);
+}
+
+.nav-card--active .nav-card__label {
+    color: var(--primary);
+}
+
+/* Ensure cards are touch-friendly */
+@media (hover: none) {
+    .nav-card {
+        min-height: 110px;
+    }
+}
+
+/* Adjust grid for very small screens */
+@media (max-width: 480px) {
+    .mobile-card-nav {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-2);
+    }
+
+    .nav-card {
+        min-height: 90px;
+        padding: var(--space-3) var(--space-2);
+    }
+
+    .nav-card__icon {
+        font-size: 1.75rem;
+        margin-bottom: var(--space-1);
+    }
+
+    .nav-card__label {
+        font-size: var(--font-xs);
+    }
+}
+
+/* Dark mode support */
+[data-theme="dark"] .nav-card {
+    background: var(--surface-elevated);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .nav-card:hover,
+[data-theme="dark"] .nav-card:focus {
+    background: var(--surface-secondary);
+    border-color: var(--primary-light);
+}
+
+[data-theme="dark"] .nav-card--active {
+    background: var(--surface-secondary);
+    border-color: var(--primary-light);
+}
+
+[data-theme="dark"] .nav-card__label {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .nav-card:hover .nav-card__label,
+[data-theme="dark"] .nav-card:focus .nav-card__label,
+[data-theme="dark"] .nav-card--active .nav-card__label {
+    color: var(--primary-light);
+}

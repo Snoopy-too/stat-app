@@ -1,0 +1,290 @@
+<?php
+/**
+ * Club New Results - Select a game to add results for
+ * Shows game cards for a specific club
+ */
+
+session_start();
+require_once '../config/database.php';
+require_once '../includes/helpers.php';
+require_once '../includes/NavigationHelper.php';
+
+$demo = isset($_GET['demo']) || isset($_GET['preview']);
+if (!$demo && (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
+    header("Location: login.php");
+    exit();
+}
+
+$club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
+
+if ($demo) {
+    $club_id = 1;
+    $club = get_demo_data('club');
+    $games = get_demo_data('games');
+} else {
+    if (!$club_id && !empty($_SESSION['current_club_id'])) {
+        $club_id = (int)$_SESSION['current_club_id'];
+    }
+    if (!$club_id && !empty($_SESSION['club_id'])) {
+        $club_id = (int)$_SESSION['club_id'];
+    }
+
+    if (!$club_id) {
+        $_SESSION['error'] = "Please create a club first.";
+        header("Location: account.php");
+        exit();
+    }
+
+    $stmt = $pdo->prepare("SELECT * FROM clubs WHERE club_id = ?");
+    $stmt->execute([$club_id]);
+    $club = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$club) {
+        $_SESSION['error'] = "Club not found or access denied.";
+        header("Location: account.php");
+        exit();
+    }
+
+    $games = [];
+    try {
+        $stmt = $pdo->prepare("
+            SELECT g.*,
+                   (SELECT COUNT(DISTINCT session_id) FROM game_results WHERE game_id = g.game_id) +
+                   (SELECT COUNT(DISTINCT session_id) FROM team_game_results WHERE game_id = g.game_id) +
+                   (SELECT COUNT(DISTINCT session_id) FROM cooperative_game_results WHERE game_id = g.game_id) as play_count
+            FROM games g
+            WHERE g.club_id = ?
+            ORDER BY g.game_name ASC
+        ");
+        $stmt->execute([$club_id]);
+        $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {}
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Game - <?php echo htmlspecialchars($club['club_name']); ?> - StatApp</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/dark-mode.js"></script>
+    <style>
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1.25rem;
+            padding: 1rem 0;
+        }
+        .game-card {
+            background: var(--card-bg, #fff);
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .game-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        .game-card__image {
+            width: 100%;
+            height: 140px;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .game-card__image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .game-card__placeholder {
+            font-size: 3rem;
+            opacity: 0.4;
+        }
+        .game-card__content {
+            padding: 1rem;
+        }
+        .game-card__name {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0 0 0.25rem;
+            color: var(--text-primary, #1e293b);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .game-card__meta {
+            font-size: 0.75rem;
+            color: var(--text-secondary, #64748b);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .game-card__plays {
+            background: var(--bg-tertiary, #f1f5f9);
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 500;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary, #64748b);
+            text-decoration: none;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+        .back-link:hover {
+            color: var(--text-primary, #1e293b);
+        }
+        .page-intro {
+            margin-bottom: 1.5rem;
+        }
+        .page-intro p {
+            color: var(--text-secondary, #64748b);
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="has-sidebar">
+    <?php NavigationHelper::renderAdminSidebar('new_result', $club_id, $club['club_name']); ?>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader('Add Game Result (' . $club['club_name'] . ')'); ?>
+    </div>
+
+    <div class="container">
+        <?php display_session_message('error'); ?>
+        <?php display_session_message('success'); ?>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: var(--spacing-4);">
+            <?php if (!empty($games)): ?>
+                <div style="flex: 1; min-width: 200px; max-width: 350px;">
+                    <input type="text" id="gameSearchInput" class="form-control" placeholder="Search games..." aria-label="Search games">
+                </div>
+            <?php endif; ?>
+            <a href="manage_games.php?club_id=<?php echo $club_id; ?>&action=add" class="btn btn--primary">
+                Add a Game
+            </a>
+        </div>
+
+        <?php if (empty($games)): ?>
+            <div class="card">
+                <div class="empty-state" style="text-align: center; padding: 3rem;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">🎲</div>
+                    <h3 style="margin: 0 0 0.5rem;">No Games Yet</h3>
+                    <p style="color: var(--text-secondary); margin: 0 0 1.5rem;">Add some games to your club before recording results.</p>
+                    <a href="manage_games.php?club_id=<?php echo $club_id; ?>&action=add" class="btn">Add Games</a>
+                </div>
+            </div>
+        <?php else: ?>
+            <div class="game-grid" id="gameGrid">
+                <?php foreach ($games as $game): ?>
+                    <a href="add_result.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game['game_id']; ?>" class="game-card">
+                        <div class="game-card__image">
+                            <?php if (!empty($game['game_image'])): ?>
+                                <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'], '../')); ?>" alt="<?php echo htmlspecialchars($game['game_name']); ?>" loading="lazy" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
+                                <span class="game-card__placeholder" style="display:none;">🎲</span>
+                            <?php else: ?>
+                                <span class="game-card__placeholder">🎲</span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="game-card__content">
+                            <h3 class="game-card__name" title="<?php echo htmlspecialchars($game['game_name']); ?>">
+                                <?php echo htmlspecialchars($game['game_name']); ?>
+                            </h3>
+                            <div class="game-card__meta">
+                                <span><?php echo $game['min_players']; ?>-<?php echo $game['max_players']; ?> players</span>
+                                <span class="game-card__plays"><?php echo $game['play_count']; ?> plays</span>
+                            </div>
+                        </div>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+            <div id="noSearchMatch" class="card" style="display: none; text-align: center; padding: 2rem; margin-top: 1rem;">
+                <p style="color: var(--text-secondary, #64748b); margin: 0;">No games match your search.</p>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <script src="../js/sidebar.js"></script>
+    <script>
+        document.getElementById('gameSearchInput')?.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.game-card');
+            let visibleCount = 0;
+            cards.forEach(card => {
+                const name = (card.querySelector('.game-card__name')?.textContent || card.textContent).toLowerCase();
+                if (name.includes(query)) {
+                    card.style.display = '';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            const noMatch = document.getElementById('noSearchMatch');
+            if (noMatch) {
+                noMatch.style.display = (visibleCount === 0 && query !== '') ? 'block' : 'none';
+            }
+        });
+    </script>
+    <?php if (!empty($demo)): ?>
+    <style>
+    html, body, body * {
+        pointer-events: none !important;
+        user-select: none !important;
+        cursor: default !important;
+    }
+    img:not(.game-card__image img) {
+        display: none !important;
+    }
+    *:hover, *:active, *:focus, *:focus-within {
+        background: inherit !important;
+        background-color: inherit !important;
+        color: inherit !important;
+        border-color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+        transition: none !important;
+        animation: none !important;
+        outline: none !important;
+        opacity: inherit !important;
+    }
+    .sidebar__nav a:hover, .sidebar__nav a:active, .sidebar__nav a:focus,
+    .btn:hover, .btn:active, .btn:focus, button:hover, button:active,
+    .form-control:hover, .form-control:active, .form-control:focus,
+    a:hover, a:active, a:focus, .game-card:hover {
+        background: transparent !important;
+        background-color: transparent !important;
+        color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+    </style>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('a, button, input, select, textarea, details, summary').forEach(el => {
+            el.setAttribute('tabindex', '-1');
+            if (el.tagName === 'BUTTON' || el.tagName === 'INPUT' || el.tagName === 'SELECT') {
+                el.setAttribute('disabled', 'disabled');
+            }
+        });
+    });
+    document.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); }, true);
+    document.addEventListener('mouseover', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseenter', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseleave', function(e) { e.stopPropagation(); }, true);
+    </script>
+    <?php endif; ?>
+</body>
+</html>

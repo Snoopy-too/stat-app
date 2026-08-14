@@ -1,0 +1,8 @@
+Options -Indexes
+Order allow,deny
+Allow from all
+
+<FilesMatch "\.(jpg|jpeg|png|gif)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>

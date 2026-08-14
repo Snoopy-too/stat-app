@@ -1,0 +1,172 @@
+/* Modern Navigation Styles - 2025 Edition */
+
+/* Main Navigation Container */
+.main-nav,
+.admin-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    padding: var(--spacing-3) clamp(1.5rem, 4vw, 3rem);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+}
+
+/* Navigation Links */
+.nav-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-2) var(--spacing-4);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+/* Hover State */
+.nav-link:hover {
+    color: var(--color-text);
+    background: var(--color-surface-muted);
+}
+
+/* Active State */
+.nav-link.active {
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Active Indicator - Modern underline effect */
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: var(--spacing-2);
+    right: var(--spacing-2);
+    height: 2px;
+    background: var(--color-primary);
+    border-radius: 2px 2px 0 0;
+}
+
+/* Focus State for Accessibility */
+.nav-link:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* Navigation Icons - Optional, subtle, and properly sized */
+.nav-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+.nav-link:hover .nav-icon,
+.nav-link.active .nav-icon {
+    opacity: 1;
+}
+
+/* Context Bar - positioned below navigation */
+.context-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    padding: var(--spacing-3) clamp(1.5rem, 4vw, 3rem);
+    background: var(--color-surface-muted);
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--font-size-sm);
+}
+
+.context-label {
+    color: var(--color-text-muted);
+    font-weight: var(--font-weight-medium);
+}
+
+.context-value {
+    color: var(--color-text);
+}
+
+.context-link {
+    margin-left: auto;
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: var(--font-weight-medium);
+    transition: color var(--transition-fast);
+}
+
+.context-link:hover {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+}
+
+/* Responsive Navigation */
+@media (max-width: 48rem) {
+    .main-nav,
+    .admin-nav {
+        overflow-x: auto;
+        scrollbar-width: thin;
+        padding: var(--spacing-2) var(--spacing-4);
+        gap: var(--spacing-1);
+    }
+
+    .nav-link {
+        padding: var(--spacing-2) var(--spacing-3);
+        font-size: var(--font-size-xs);
+    }
+
+    /* Hide icons on very small screens for space */
+    .nav-icon {
+        display: none;
+    }
+
+    .context-bar {
+        flex-wrap: wrap;
+        padding: var(--spacing-2) var(--spacing-4);
+    }
+
+    .context-link {
+        margin-left: 0;
+        width: 100%;
+        margin-top: var(--spacing-2);
+    }
+}
+
+/* Dark Mode Support */
+[data-theme="dark"] .nav-link {
+    color: var(--color-text-secondary);
+}
+
+[data-theme="dark"] .nav-link:hover {
+    color: var(--color-text);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .nav-link.active {
+    color: var(--color-primary-light);
+    background: rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="dark"] .context-bar {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* Loading State - Optional smooth transition */
+.nav-link[aria-busy="true"] {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Navigation Separator - Optional visual grouping */
+.nav-separator {
+    width: 1px;
+    height: 1.5rem;
+    background: var(--color-border);
+    margin: 0 var(--spacing-2);
+}

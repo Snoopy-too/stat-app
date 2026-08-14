@@ -1,0 +1,336 @@
+.page-header {
+    background: var(--color-header-bg);
+    color: var(--color-header-text);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--spacing-3);
+    padding: 0 clamp(1rem, 3vw, 2rem);
+    height: var(--header-height);
+
+    /* Glassmorphism */
+    background: var(--color-header-bg);
+    backdrop-filter: blur(var(--header-backdrop-blur));
+    -webkit-backdrop-filter: blur(var(--header-backdrop-blur));
+    border-bottom: 1px solid var(--color-border);
+    /* Subtle border */
+
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    transition: background-color var(--transition-medium), box-shadow var(--transition-medium);
+}
+
+/* Add shadow on scroll (handled by JS usually, but default here) */
+.header.is-scrolled {
+    box-shadow: var(--shadow-sm);
+    background: var(--color-header-bg);
+}
+
+.header h1 {
+    margin: 0;
+    font-size: clamp(1.125rem, 1.5vw, 1.35rem);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-header-text);
+    letter-spacing: -0.02em;
+}
+
+.header-actions,
+.header-subtitle,
+.compact-header__subtitle,
+.compact-header__actions {
+    display: none !important;
+}
+
+.header--compact .header-actions {
+    display: flex !important;
+    align-items: center;
+    gap: var(--spacing-2);
+    margin-left: auto;
+}
+
+.container {
+    width: min(var(--container-max), 100% - var(--spacing-4));
+    margin: var(--spacing-4) auto;
+    padding: var(--spacing-4);
+
+    /* Prevent overflow on Safari Private Mode */
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.container--narrow {
+    width: min(42rem, 100% - var(--spacing-4));
+}
+
+.container--medium {
+    width: min(64rem, 100% - var(--spacing-4));
+}
+
+.container--wide {
+    width: min(var(--container-wide), 100% - var(--spacing-4));
+}
+
+.container--flush {
+    padding: var(--spacing-2);
+}
+
+.page-section {
+    margin-bottom: var(--spacing-5);
+}
+
+.page-section:last-child {
+    margin-bottom: 0;
+}
+
+.grid {
+    display: grid;
+    gap: var(--spacing-4);
+}
+
+.grid--columns-2 {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+}
+
+.grid--columns-3 {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+}
+
+.results-pie-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1.25rem;
+}
+
+.results-pie-grid > div {
+    grid-column: span 12;
+}
+
+@media (min-width: 480px) and (orientation: landscape), (min-width: 568px) {
+    .results-pie-grid > div {
+        grid-column: span 6;
+    }
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: var(--spacing-3);
+}
+
+.sales-pitch ul {
+    margin-top: var(--spacing-2);
+    margin-bottom: var(--spacing-2);
+}
+
+.page-actions {
+    display: flex;
+    gap: var(--spacing-2);
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: var(--spacing-4);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 62rem) {
+    .container {
+        margin: var(--spacing-3) auto;
+    }
+}
+
+@media (max-width: 48rem) {
+    .header {
+        height: auto;
+        min-height: var(--header-height);
+        padding: var(--spacing-3) var(--spacing-4);
+        flex-direction: row;
+        /* Keep row for mobile menu toggle */
+    }
+
+    .header-title-group {
+        flex: 1;
+    }
+
+    .header h1 {
+        font-size: 1.25rem;
+    }
+
+    .container {
+        width: 100%;
+        margin: 0;
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+        background: transparent;
+        padding: var(--spacing-4);
+    }
+
+    /* On mobile, cards inside container should handle the surface look */
+    .container>.card {
+        box-shadow: var(--shadow-sm);
+    }
+}
+
+/* Mobile Navigation Menu */
+.mobile-menu-toggle {
+    display: none;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    margin-left: var(--spacing-3);
+    transition: background-color var(--transition-fast);
+}
+
+.mobile-menu-toggle:hover {
+    background-color: var(--color-surface-muted);
+}
+
+.mobile-menu-toggle:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+@media (max-width: 48rem) {
+    .mobile-menu-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 40px;
+        width: 40px;
+    }
+
+    .header-actions {
+        order: 10;
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--spacing-2);
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height var(--transition-medium), opacity var(--transition-medium);
+        opacity: 0;
+    }
+
+    .header-actions.mobile-menu-open {
+        max-height: 500px;
+        opacity: 1;
+        padding-top: var(--spacing-4);
+        padding-bottom: var(--spacing-2);
+        border-top: 1px solid var(--color-border);
+        margin-top: var(--spacing-2);
+    }
+
+    .header-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .header {
+        flex-wrap: wrap;
+    }
+
+    /* Keep header-actions visible on compact headers & theme toggle headers */
+    .header--compact .header-actions,
+    .landing-header .header-actions,
+    .header-actions:has([data-theme-toggle]),
+    .header-actions:has(.theme-toggle) {
+        max-height: none !important;
+        overflow: visible !important;
+        opacity: 1 !important;
+        order: 0 !important;
+        width: auto !important;
+        flex-direction: row !important;
+        padding: 0 !important;
+        border: none !important;
+        margin: 0 !important;
+        margin-left: auto !important;
+    }
+
+    .header--compact .header-actions .btn,
+    .landing-header .header-actions .btn {
+        width: auto !important;
+    }
+}
+
+/* ==================== */
+/* SIDEBAR LAYOUT       */
+/* ==================== */
+
+/* Body with sidebar - desktop layout offset */
+.has-sidebar {
+    --sidebar-width: 260px;
+}
+
+.has-sidebar .header {
+    margin-left: 260px !important;
+    margin-left: var(--sidebar-width, 260px) !important;
+    width: calc(100% - 260px) !important;
+    width: calc(100% - var(--sidebar-width, 260px)) !important;
+    transition: margin-left 300ms ease, width 300ms ease;
+}
+
+.has-sidebar .container {
+    margin-left: calc(260px + max(1rem, (100% - 260px - var(--container-max, 75rem)) / 2)) !important;
+    margin-right: max(1rem, (100% - 260px - var(--container-max, 75rem)) / 2) !important;
+    width: auto !important;
+    max-width: calc(100% - 260px - 2rem) !important;
+    transition: margin-left 300ms ease, margin-right 300ms ease;
+}
+
+.has-sidebar .container--narrow {
+    margin-left: calc(260px + max(1rem, (100% - 260px - 42rem) / 2)) !important;
+    margin-right: max(1rem, (100% - 260px - 42rem) / 2) !important;
+    width: auto !important;
+}
+
+.has-sidebar .container--medium {
+    margin-left: calc(260px + max(1rem, (100% - 260px - 64rem) / 2)) !important;
+    margin-right: max(1rem, (100% - 260px - 64rem) / 2) !important;
+    width: auto !important;
+}
+
+.has-sidebar .container--wide {
+    margin-left: calc(260px + max(1rem, (100% - 260px - var(--container-wide, 85rem)) / 2)) !important;
+    margin-right: max(1rem, (100% - 260px - var(--container-wide, 85rem)) / 2) !important;
+    width: auto !important;
+}
+
+/* Compact header style for sidebar pages */
+.header--compact {
+    justify-content: flex-start !important;
+    gap: 1rem;
+    gap: var(--spacing-4, 1rem);
+}
+
+/* Main content wrapper for sidebar layout */
+.main-content {
+    transition: margin-left 300ms ease;
+}
+
+.has-sidebar .main-content {
+    margin-left: 260px;
+    margin-left: var(--sidebar-width, 260px);
+}
+
+/* Mobile & Landscape - reset sidebar offset */
+@media (max-width: 60rem), (max-height: 34rem) {
+    .has-sidebar .header,
+    .has-sidebar .container,
+    .has-sidebar .container--narrow,
+    .has-sidebar .container--medium,
+    .has-sidebar .container--wide,
+    .has-sidebar .main-content {
+        margin-left: auto !important;
+        margin-right: auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}

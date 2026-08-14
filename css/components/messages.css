@@ -1,0 +1,276 @@
+/* ==========================================================================
+   Messages, Alerts & Overlay Toast Banners
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Floating Overlay Container for Banners & Toasts
+   -------------------------------------------------------------------------- */
+.toast-container,
+.banner-overlay-container {
+    position: fixed;
+    top: 1.25rem;
+    right: 1.25rem;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: min(92vw, 440px);
+    width: 100%;
+    pointer-events: none; /* Container is click-through */
+}
+
+/* --------------------------------------------------------------------------
+   Banner Overlay / Toast Item
+   -------------------------------------------------------------------------- */
+.banner-overlay,
+.toast {
+    pointer-events: auto; /* Banner itself is interactive */
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border-radius: var(--radius-md, 0.75rem);
+    background: var(--color-surface, #ffffff);
+    color: var(--color-text, #0f172a);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 
+                0 8px 10px -6px rgba(0, 0, 0, 0.08), 
+                0 0 0 1px var(--color-border, #e2e8f0);
+    border-left: 4px solid transparent;
+    font-size: var(--font-size-sm, 0.875rem);
+    line-height: 1.5;
+    word-break: break-word;
+    animation: bannerOverlayFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transition: opacity 0.25s ease, transform 0.25s ease, max-height 0.25s ease;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* Color Variations */
+.banner-overlay--success,
+.toast--success {
+    border-left-color: var(--color-success-border, #10b981);
+    box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.18), 
+                0 4px 12px rgba(0, 0, 0, 0.08), 
+                0 0 0 1px rgba(16, 185, 129, 0.25);
+}
+
+.banner-overlay--error,
+.toast--error {
+    border-left-color: var(--color-error-border, #ef4444);
+    box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.2), 
+                0 4px 12px rgba(0, 0, 0, 0.08), 
+                0 0 0 1px rgba(239, 68, 68, 0.25);
+}
+
+.banner-overlay--warning,
+.toast--warning {
+    border-left-color: #f59e0b;
+    box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.18), 
+                0 4px 12px rgba(0, 0, 0, 0.08), 
+                0 0 0 1px rgba(245, 158, 11, 0.25);
+}
+
+.banner-overlay--info,
+.toast--info {
+    border-left-color: var(--color-primary, #6366f1);
+    box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.18), 
+                0 4px 12px rgba(0, 0, 0, 0.08), 
+                0 0 0 1px rgba(99, 102, 241, 0.25);
+}
+
+/* Dark Themes */
+[data-theme="dark"] .banner-overlay,
+[data-theme="midnight"] .banner-overlay,
+[data-theme="tabletop"] .banner-overlay,
+[data-theme="cyber-arcade"] .banner-overlay,
+.dark-theme .banner-overlay,
+[data-theme="dark"] .toast,
+[data-theme="midnight"] .toast,
+[data-theme="tabletop"] .toast,
+[data-theme="cyber-arcade"] .toast,
+.dark-theme .toast {
+    background: var(--color-surface, #1e293b);
+    color: var(--color-heading, #f8fafc);
+}
+
+/* Icon */
+.banner-overlay__icon,
+.toast__icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.125rem;
+}
+
+.banner-overlay--success .banner-overlay__icon,
+.toast--success .toast__icon { 
+    color: var(--color-success-border, #10b981); 
+}
+
+.banner-overlay--error .banner-overlay__icon,
+.toast--error .toast__icon { 
+    color: var(--color-error-border, #ef4444); 
+}
+
+.banner-overlay--warning .banner-overlay__icon,
+.toast--warning .toast__icon { 
+    color: #f59e0b; 
+}
+
+.banner-overlay--info .banner-overlay__icon,
+.toast--info .toast__icon { 
+    color: var(--color-primary, #6366f1); 
+}
+
+/* Content */
+.banner-overlay__content,
+.toast__content {
+    flex: 1;
+    min-width: 0;
+    font-weight: var(--font-weight-medium, 500);
+}
+
+.banner-overlay__content p,
+.toast__content p {
+    margin: 0;
+}
+
+.banner-overlay__content ul,
+.toast__content ul {
+    margin: 0.25rem 0 0 1.25rem;
+    padding: 0;
+}
+
+/* Close Button */
+.banner-overlay__close,
+.toast__close {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    margin: -0.25rem -0.25rem -0.25rem 0.25rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted, #64748b);
+    border-radius: var(--radius-sm, 0.375rem);
+    cursor: pointer;
+    font-size: 1.25rem;
+    line-height: 1;
+    transition: color var(--transition-fast, 150ms ease), 
+                background-color var(--transition-fast, 150ms ease), 
+                transform var(--transition-fast, 150ms ease);
+}
+
+.banner-overlay__close:hover,
+.toast__close:hover {
+    color: var(--color-text, #0f172a);
+    background-color: var(--color-surface-muted, rgba(0, 0, 0, 0.06));
+}
+
+[data-theme="dark"] .banner-overlay__close:hover,
+[data-theme="midnight"] .banner-overlay__close:hover,
+[data-theme="tabletop"] .banner-overlay__close:hover,
+[data-theme="cyber-arcade"] .banner-overlay__close:hover,
+.dark-theme .banner-overlay__close:hover,
+[data-theme="dark"] .toast__close:hover,
+[data-theme="midnight"] .toast__close:hover,
+[data-theme="tabletop"] .toast__close:hover,
+[data-theme="cyber-arcade"] .toast__close:hover,
+.dark-theme .toast__close:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.banner-overlay__close:focus-visible,
+.toast__close:focus-visible {
+    outline: 2px solid var(--color-primary, #6366f1);
+    outline-offset: 1px;
+}
+
+.banner-overlay__close:active,
+.toast__close:active {
+    transform: scale(0.92);
+}
+
+/* --------------------------------------------------------------------------
+   Animations (Non-shifting overlay fade in/out)
+   -------------------------------------------------------------------------- */
+@keyframes bannerOverlayFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.banner-overlay--dismissing,
+.toast--dismissing {
+    opacity: 0 !important;
+    transform: translateY(-8px) scale(0.96) !important;
+    pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Inline Static Messages (inside modals, form groups, etc.)
+   -------------------------------------------------------------------------- */
+.message {
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-sm);
+    border-left: 4px solid transparent;
+    margin: var(--spacing-3) 0;
+    background: var(--color-surface-muted);
+    box-shadow: var(--shadow-xs);
+    font-size: var(--font-size-sm, 0.875rem);
+    line-height: 1.5;
+}
+
+.message--success,
+.success,
+.message.success {
+    background: var(--color-success-bg);
+    border-left: 4px solid var(--color-success-border);
+    color: var(--color-success-text);
+}
+
+.message--error,
+.error,
+.message.error {
+    background: var(--color-error-bg);
+    border-left: 4px solid var(--color-error-border);
+    color: var(--color-error-text);
+}
+
+.message--warning {
+    background: var(--color-warning-bg);
+    border-left-color: #f59e0b;
+    color: var(--color-warning-text);
+}
+
+.message--info {
+    background: var(--color-primary-soft);
+    border-left-color: var(--color-primary);
+    color: var(--color-heading);
+}
+
+/* --------------------------------------------------------------------------
+   Mobile Responsive Adjustments
+   -------------------------------------------------------------------------- */
+@media (max-width: 48rem) {
+    .toast-container,
+    .banner-overlay-container {
+        top: 1rem;
+        right: 1rem;
+        left: 1rem;
+        max-width: none;
+        width: auto;
+    }
+}

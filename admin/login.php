@@ -8,7 +8,11 @@ require_once '../includes/helpers.php';
 
 if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
     $clubId = $_SESSION['current_club_id'] ?? $_SESSION['club_id'] ?? null;
-    header("Location: club_new_results.php" . ($clubId ? "?club_id=" . (int)$clubId : ""));
+    if ($clubId) {
+        header("Location: club_new_results.php?club_id=" . (int)$clubId);
+    } else {
+        header("Location: select_club.php");
+    }
     exit();
 }
 
@@ -102,12 +106,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $_SESSION['club_id'] = $defClubId;
                         } elseif ($defaultCount > 1) {
                             // If multiple defaults, display them in select_club.php
+                            unset($_SESSION['current_club_id'], $_SESSION['club_id']);
                             session_write_close();
                             header("Location: select_club.php");
                             exit();
                         } else {
                             // If no clubs are set as default, all clubs will be shown
                             if (count($userClubs) > 1) {
+                                unset($_SESSION['current_club_id'], $_SESSION['club_id']);
                                 session_write_close();
                                 header("Location: select_club.php");
                                 exit();
@@ -115,12 +121,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $singleClubId = (int)$userClubs[0]['club_id'];
                                 $_SESSION['current_club_id'] = $singleClubId;
                                 $_SESSION['club_id'] = $singleClubId;
+                            } else {
+                                unset($_SESSION['current_club_id'], $_SESSION['club_id']);
+                                session_write_close();
+                                header("Location: account.php");
+                                exit();
                             }
                         }
 
                         $targetClubId = $_SESSION['current_club_id'] ?? $_SESSION['club_id'] ?? null;
                         session_write_close();
-                        header("Location: club_new_results.php" . ($targetClubId ? "?club_id=" . (int)$targetClubId : ""));
+                        header("Location: " . ($targetClubId ? "club_new_results.php?club_id=" . (int)$targetClubId : "select_club.php"));
                         exit();
                     }
                     // Log failed password verification

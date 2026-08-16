@@ -128,21 +128,24 @@ class SSOHelper {
                 $_SESSION['login_time'] = time();
                 $_SESSION['sso_tfd'] = true;
 
-                // Find default club
-                $cStmt = $pdo->prepare("SELECT c.club_id FROM statapp.clubs c JOIN statapp.club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ? AND ca.is_default = 1 LIMIT 1");
-                $cStmt->execute([$admin['admin_id']]);
-                $defClub = $cStmt->fetchColumn();
-                if ($defClub) {
-                    $_SESSION['current_club_id'] = (int)$defClub;
-                    $_SESSION['club_id'] = (int)$defClub;
+                // Determine default club context
+                $userClubsStmt = $pdo->prepare("SELECT c.club_id, ca.is_default FROM statapp.clubs c JOIN statapp.club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ? ORDER BY c.club_name ASC");
+                $userClubsStmt->execute([$admin['admin_id']]);
+                $userClubs = $userClubsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                $defaultClubs = array_values(array_filter($userClubs, function($c) { return !empty($c['is_default']); }));
+                $defaultCount = count($defaultClubs);
+
+                if ($defaultCount === 1) {
+                    $defClubId = (int)$defaultClubs[0]['club_id'];
+                    $_SESSION['current_club_id'] = $defClubId;
+                    $_SESSION['club_id'] = $defClubId;
+                } elseif (count($userClubs) === 1) {
+                    $singleClubId = (int)$userClubs[0]['club_id'];
+                    $_SESSION['current_club_id'] = $singleClubId;
+                    $_SESSION['club_id'] = $singleClubId;
                 } else {
-                    $firstClubStmt = $pdo->prepare("SELECT club_id FROM statapp.club_admins WHERE admin_id = ? ORDER BY id ASC LIMIT 1");
-                    $firstClubStmt->execute([$admin['admin_id']]);
-                    $firstClub = $firstClubStmt->fetchColumn();
-                    if ($firstClub) {
-                        $_SESSION['current_club_id'] = (int)$firstClub;
-                        $_SESSION['club_id'] = (int)$firstClub;
-                    }
+                    unset($_SESSION['current_club_id'], $_SESSION['club_id']);
                 }
 
                 return true;

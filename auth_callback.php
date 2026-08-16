@@ -70,7 +70,11 @@ if (!$email) {
 
 if (SSOHelper::loginAdminByEmail($email)) {
     $clubId = $_SESSION['current_club_id'] ?? $_SESSION['club_id'] ?? null;
-    header("Location: admin/club_new_results.php" . ($clubId ? "?club_id=" . (int)$clubId : ""));
+    if ($clubId) {
+        header("Location: admin/club_new_results.php?club_id=" . (int)$clubId);
+    } else {
+        header("Location: admin/select_club.php");
+    }
     exit();
 } else {
     $_SESSION['error'] = "No StatApp administrator account found for " . htmlspecialchars($email);

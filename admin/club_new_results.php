@@ -30,8 +30,7 @@ if ($demo) {
     }
 
     if (!$club_id) {
-        $_SESSION['error'] = "Please create a club first.";
-        header("Location: account.php");
+        header("Location: select_club.php");
         exit();
     }
 

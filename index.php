@@ -4,7 +4,11 @@ require_once __DIR__ . '/config/session.php';
 // Redirect admin users directly to their account
 if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
     $clubId = $_SESSION['current_club_id'] ?? $_SESSION['club_id'] ?? null;
-    header('Location: admin/club_new_results.php' . ($clubId ? '?club_id=' . (int)$clubId : ''));
+    if ($clubId) {
+        header('Location: admin/club_new_results.php?club_id=' . (int)$clubId);
+    } else {
+        header('Location: admin/select_club.php');
+    }
     exit;
 }
 

@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/NavigationHelper.php';
@@ -55,7 +55,8 @@ if ($club_id) {
 
 if ($demo || !$club) {
     $club_id = 1;
-    $club = ['club_id' => 1, 'club_name' => 'Meeple & Dice Club'];
+    $demoClub = function_exists('get_demo_data') ? get_demo_data('club') : [];
+    $club = ['club_id' => 1, 'club_name' => $demoClub['club_name'] ?? 'Meeple Mosh'];
     $admin_clubs = [$club];
 }
 
@@ -145,17 +146,21 @@ if ($club_id) {
 }
 
 if ($demo && empty($chart_member_names)) {
+    $demo_ind = [18, 15, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2];
+    $demo_team = [11, 9, 7, 6, 5, 4, 4, 3, 2, 2, 1, 1];
     foreach ($members as $idx => $m) {
         $name = !empty($m['nickname']) ? $m['nickname'] : (!empty($m['member_name']) ? $m['member_name'] : 'Member ' . ($idx + 1));
         $chart_member_names[] = $name;
-        $chart_individual_wins[] = max(1, 8 - ($idx * 2));
-        $chart_team_wins[] = max(0, 4 - $idx);
+        $chart_individual_wins[] = $m['total_wins'] ?? ($demo_ind[$idx] ?? max(1, 12 - $idx));
+        $chart_team_wins[] = $demo_team[$idx] ?? max(0, 6 - (int)floor($idx / 2));
     }
 }
 
 // Fetch Wins Over Time Per Member for line chart
 $wot_labels = [];
 $wot_datasets = [];
+$wot_all_months = [];
+$wot_monthly_wins = [];
 if ($club_id) {
     try {
         $stmt_months = $pdo->prepare("
@@ -164,13 +169,17 @@ if ($club_id) {
             JOIN games g ON gr.game_id = g.game_id
             WHERE g.club_id = ?
             ORDER BY month_key ASC
-            LIMIT 12
         ");
         $stmt_months->execute([$club_id]);
         $all_months = array_column($stmt_months->fetchAll(PDO::FETCH_ASSOC), 'month_key');
 
         if (!empty($all_months)) {
-            $wot_labels = array_map(fn($m) => date('M Y', strtotime($m . '-01')), $all_months);
+            foreach ($all_months as $mk) {
+                $wot_all_months[] = [
+                    'key' => $mk,
+                    'label' => date('M Y', strtotime($mk . '-01'))
+                ];
+            }
 
             $stmt_mwins = $pdo->prepare("
                 SELECT COALESCE(NULLIF(m.nickname, ''), m.member_name) as name,
@@ -188,12 +197,12 @@ if ($club_id) {
             $stmt_mwins->execute([$club_id]);
             $raw = $stmt_mwins->fetchAll(PDO::FETCH_ASSOC);
 
-            $lookup = [];
             foreach ($raw as $row) {
-                $lookup[$row['name']][$row['month_key']] = (int)$row['wins'];
+                $wot_monthly_wins[$row['name']][$row['month_key']] = (int)$row['wins'];
             }
 
-            foreach ($lookup as $name => $month_wins) {
+            $wot_labels = array_map(fn($m) => $m['label'], $wot_all_months);
+            foreach ($wot_monthly_wins as $name => $month_wins) {
                 $series = [];
                 $cumulative = 0;
                 foreach ($all_months as $mk) {
@@ -206,13 +215,37 @@ if ($club_id) {
     } catch (Exception $e) {}
 }
 
-if ($demo && empty($wot_labels)) {
-    $wot_labels = ['Apr', 'May', 'Jun', 'Jul', 'Aug'];
-    $demo_wins = [[1,2,2,3,4],[0,1,2,2,3],[0,0,1,2,2],[0,1,1,1,2]];
-    foreach ($members as $idx => $m) {
-        $name = !empty($m['nickname']) ? $m['nickname'] : (!empty($m['member_name']) ? $m['member_name'] : 'Member ' . ($idx + 1));
-        $wot_datasets[] = ['name' => $name, 'data' => $demo_wins[$idx] ?? array_fill(0, 5, 0)];
-        if ($idx >= 3) break;
+if ($demo && empty($wot_all_months)) {
+    $demo_months_keys = [];
+    $start_ts = strtotime('-17 months');
+    for ($i = 0; $i < 18; $i++) {
+        $ts = strtotime("+$i months", $start_ts);
+        $mk = date('Y-m', $ts);
+        $lbl = date('M Y', $ts);
+        $wot_all_months[] = ['key' => $mk, 'label' => $lbl];
+        $demo_months_keys[] = $mk;
+    }
+
+    $demo_member_names = [
+        'ShadowKnight', 'StarGazer', 'CyberSamurai', 'Vortex',
+        'PixelMaster', 'Kingslayer', 'NeonRider', 'PointGod'
+    ];
+
+    foreach ($demo_member_names as $m_idx => $name) {
+        foreach ($demo_months_keys as $idx => $mk) {
+            $wot_monthly_wins[$name][$mk] = (($m_idx + 1) * ($idx + 2)) % 4;
+        }
+    }
+
+    $wot_labels = array_map(fn($m) => $m['label'], $wot_all_months);
+    foreach ($wot_monthly_wins as $name => $month_wins) {
+        $series = [];
+        $cumulative = 0;
+        foreach ($demo_months_keys as $mk) {
+            $cumulative += $month_wins[$mk] ?? 0;
+            $series[] = $cumulative;
+        }
+        $wot_datasets[] = ['name' => $name, 'data' => $series];
     }
 }
 
@@ -318,7 +351,7 @@ $baseUrl = 'manage_members.php?club_id=' . $club_id;
         <?php display_session_message('success'); ?>
         <?php display_session_message('error'); ?>
 
-        <?php TableHelper::renderMembersAnalytics($chart_member_names, $chart_individual_wins, $chart_team_wins, $wot_labels, $wot_datasets, ['is_admin' => true, 'open' => true]); ?>
+        <?php TableHelper::renderMembersAnalytics($chart_member_names, $chart_individual_wins, $chart_team_wins, $wot_labels, $wot_datasets, ['is_admin' => true, 'open' => true, 'all_months' => $wot_all_months, 'monthly_wins' => $wot_monthly_wins]); ?>
 
         <div id="add-member-form-wrapper" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? '' : 'display:none;'; ?> margin: 1rem 0 1.25rem 0; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 0.75rem); background: var(--color-surface-muted);">
             <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);">Add New Member</h3>

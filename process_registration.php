@@ -76,8 +76,8 @@ try {
     $_SESSION['registration_error'] = $e->getMessage();
     $_SESSION['error'] = $e->getMessage();
     
-    // Redirect back to registration page
-    header('Location: register.php');
+    // Redirect back to registration tab
+    header('Location: admin/login.php?tab=register');
     exit;
 }
 ?>

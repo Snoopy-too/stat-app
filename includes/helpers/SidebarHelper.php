@@ -89,6 +89,15 @@ class SidebarHelper {
     public static function renderSidebar($currentPage = '', $clubId = null, $clubName = null, $clubLogo = null) {
         global $pdo;
 
+        $isDemoMode = !empty($_GET['demo']) || !empty($_GET['preview']);
+        if ($isDemoMode) {
+            $clubId = $clubId ?: 1;
+            if (empty($clubName) && function_exists('get_demo_data')) {
+                $demoClub = get_demo_data('club');
+                $clubName = $demoClub['club_name'] ?? 'Meeple Mosh';
+            }
+        }
+
         $clubTheme = null;
 
         if (!$clubId && !empty($_SESSION['current_club_id'])) {
@@ -159,11 +168,29 @@ class SidebarHelper {
             } catch (Throwable $e) {}
         }
 
+        if (($isDemoMode || $memberCount === null || $memberCount === 0) && function_exists('get_demo_data')) {
+            $demoMembers = get_demo_data('members');
+            $demoTeams = get_demo_data('teams');
+            $demoChampions = get_demo_data('champions');
+            $demoGames = get_demo_data('games');
+            $demoResults = get_demo_data('results');
+
+            if (($memberCount === null || $memberCount === 0) && is_array($demoMembers)) $memberCount = count($demoMembers);
+            if (($teamCount === null || $teamCount === 0) && is_array($demoTeams)) $teamCount = count($demoTeams);
+            if (($championCount === null || $championCount === 0) && is_array($demoChampions)) $championCount = count($demoChampions);
+            if (($gameCount === null || $gameCount === 0) && is_array($demoGames)) $gameCount = count($demoGames);
+            if (($resultCount === null || $resultCount === 0) && is_array($demoResults)) $resultCount = count($demoResults);
+        }
+
         $clubQuery = $clubId ? '?id=' . (int)$clubId : '';
+        if ($isDemoMode) {
+            $themeParam = !empty($_GET['theme']) ? '&theme=' . urlencode($_GET['theme']) : '';
+            $clubQuery = $clubQuery ? $clubQuery . '&demo=1' . $themeParam : '?demo=1' . $themeParam;
+        }
         $displayName = !empty($clubName) ? $clubName : 'StatApp';
 
         echo '<style>
-            .sidebar{position:fixed!important;top:0!important;left:0!important;width:260px!important;height:100vh!important;background:var(--sidebar-bg, var(--color-surface, #1e293b))!important;border-right:1px solid var(--sidebar-border, var(--color-border, #334155))!important;color:var(--color-text, #f8fafc)!important;display:flex!important;flex-direction:column!important;z-index:1100!important;overflow-y:auto!important;transition:transform .3s ease, background .3s ease, border-color .3s ease!important;box-shadow:2px 0 8px rgba(0,0,0,.1)!important}
+            .sidebar{position:fixed!important;top:0!important;left:0!important;width:260px!important;height:100vh!important;height:100dvh!important;background:var(--sidebar-bg, var(--color-surface, #1e293b))!important;border-right:1px solid var(--sidebar-border, var(--color-border, #334155))!important;color:var(--color-text, #f8fafc)!important;display:flex!important;flex-direction:column!important;z-index:1100!important;overflow:hidden!important;transition:transform .3s ease, background .3s ease, border-color .3s ease!important;box-shadow:2px 0 8px rgba(0,0,0,.1)!important}
             .has-sidebar .header{margin-left:260px!important;width:calc(100% - 260px)!important}
             .has-sidebar .container{margin-left:calc(260px + max(1rem, (100% - 260px - var(--container-max, 75rem)) / 2))!important;margin-right:max(1rem, (100% - 260px - var(--container-max, 75rem)) / 2)!important;width:auto!important;max-width:calc(100% - 260px - 2rem)!important;}
             .has-sidebar .container--narrow{margin-left:calc(260px + max(1rem, (100% - 260px - 42rem) / 2))!important;margin-right:max(1rem, (100% - 260px - 42rem) / 2)!important;width:auto!important;}
@@ -178,8 +205,20 @@ class SidebarHelper {
                 .sidebar__close{display:flex!important}
                 .sidebar-toggle{display:flex!important}
                 .has-sidebar .header,.has-sidebar .container,.has-sidebar .container--narrow,.has-sidebar .container--medium,.has-sidebar .container--wide{margin-left:0!important;margin-right:0!important;width:100%!important;max-width:100%!important}
-                body.sidebar-open{overflow:hidden!important}
+                body.sidebar-open{overflow:hidden!important;touch-action:none!important;overscroll-behavior:none!important}
                 .sidebar-overlay.sidebar-overlay--visible{display:block!important;opacity:1!important}
+            }
+            @media(max-height:600px){
+                .sidebar__header{padding:0.5rem 0.5rem!important}
+                .sidebar__logo{font-size:0.95rem!important;margin-bottom:0.35rem!important;gap:0.5rem!important}
+                .sidebar__logo img,.sidebar__logo-icon{width:28px!important;height:28px!important;font-size:1rem!important}
+                .sidebar__header .sidebar__link,.sidebar__header a{padding:0.35rem 0.45rem!important;font-size:0.8rem!important}
+            }
+            @media(max-height:420px){
+                .sidebar__header{padding:0.3rem 0.4rem!important}
+                .sidebar__logo{font-size:0.85rem!important;margin-bottom:0.25rem!important}
+                .sidebar__logo img,.sidebar__logo-icon{width:22px!important;height:22px!important}
+                .sidebar__header .sidebar__link{padding:0.25rem 0.35rem!important;font-size:0.75rem!important}
             }
             .sidebar__link:hover:not(.sidebar__link--logout) {
                 background: var(--color-surface, rgba(255,255,255,0.15)) !important;
@@ -195,15 +234,15 @@ class SidebarHelper {
         </style>';
 
         echo '<aside class="sidebar" style="position:fixed;top:0;left:0;bottom:0;width:260px;background:var(--sidebar-bg, var(--color-surface, #1e293b));border-right:1px solid var(--sidebar-border, var(--color-border, #334155));color:var(--color-text, #f8fafc);z-index:1050;display:flex;flex-direction:column;box-shadow:4px 0 12px rgba(0,0,0,0.15);transition:transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;">';
-        echo '<button class="sidebar__close" aria-label="Close menu" style="display:none;position:absolute;top:1rem;right:1rem;width:32px;height:32px;background:rgba(255,255,255,0.1);border:none;border-radius:0.375rem;cursor:pointer;font-size:1.25rem;color:var(--color-text-soft, #94a3b8);align-items:center;justify-content:center;">&times;</button>';
+        echo '<button class="sidebar__close" aria-label="Close menu" style="display:none;position:absolute;top:1rem;right:1rem;width:40px;height:40px;background:var(--color-surface-muted, rgba(255,255,255,0.1));border:1px solid var(--color-border, rgba(255,255,255,0.2));border-radius:0.75rem;cursor:pointer;font-size:1.25rem;color:var(--color-heading, var(--color-text, #f1f5f9));align-items:center;justify-content:center;">&times;</button>';
 
         $activeStyle = 'display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.85rem;margin:0.25rem 0.5rem;text-decoration:none;font-size:0.875rem;font-weight:500;border-radius:0.5rem;transition:all 0.2s ease;';
         $normalLinkStyle = $activeStyle . 'color:var(--color-text, #f8fafc);background:var(--color-surface-muted, rgba(255,255,255,0.08));border:1px solid var(--color-border, #334155);';
         $activeLinkStyle = $activeStyle . 'color:var(--color-primary, #a5b4fc);background:var(--color-primary-soft, rgba(99,102,241,0.25));border:1px solid var(--color-primary, #6366f1);font-weight:600;';
         $iconStyle = 'width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:1rem;';
 
-        echo '<div class="sidebar__header" style="padding:1.25rem 0.5rem 1rem 0.5rem;border-bottom:1px solid var(--color-border, #334155);flex-shrink:0;">';
-        echo '<a href="index.php" class="sidebar__logo" style="display:flex;align-items:center;gap:0.75rem;text-decoration:none;color:var(--color-heading, #f1f5f9);font-weight:700;font-size:1.125rem;padding:0.25rem 0.5rem;margin-bottom:0.75rem;">';
+        echo '<div class="sidebar__header" style="padding:1rem 0.75rem;border-bottom:none;flex-shrink:0;">';
+        echo '<a href="index.php" class="sidebar__logo" style="display:flex;align-items:center;gap:0.75rem;text-decoration:none;color:var(--color-heading, #f1f5f9);font-weight:700;font-size:1.125rem;padding:0.25rem 0.5rem;">';
         $isDemoMode = isset($_GET['demo']) || isset($_GET['preview']);
         if (!empty($clubLogo) && !$isDemoMode) {
             $logoUrl = function_exists('get_club_logo_url') ? get_club_logo_url($clubLogo, '') : (preg_match('~^https?://~i', $clubLogo) ? $clubLogo : 'images/club_logos/' . $clubLogo);
@@ -214,16 +253,16 @@ class SidebarHelper {
         }
         echo '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' . htmlspecialchars($displayName) . '</span>';
         echo '</a>';
+        echo '</div>';
 
-        echo '<div style="display:flex;align-items:center;gap:0.35rem;margin:0 0.5rem;">';
+        echo '<nav class="sidebar__nav" style="flex:1;padding:0 0 1rem 0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;">';
+
+        echo '<div style="display:flex;align-items:center;gap:0.35rem;margin:0 0.5rem 0.5rem 0.5rem;">';
         echo '<a href="index.php" class="sidebar__link' . ($currentPage === 'home' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'home' ? $activeLinkStyle : $normalLinkStyle) . ';flex:1;margin:0;">';
         echo '<span class="sidebar__link-icon" style="' . $iconStyle . '"><span class="material-symbols-outlined">home</span></span>';
         echo '<span>Home</span>';
         echo '</a>';
         echo '</div>';
-        echo '</div>';
-
-        echo '<nav class="sidebar__nav" style="flex:1;padding:1rem 0;overflow-y:auto;">';
 
         if ($clubId) {
             echo '<div class="sidebar__section" style="margin-bottom:0.5rem;">';
@@ -292,8 +331,17 @@ class SidebarHelper {
      * Render admin sidebar navigation
      */
     public static function renderAdminSidebar($currentPage = '', $clubId = null, $clubName = null, $clubLogo = null) {
+        $isDemoMode = !empty($_GET['demo']) || !empty($_GET['preview']);
+        if ($isDemoMode) {
+            $clubId = $clubId ?: 1;
+            if (empty($clubName) && function_exists('get_demo_data')) {
+                $demoClub = get_demo_data('club');
+                $clubName = $demoClub['club_name'] ?? 'Meeple Mosh';
+            }
+        }
+
         echo '<style>
-            .sidebar{position:fixed!important;top:0!important;left:0!important;width:260px!important;height:100vh!important;background:var(--sidebar-bg, var(--color-surface, #1e293b))!important;border-right:1px solid var(--sidebar-border, var(--color-border, #334155))!important;color:var(--color-text, #f8fafc)!important;display:flex!important;flex-direction:column!important;z-index:1100!important;overflow-y:auto!important;transition:transform .3s ease, background .3s ease, border-color .3s ease!important;box-shadow:2px 0 8px rgba(0,0,0,.1)!important}
+            .sidebar{position:fixed!important;top:0!important;left:0!important;width:260px!important;height:100vh!important;height:100dvh!important;background:var(--sidebar-bg, var(--color-surface, #1e293b))!important;border-right:1px solid var(--sidebar-border, var(--color-border, #334155))!important;color:var(--color-text, #f8fafc)!important;display:flex!important;flex-direction:column!important;z-index:1100!important;overflow:hidden!important;transition:transform .3s ease, background .3s ease, border-color .3s ease!important;box-shadow:2px 0 8px rgba(0,0,0,.1)!important}
             .has-sidebar .header{margin-left:260px!important;width:calc(100% - 260px)!important}
             .has-sidebar .container{margin-left:calc(260px + max(1rem, (100% - 260px - var(--container-max, 75rem)) / 2))!important;margin-right:max(1rem, (100% - 260px - var(--container-max, 75rem)) / 2)!important;width:auto!important;max-width:calc(100% - 260px - 2rem)!important;}
             .has-sidebar .container--narrow{margin-left:calc(260px + max(1rem, (100% - 260px - 42rem) / 2))!important;margin-right:max(1rem, (100% - 260px - 42rem) / 2)!important;width:auto!important;}
@@ -308,8 +356,20 @@ class SidebarHelper {
                 .sidebar__close{display:flex!important}
                 .sidebar-toggle{display:flex!important}
                 .has-sidebar .header,.has-sidebar .container,.has-sidebar .container--narrow,.has-sidebar .container--medium,.has-sidebar .container--wide{margin-left:0!important;margin-right:0!important;width:100%!important;max-width:100%!important}
-                body.sidebar-open{overflow:hidden!important}
+                body.sidebar-open{overflow:hidden!important;touch-action:none!important;overscroll-behavior:none!important}
                 .sidebar-overlay.sidebar-overlay--visible{display:block!important;opacity:1!important}
+            }
+            @media(max-height:600px){
+                .sidebar__header{padding:0.5rem 0.5rem!important}
+                .sidebar__logo{font-size:0.95rem!important;margin-bottom:0.35rem!important;gap:0.5rem!important}
+                .sidebar__logo img,.sidebar__logo-icon{width:28px!important;height:28px!important;font-size:1rem!important}
+                .sidebar__header .sidebar__link,.sidebar__header a{padding:0.35rem 0.45rem!important;font-size:0.8rem!important}
+            }
+            @media(max-height:420px){
+                .sidebar__header{padding:0.3rem 0.4rem!important}
+                .sidebar__logo{font-size:0.85rem!important;margin-bottom:0.25rem!important}
+                .sidebar__logo img,.sidebar__logo-icon{width:22px!important;height:22px!important}
+                .sidebar__header .sidebar__link{padding:0.25rem 0.35rem!important;font-size:0.75rem!important}
             }
             .sidebar__link:hover:not(.sidebar__link--logout) {
                 background: var(--color-surface, rgba(255,255,255,0.15)) !important;
@@ -339,7 +399,7 @@ class SidebarHelper {
         // Auto-fetch default club if not provided to ensure consistent active context
         if (!$clubId && isset($pdo) && isset($_SESSION['admin_id'])) {
             try {
-                $stmt = $pdo->prepare("SELECT c.club_id, c.club_name, c.logo_image, c.theme FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ? ORDER BY c.club_name ASC LIMIT 1");
+                $stmt = $pdo->prepare("SELECT c.club_id, c.club_name, c.logo_image, c.theme FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ? ORDER BY ca.is_default DESC, c.club_name ASC LIMIT 1");
                 $stmt->execute([$_SESSION['admin_id']]);
                 $defaultClub = $stmt->fetch(PDO::FETCH_ASSOC);
                 if ($defaultClub) {
@@ -384,7 +444,7 @@ class SidebarHelper {
         $gameCount = null;
         $resultCount = null;
 
-        if ($clubId && isset($pdo)) {
+        if ($clubId && isset($pdo) && !$isDemoMode) {
             try {
                 $cStmt = $pdo->prepare("
                     SELECT 
@@ -410,19 +470,37 @@ class SidebarHelper {
             } catch (Throwable $e) {}
         }
 
+        if (($isDemoMode || $memberCount === null || $memberCount === 0) && function_exists('get_demo_data')) {
+            $demoMembers = get_demo_data('members');
+            $demoTeams = get_demo_data('teams');
+            $demoChampions = get_demo_data('champions');
+            $demoGames = get_demo_data('games');
+            $demoResults = get_demo_data('results');
+
+            if (($memberCount === null || $memberCount === 0) && is_array($demoMembers)) $memberCount = count($demoMembers);
+            if (($teamCount === null || $teamCount === 0) && is_array($demoTeams)) $teamCount = count($demoTeams);
+            if (($championCount === null || $championCount === 0) && is_array($demoChampions)) $championCount = count($demoChampions);
+            if (($gameCount === null || $gameCount === 0) && is_array($demoGames)) $gameCount = count($demoGames);
+            if (($resultCount === null || $resultCount === 0) && is_array($demoResults)) $resultCount = count($demoResults);
+        }
+
         $clubQuery = $clubId ? '?club_id=' . (int)$clubId : '';
+        if ($isDemoMode) {
+            $themeParam = !empty($_GET['theme']) ? '&theme=' . urlencode($_GET['theme']) : '';
+            $clubQuery = $clubQuery ? $clubQuery . '&demo=1' . $themeParam : '?demo=1' . $themeParam;
+        }
         $displayName = !empty($clubName) ? $clubName : 'StatApp Admin';
 
         echo '<aside class="sidebar" style="position:fixed;top:0;left:0;bottom:0;width:260px;background:var(--sidebar-bg, var(--color-surface, #1e293b));border-right:1px solid var(--sidebar-border, var(--color-border, #334155));color:var(--color-text, #f8fafc);z-index:1050;display:flex;flex-direction:column;box-shadow:4px 0 12px rgba(0,0,0,0.15);transition:transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;">';
-        echo '<button class="sidebar__close" aria-label="Close menu" style="display:none;position:absolute;top:1rem;right:1rem;width:32px;height:32px;background:rgba(255,255,255,0.1);border:none;border-radius:0.375rem;cursor:pointer;font-size:1.25rem;color:var(--color-text-soft, #94a3b8);align-items:center;justify-content:center;">&times;</button>';
+        echo '<button class="sidebar__close" aria-label="Close menu" style="display:none;position:absolute;top:1rem;right:1rem;width:40px;height:40px;background:var(--color-surface-muted, rgba(255,255,255,0.1));border:1px solid var(--color-border, rgba(255,255,255,0.2));border-radius:0.75rem;cursor:pointer;font-size:1.25rem;color:var(--color-heading, var(--color-text, #f1f5f9));align-items:center;justify-content:center;">&times;</button>';
 
         $activeStyle = 'display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.85rem;margin:0.25rem 0.5rem;text-decoration:none;font-size:0.875rem;font-weight:500;border-radius:0.5rem;transition:all 0.2s ease;';
         $normalLinkStyle = $activeStyle . 'color:var(--color-text, #f8fafc);background:var(--color-surface-muted, rgba(255,255,255,0.08));border:1px solid var(--color-border, #334155);';
         $activeLinkStyle = $activeStyle . 'color:var(--color-primary, #a5b4fc);background:var(--color-primary-soft, rgba(99,102,241,0.25));border:1px solid var(--color-primary, #6366f1);font-weight:600;';
         $iconStyle = 'width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:1rem;';
 
-        echo '<div class="sidebar__header" style="padding:1rem 0.75rem;border-bottom:1px solid var(--color-border, #334155);flex-shrink:0;">';
-        echo '<a href="account.php" class="sidebar__logo" style="display:flex;align-items:center;gap:0.75rem;text-decoration:none;color:var(--color-heading, #f1f5f9);font-weight:700;font-size:1.125rem;padding:0.25rem 0.25rem;">';
+        echo '<div class="sidebar__header" style="padding:1rem 0.75rem;border-bottom:none;flex-shrink:0;">';
+        echo '<a href="account.php" class="sidebar__logo" style="display:flex;align-items:center;gap:0.75rem;text-decoration:none;color:var(--color-heading, #f1f5f9);font-weight:700;font-size:1.125rem;">';
         $isDemoMode = isset($_GET['demo']) || isset($_GET['preview']);
         if (!empty($clubLogo) && !$isDemoMode) {
             $logoUrl = function_exists('get_club_logo_url') ? get_club_logo_url($clubLogo, '../') : (preg_match('~^https?://~i', $clubLogo) ? $clubLogo : '../images/club_logos/' . $clubLogo);
@@ -435,13 +513,13 @@ class SidebarHelper {
         echo '</a>';
         echo '</div>';
 
-        echo '<nav class="sidebar__nav" style="flex:1;padding:0.75rem 0.5rem;overflow-y:auto;">';
+        echo '<nav class="sidebar__nav" style="flex:1;padding:0 0 0.75rem 0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;">';
 
-        // Single Row Action Bar: +New Result | Gear (Settings) | Logout
-        echo '<div style="display:flex;align-items:center;gap:0.35rem;margin:0 0.25rem 0.75rem 0.25rem;">';
+        // Single Row Action Bar: +New Result | Gear (Settings)
+        echo '<div style="display:flex;align-items:center;gap:0.35rem;margin:0 0.5rem 0.5rem 0.5rem;">';
         
         $newResultActive = in_array($currentPage, ['new_result', 'add_result'], true);
-        $newResultStyle = 'flex:1;display:flex;align-items:center;justify-content:center;gap:0.35rem;padding:0.55rem 0.6rem;font-size:0.85rem;border-radius:0.5rem;text-decoration:none;transition:all 0.2s ease;';
+        $newResultStyle = 'width:115px;height:38px;display:inline-flex;align-items:center;justify-content:center;gap:0.35rem;font-size:0.875rem;border-radius:0.5rem;text-decoration:none;transition:all 0.2s ease;flex-shrink:0;margin:0;';
         if ($newResultActive) {
             $newResultStyle .= 'color:var(--color-primary, #a5b4fc);background:var(--color-primary-soft, rgba(99,102,241,0.25));border:1px solid var(--color-primary, #6366f1);font-weight:600;';
         } else {
@@ -452,7 +530,7 @@ class SidebarHelper {
         echo '</a>';
 
         $accountActive = ($currentPage === 'account');
-        $gearStyle = 'display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:0.5rem;text-decoration:none;transition:all 0.2s ease;flex-shrink:0;';
+        $gearStyle = 'width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border-radius:0.5rem;text-decoration:none;transition:all 0.2s ease;flex-shrink:0;margin:0;';
         if ($accountActive) {
             $gearStyle .= 'background:var(--color-primary-soft, rgba(99,102,241,0.25));color:var(--color-primary, #a5b4fc);border:1px solid var(--color-primary, #6366f1);';
         } else {
@@ -461,13 +539,7 @@ class SidebarHelper {
         echo '<a href="account.php" class="sidebar__link' . ($accountActive ? ' sidebar__link--active' : '') . '" style="' . $gearStyle . '" title="Settings & Account">';
         echo '<span class="material-symbols-outlined" style="font-size:1.25rem;">settings</span>';
         echo '</a>';
-
-        $logoutStyle = 'display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:0.5rem;text-decoration:none;color:#f87171;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.2);transition:background 0.2s;flex-shrink:0;';
-        echo '<a href="logout.php" class="sidebar__link sidebar__link--logout" style="' . $logoutStyle . '" title="Logout">';
-        echo '<span class="material-symbols-outlined" style="font-size:1.25rem;">logout</span>';
-        echo '</a>';
         echo '</div>';
-
         // Navigation Items (No hr divider)
         $mLabel = 'Members' . ($memberCount !== null ? ' (' . $memberCount . ')' : '');
         $tLabel = 'Teams' . ($teamCount !== null ? ' (' . $teamCount . ')' : '');

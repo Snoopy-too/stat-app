@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
@@ -153,7 +153,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $club_name = trim($_POST['club_name']);
         $slug = trim($_POST['slug']);
         $slug = $slug === '' ? null : $slug;
-        $status = $_POST['status'] ?? 'active';
         
         if (empty($club_name)) {
             $_SESSION['error'] = "Club name cannot be empty.";
@@ -239,11 +238,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $stmt = $pdo->prepare("
                     UPDATE clubs 
-                    SET club_name = ?, slug = ?, status = ?, logo_image = ?
+                    SET club_name = ?, slug = ?, logo_image = ?
                     WHERE club_id = ? AND EXISTS (SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?)
                 ");
                 $stmt->execute([
-                    $club_name, $slug, $status, $logo_image, $club_id, $club_id, $_SESSION['admin_id']
+                    $club_name, $slug, $logo_image, $club_id, $club_id, $_SESSION['admin_id']
                 ]);
                 
                 $_SESSION['success'] = "Club updated successfully!";
@@ -274,7 +273,6 @@ $adminsStmt = $pdo->prepare("
 $adminsStmt->execute([$club_id]);
 $club_administrators = $adminsStmt->fetchAll(PDO::FETCH_ASSOC);
 
-$statuses = ['active', 'suspended', 'inactive'];
 $csrf_token = $security->generateCSRFToken();
 ?>
 
@@ -385,17 +383,6 @@ $csrf_token = $security->generateCSRFToken();
                             <button type="button" class="btn btn--small btn--subtle" onclick="copyUrlFromElement('json-api-url', this)">Copy</button>
                         </div>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label for="status"><strong>Club Status:</strong></label>
-                    <select id="status" name="status" class="form-control">
-                        <?php foreach ($statuses as $status): ?>
-                            <option value="<?php echo $status; ?>"
-                                <?php echo ($status == $club['status']) ? 'selected' : ''; ?>>
-                                <?php echo ucfirst($status); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
                 </div>
                 <div class="form-actions" style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
                     <button type="submit" class="btn btn--primary">Save Changes</button>

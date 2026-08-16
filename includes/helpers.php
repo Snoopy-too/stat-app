@@ -155,6 +155,31 @@ function ensure_game_type_column_exists($pdo) {
 }
 
 /**
+ * Ensures the 'is_default' column exists in the 'club_admins' table
+ *
+ * @param PDO $pdo
+ * @return void
+ */
+function ensure_club_admins_is_default_column_exists($pdo) {
+    static $checked = false;
+    if ($checked || !$pdo) {
+        return;
+    }
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM club_admins LIKE 'is_default'");
+        if ($stmt && $stmt->rowCount() === 0) {
+            $pdo->exec("ALTER TABLE club_admins ADD COLUMN is_default TINYINT(1) NOT NULL DEFAULT 0");
+            try {
+                $pdo->exec("UPDATE club_admins ca JOIN admin_users au ON ca.admin_id = au.admin_id AND ca.club_id = au.default_club_id SET ca.is_default = 1 WHERE au.default_club_id IS NOT NULL");
+            } catch (Throwable $e) {}
+        }
+        $checked = true;
+    } catch (Throwable $e) {
+        // Silently fail if table issue or lacking permissions
+    }
+}
+
+/**
  * Ensures all result-related tables exist in the database
  *
  * @param PDO $pdo
@@ -330,7 +355,7 @@ function get_team_members_map($pdo, array $teams): array {
     ensure_results_tables_exist($pdo);
 
     $teamIds = array_values(array_filter(array_map(function($t) {
-        return (int)($t['team_id'] ?? 0);
+        return (int)($t['team_id'] ?? $t['id'] ?? 0);
     }, $teams)));
 
     if (empty($teamIds)) return [];
@@ -356,7 +381,7 @@ function get_team_members_map($pdo, array $teams): array {
     } catch (Throwable $e) {}
 
     foreach ($teams as $t) {
-        $tid = (int)($t['team_id'] ?? 0);
+        $tid = (int)($t['team_id'] ?? $t['id'] ?? 0);
         if ($tid > 0 && empty($map[$tid])) {
             $mList = [];
             for ($i = 1; $i <= 4; $i++) {

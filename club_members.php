@@ -99,9 +99,22 @@ try {
     }
 } catch (Throwable $e) {}
 
+if ($demo && empty($chart_member_names)) {
+    $demo_ind = [18, 15, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2];
+    $demo_team = [11, 9, 7, 6, 5, 4, 4, 3, 2, 2, 1, 1];
+    foreach ($members as $idx => $m) {
+        $name = !empty($m['nickname']) ? $m['nickname'] : (!empty($m['member_name']) ? $m['member_name'] : 'Member ' . ($idx + 1));
+        $chart_member_names[] = $name;
+        $chart_individual_wins[] = $m['total_wins'] ?? ($demo_ind[$idx] ?? max(1, 12 - $idx));
+        $chart_team_wins[] = $demo_team[$idx] ?? max(0, 6 - (int)floor($idx / 2));
+    }
+}
+
 // Fetch Wins Over Time Per Member for line chart
 $wot_labels = [];
 $wot_datasets = [];
+$wot_all_months = [];
+$wot_monthly_wins = [];
 try {
     $stmt_months = $pdo->prepare("
         SELECT DISTINCT DATE_FORMAT(gr.played_at, '%Y-%m') as month_key
@@ -109,13 +122,17 @@ try {
         JOIN games g ON gr.game_id = g.game_id
         WHERE g.club_id = ?
         ORDER BY month_key ASC
-        LIMIT 12
     ");
     $stmt_months->execute([$club_id]);
     $all_months = array_column($stmt_months->fetchAll(PDO::FETCH_ASSOC), 'month_key');
 
     if (!empty($all_months)) {
-        $wot_labels = array_map(fn($m) => date('M Y', strtotime($m . '-01')), $all_months);
+        foreach ($all_months as $mk) {
+            $wot_all_months[] = [
+                'key' => $mk,
+                'label' => date('M Y', strtotime($mk . '-01'))
+            ];
+        }
 
         $stmt_mwins = $pdo->prepare("
             SELECT COALESCE(NULLIF(m.nickname, ''), 'Member') as name,
@@ -134,12 +151,12 @@ try {
         $stmt_mwins->execute([$club_id]);
         $raw = $stmt_mwins->fetchAll(PDO::FETCH_ASSOC);
 
-        $lookup = [];
         foreach ($raw as $row) {
-            $lookup[$row['name']][$row['month_key']] = (int)$row['wins'];
+            $wot_monthly_wins[$row['name']][$row['month_key']] = (int)$row['wins'];
         }
 
-        foreach ($lookup as $name => $month_wins) {
+        $wot_labels = array_map(fn($m) => $m['label'], $wot_all_months);
+        foreach ($wot_monthly_wins as $name => $month_wins) {
             $series = [];
             $cumulative = 0;
             foreach ($all_months as $mk) {
@@ -150,6 +167,40 @@ try {
         }
     }
 } catch (Throwable $e) {}
+
+if ($demo && empty($wot_all_months)) {
+    $demo_months_keys = [];
+    $start_ts = strtotime('-17 months');
+    for ($i = 0; $i < 18; $i++) {
+        $ts = strtotime("+$i months", $start_ts);
+        $mk = date('Y-m', $ts);
+        $lbl = date('M Y', $ts);
+        $wot_all_months[] = ['key' => $mk, 'label' => $lbl];
+        $demo_months_keys[] = $mk;
+    }
+
+    $demo_member_names = [
+        'ShadowKnight', 'StarGazer', 'CyberSamurai', 'Vortex',
+        'PixelMaster', 'Kingslayer', 'NeonRider', 'PointGod'
+    ];
+
+    foreach ($demo_member_names as $m_idx => $name) {
+        foreach ($demo_months_keys as $idx => $mk) {
+            $wot_monthly_wins[$name][$mk] = (($m_idx + 1) * ($idx + 2)) % 4;
+        }
+    }
+
+    $wot_labels = array_map(fn($m) => $m['label'], $wot_all_months);
+    foreach ($wot_monthly_wins as $name => $month_wins) {
+        $series = [];
+        $cumulative = 0;
+        foreach ($demo_months_keys as $mk) {
+            $cumulative += $month_wins[$mk] ?? 0;
+            $series[] = $cumulative;
+        }
+        $wot_datasets[] = ['name' => $name, 'data' => $series];
+    }
+}
 
 $base_url_param = !empty($club['slug']) ? 'slug=' . urlencode($club['slug']) : 'id=' . $club_id;
 ?>
@@ -172,7 +223,7 @@ $base_url_param = !empty($club['slug']) ? 'slug=' . urlencode($club['slug']) : '
     </div>
 
     <div class="container container--medium">
-        <?php TableHelper::renderMembersAnalytics($chart_member_names, $chart_individual_wins, $chart_team_wins, $wot_labels, $wot_datasets, ['is_admin' => false]); ?>
+        <?php TableHelper::renderMembersAnalytics($chart_member_names, $chart_individual_wins, $chart_team_wins, $wot_labels, $wot_datasets, ['is_admin' => false, 'all_months' => $wot_all_months, 'monthly_wins' => $wot_monthly_wins]); ?>
 
         <?php
         TableHelper::renderMembersTable($members, [

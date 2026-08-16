@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/NavigationHelper.php';
@@ -36,12 +36,13 @@ if ($club_id > 0) {
     $_SESSION['club_id'] = $club_id;
 }
 
-$club_name = 'Meeple & Dice Club';
+$demoClub = function_exists('get_demo_data') ? get_demo_data('club') : [];
+$club_name = $demoClub['club_name'] ?? 'Meeple Mosh';
 if ($club_id && !$demo) {
     try {
         $stmt = $pdo->prepare("SELECT club_name FROM clubs WHERE club_id = ?");
         $stmt->execute([$club_id]);
-        $club_name = $stmt->fetchColumn() ?: 'Meeple & Dice Club';
+        $club_name = $stmt->fetchColumn() ?: $club_name;
     } catch (Exception $e) {}
 }
 

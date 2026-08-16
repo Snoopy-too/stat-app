@@ -1,178 +1,80 @@
 /**
- * Sidebar Navigation Controller
- * Handles toggle, overlay, keyboard, and resize events
+ * Sidebar Navigation Controller (Ponytail Edition)
+ * Handles mobile sidebar toggle, overlay, body scroll lock, and keyboard escape.
+ * Layout and landscape button scaling are handled natively in CSS.
  */
 (function() {
     'use strict';
 
-    const MOBILE_BREAKPOINT = 768;
-
-    // DOM Elements
-    let sidebar = null;
-    let overlay = null;
-    let toggleButtons = null;
-    let closeButton = null;
-
-    /**
-     * Initialize sidebar functionality
-     */
-    function init() {
-        sidebar = document.querySelector('.sidebar');
-        overlay = document.querySelector('.sidebar-overlay');
-        toggleButtons = document.querySelectorAll('.sidebar-toggle');
-        closeButton = document.querySelector('.sidebar__close');
+    document.addEventListener('DOMContentLoaded', function() {
+        var sidebar = document.querySelector('.sidebar');
+        var overlay = document.querySelector('.sidebar-overlay');
+        var toggleButtons = document.querySelectorAll('.sidebar-toggle');
+        var closeButton = document.querySelector('.sidebar__close');
 
         if (!sidebar) return;
 
-        // Create overlay if it doesn't exist
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.className = 'sidebar-overlay';
-            overlay.setAttribute('aria-hidden', 'true');
-            document.body.appendChild(overlay);
+        var scrollY = 0;
+
+        function closeSidebar() {
+            if (!sidebar.classList.contains('sidebar--open')) return;
+            sidebar.classList.remove('sidebar--open');
+            if (overlay) overlay.classList.remove('sidebar-overlay--visible');
+            document.body.classList.remove('sidebar-open');
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
+            window.scrollTo(0, scrollY);
         }
 
-        // Bind events
-        bindEvents();
+        function openSidebar() {
+            if (sidebar.classList.contains('sidebar--open')) return;
+            scrollY = window.scrollY || window.pageYOffset || 0;
+            sidebar.classList.add('sidebar--open');
+            if (overlay) overlay.classList.add('sidebar-overlay--visible');
+            document.body.classList.add('sidebar-open');
+            document.body.style.position = 'fixed';
+            document.body.style.top = '-' + scrollY + 'px';
+            document.body.style.width = '100%';
+        }
 
-        // Check initial state based on screen size
-        handleResize();
-    }
+        function toggleSidebar() {
+            if (sidebar.classList.contains('sidebar--open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        }
 
-    /**
-     * Bind all event listeners
-     */
-    function bindEvents() {
-        // Toggle button clicks
         toggleButtons.forEach(function(btn) {
             btn.addEventListener('click', toggleSidebar);
         });
 
-        // Close button click
-        if (closeButton) {
-            closeButton.addEventListener('click', closeSidebar);
-        }
+        if (closeButton) closeButton.addEventListener('click', closeSidebar);
+        if (overlay) overlay.addEventListener('click', closeSidebar);
 
-        // Overlay click
+        // Prevent touchmove propagation on overlay and header
         if (overlay) {
-            overlay.addEventListener('click', closeSidebar);
+            overlay.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+            }, { passive: false });
         }
 
-        // Keyboard events
-        document.addEventListener('keydown', handleKeydown);
+        var header = sidebar.querySelector('.sidebar__header');
+        if (header) {
+            header.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+            }, { passive: false });
+        }
 
-        // Window resize
-        window.addEventListener('resize', debounce(handleResize, 150));
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeSidebar();
+        });
 
-        // Close sidebar when clicking a link (mobile)
         sidebar.querySelectorAll('.sidebar__link').forEach(function(link) {
             link.addEventListener('click', function() {
-                if (isMobile()) {
-                    closeSidebar();
-                }
+                if (window.innerWidth <= 768) closeSidebar();
             });
         });
-    }
-
-    /**
-     * Toggle sidebar open/closed
-     */
-    function toggleSidebar() {
-        if (sidebar.classList.contains('sidebar--open')) {
-            closeSidebar();
-        } else {
-            openSidebar();
-        }
-    }
-
-    /**
-     * Open sidebar
-     */
-    function openSidebar() {
-        sidebar.classList.add('sidebar--open');
-        overlay.classList.add('sidebar-overlay--visible');
-        document.body.classList.add('sidebar-open');
-
-        // Update toggle button aria
-        toggleButtons.forEach(function(btn) {
-            btn.setAttribute('aria-expanded', 'true');
-        });
-
-        // Focus trap - focus first focusable element in sidebar
-        var firstFocusable = sidebar.querySelector('a, button');
-        if (firstFocusable && isMobile()) {
-            setTimeout(function() {
-                firstFocusable.focus();
-            }, 100);
-        }
-    }
-
-    /**
-     * Close sidebar
-     */
-    function closeSidebar() {
-        sidebar.classList.remove('sidebar--open');
-        overlay.classList.remove('sidebar-overlay--visible');
-        document.body.classList.remove('sidebar-open');
-
-        // Update toggle button aria
-        toggleButtons.forEach(function(btn) {
-            btn.setAttribute('aria-expanded', 'false');
-        });
-    }
-
-    /**
-     * Handle keyboard events
-     */
-    function handleKeydown(e) {
-        // Close on Escape
-        if (e.key === 'Escape' && sidebar.classList.contains('sidebar--open')) {
-            closeSidebar();
-            // Return focus to toggle button
-            if (toggleButtons.length > 0) {
-                toggleButtons[0].focus();
-            }
-        }
-    }
-
-    /**
-     * Handle window resize
-     */
-    function handleResize() {
-        // Auto-close sidebar when resizing to desktop
-        if (!isMobile() && sidebar.classList.contains('sidebar--open')) {
-            closeSidebar();
-        }
-    }
-
-    /**
-     * Check if viewport is mobile size
-     */
-    function isMobile() {
-        return window.innerWidth <= MOBILE_BREAKPOINT;
-    }
-
-    /**
-     * Debounce utility function
-     */
-    function debounce(func, wait) {
-        var timeout;
-        return function executedFunction() {
-            var context = this;
-            var args = arguments;
-            var later = function() {
-                timeout = null;
-                func.apply(context, args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
-
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
+    });
 })();

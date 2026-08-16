@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
@@ -10,11 +10,13 @@ if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSI
     exit();
 }
 
+ensure_club_admins_is_default_column_exists($pdo);
+
 $security = new SecurityUtils($pdo);
 
 // Fetch all clubs this admin has access to
 $stmt = $pdo->prepare("
-    SELECT c.club_id, c.club_name, c.logo_image,
+    SELECT c.club_id, c.club_name, c.logo_image, ca.is_default,
            (SELECT COUNT(*) FROM members WHERE club_id = c.club_id) as member_count
     FROM clubs c
     JOIN club_admins ca ON c.club_id = ca.club_id
@@ -22,11 +24,11 @@ $stmt = $pdo->prepare("
     ORDER BY c.club_name ASC
 ");
 $stmt->execute([$_SESSION['admin_id']]);
-$clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
-$club_count = count($clubs);
+$all_clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$total_club_count = count($all_clubs);
 
 // If user has 0 clubs, redirect to dashboard or create club
-if ($club_count === 0) {
+if ($total_club_count === 0) {
     if (isset($_SESSION['admin_type']) && $_SESSION['admin_type'] === 'single_club') {
         header("Location: create_first_club.php");
         exit();
@@ -35,13 +37,30 @@ if ($club_count === 0) {
     exit();
 }
 
-// If user has only 1 club, auto-select it and proceed
-if ($club_count === 1) {
-    $_SESSION['current_club_id'] = (int)$clubs[0]['club_id'];
-    $_SESSION['club_id'] = (int)$clubs[0]['club_id'];
-    header("Location: club_new_results.php?club_id=" . (int)$clubs[0]['club_id']);
-    exit();
+$default_clubs = array_values(array_filter($all_clubs, function($c) {
+    return !empty($c['is_default']);
+}));
+$default_count = count($default_clubs);
+
+$show_all = isset($_GET['all']) && $_GET['all'] === '1';
+
+// If only 1 default club (and not viewing all), auto-select and proceed
+if (!$show_all) {
+    if ($default_count === 1) {
+        $_SESSION['current_club_id'] = (int)$default_clubs[0]['club_id'];
+        $_SESSION['club_id'] = (int)$default_clubs[0]['club_id'];
+        header("Location: club_new_results.php?club_id=" . (int)$default_clubs[0]['club_id']);
+        exit();
+    } elseif ($total_club_count === 1) {
+        $_SESSION['current_club_id'] = (int)$all_clubs[0]['club_id'];
+        $_SESSION['club_id'] = (int)$all_clubs[0]['club_id'];
+        header("Location: club_new_results.php?club_id=" . (int)$all_clubs[0]['club_id']);
+        exit();
+    }
 }
+
+// If multiple defaults, show defaults; if no defaults, show all clubs
+$clubs = ($default_count > 1 && !$show_all) ? $default_clubs : $all_clubs;
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -55,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Verify the selected club belongs to this admin
     $valid_club = false;
-    foreach ($clubs as $club) {
+    foreach ($all_clubs as $club) {
         if ((int)$club['club_id'] === $selected_club_id) {
             $valid_club = true;
             break;
@@ -66,9 +85,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['current_club_id'] = $selected_club_id;
         $_SESSION['club_id'] = $selected_club_id;
 
-        // Set as default club if requested
+        // Set as exclusive default club if requested
         if (!empty($_POST['set_default'])) {
-            $upd = $pdo->prepare("UPDATE admin_users SET default_club_id = ? WHERE admin_id = ?");
+            $updClear = $pdo->prepare("UPDATE club_admins SET is_default = 0 WHERE admin_id = ?");
+            $updClear->execute([$_SESSION['admin_id']]);
+            $upd = $pdo->prepare("UPDATE club_admins SET is_default = 1 WHERE club_id = ? AND admin_id = ?");
             $upd->execute([$selected_club_id, $_SESSION['admin_id']]);
             $_SESSION['success'] = "Club selected and saved as your default club.";
         }
@@ -129,12 +150,26 @@ require_once '../includes/templates/header.php';
                 <div class="form-group form-check" style="margin-top: 0.75rem; align-items: center;">
                     <input type="checkbox" name="set_default" id="set_default" value="1" class="form-check-input">
                     <label for="set_default" style="cursor: pointer; font-size: 0.9rem; color: var(--color-heading); font-weight: 500; margin: 0;">
-                        Set the club I select as my default club
+                        Set the club I select as a default club
                     </label>
                 </div>
 
+                <?php if ($default_count > 1 && !$show_all && $total_club_count > $default_count): ?>
+                    <p style="font-size: 0.85rem; text-align: center; margin: 0.5rem 0 0 0;">
+                        <a href="select_club.php?all=1" style="color: var(--color-primary); text-decoration: underline;">
+                            Show all clubs (<?php echo $total_club_count; ?>)
+                        </a>
+                    </p>
+                <?php elseif ($show_all && $default_count > 1): ?>
+                    <p style="font-size: 0.85rem; text-align: center; margin: 0.5rem 0 0 0;">
+                        <a href="select_club.php" style="color: var(--color-primary); text-decoration: underline;">
+                            Show only default clubs (<?php echo $default_count; ?>)
+                        </a>
+                    </p>
+                <?php endif; ?>
+
                 <p style="font-size: 0.8rem; color: var(--color-text-muted); text-align: center;">
-                    You can also set or change your default club later in your <a href="account.php" style="color: inherit; text-decoration: underline;">Account settings</a>.
+                    You can manage your default clubs in your <a href="account.php" style="color: inherit; text-decoration: underline;">Account settings</a>.
                 </p>
             </form>
         </div>

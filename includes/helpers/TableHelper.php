@@ -34,7 +34,53 @@ class TableHelper {
                 </div>
                 <?php if (!empty($wot_labels) && !empty($wot_datasets)): ?>
                 <div style="margin-top: 2rem;">
-                    <h3 style="font-size: 1rem; margin-bottom: 0.75rem; text-align: center;">Cumulative Wins Over Time</h3>
+                    <style>
+                        .wot-header-container {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            margin-bottom: 0.75rem;
+                            flex-wrap: wrap;
+                            gap: 0.5rem;
+                        }
+                        .wot-timeframe-selector {
+                            display: inline-flex;
+                            background: var(--color-surface-muted, #f1f5f9);
+                            padding: 3px;
+                            border-radius: var(--radius-md, 6px);
+                            border: 1px solid var(--color-border, #e2e8f0);
+                            gap: 2px;
+                        }
+                        .wot-btn {
+                            padding: 4px 10px;
+                            font-size: 0.75rem;
+                            font-weight: 500;
+                            border: none;
+                            background: transparent;
+                            color: var(--color-text-muted, #64748b);
+                            border-radius: var(--radius-sm, 4px);
+                            cursor: pointer;
+                            transition: all 0.15s ease;
+                        }
+                        .wot-btn:hover {
+                            color: var(--color-text, #0f172a);
+                        }
+                        .wot-btn.active {
+                            background: var(--color-surface, #ffffff);
+                            color: var(--color-primary, #6366f1);
+                            font-weight: 600;
+                            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+                        }
+                    </style>
+                    <div class="wot-header-container">
+                        <h3 style="font-size: 1rem; margin: 0;">Cumulative Wins Over Time</h3>
+                        <div class="wot-timeframe-selector" role="group" aria-label="Timeframe selector">
+                            <button type="button" class="wot-btn" data-range="6m">Last 6 Months</button>
+                            <button type="button" class="wot-btn" data-range="1y">1 Year</button>
+                            <button type="button" class="wot-btn" data-range="2y">2 Years</button>
+                            <button type="button" class="wot-btn active" data-range="all">All Time</button>
+                        </div>
+                    </div>
                     <div style="position: relative; height: 260px;">
                         <canvas id="winRatesChart"></canvas>
                     </div>
@@ -124,6 +170,8 @@ class TableHelper {
 
             const wotLabels = <?php echo json_encode($wot_labels); ?>;
             const wotRawData = <?php echo json_encode($wot_datasets); ?>;
+            const wotAllMonths = <?php echo json_encode($options['all_months'] ?? []); ?>;
+            const wotMonthlyWins = <?php echo json_encode($options['monthly_wins'] ?? []); ?>;
             const lineColors = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#14b8a6','#f43f5e','#6366f1'];
 
             const ctxWot = document.getElementById('winRatesChart');
@@ -159,6 +207,72 @@ class TableHelper {
                         }
                     }
                 });
+
+                const wotButtons = document.querySelectorAll('.wot-btn');
+                function applyWotTimeframe(range) {
+                    wotButtons.forEach(btn => {
+                        btn.classList.toggle('active', btn.getAttribute('data-range') === range);
+                    });
+
+                    if (!wotAllMonths || wotAllMonths.length === 0 || !wotMonthlyWins || Object.keys(wotMonthlyWins).length === 0) {
+                        return;
+                    }
+
+                    let sliceMonths = wotAllMonths;
+                    if (range === '6m') {
+                        sliceMonths = wotAllMonths.slice(-6);
+                    } else if (range === '1y') {
+                        sliceMonths = wotAllMonths.slice(-12);
+                    } else if (range === '2y') {
+                        sliceMonths = wotAllMonths.slice(-24);
+                    } else if (range === 'all') {
+                        sliceMonths = wotAllMonths;
+                    }
+
+                    const newLabels = sliceMonths.map(m => m.label);
+                    const newDatasets = [];
+                    const memberNames = Object.keys(wotMonthlyWins);
+
+                    memberNames.forEach((name, i) => {
+                        let cumulative = 0;
+                        const series = [];
+                        let totalInSlice = 0;
+
+                        sliceMonths.forEach(m => {
+                            const wins = (wotMonthlyWins[name] && wotMonthlyWins[name][m.key]) ? wotMonthlyWins[name][m.key] : 0;
+                            cumulative += wins;
+                            series.push(cumulative);
+                            totalInSlice += wins;
+                        });
+
+                        if (totalInSlice > 0 || memberNames.length <= 8) {
+                            newDatasets.push({
+                                label: name,
+                                data: series,
+                                borderColor: lineColors[i % lineColors.length],
+                                backgroundColor: 'transparent',
+                                tension: 0.3,
+                                pointRadius: 3,
+                                pointHoverRadius: 5,
+                                borderWidth: 2
+                            });
+                        }
+                    });
+
+                    lineChart.data.labels = newLabels;
+                    lineChart.data.datasets = newDatasets;
+                    lineChart.update();
+                }
+
+                wotButtons.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        applyWotTimeframe(this.getAttribute('data-range'));
+                    });
+                });
+
+                if (wotAllMonths && wotAllMonths.length > 0) {
+                    applyWotTimeframe('all');
+                }
             }
 
             const accordion = document.getElementById('analytics-accordion');
@@ -229,28 +343,34 @@ class TableHelper {
         }
 
         if ($game_id && !empty($selected_game)) {
-            $gType = strtolower($selected_game['game_type'] ?? 'winner_losers');
             $selected_game_title = "Win Rate for " . $selected_game['game_name'];
+            $cWins = 0; $cLosses = 0;
+            $wCounts = [];
+            $hasCoop = false;
+            $hasCompetitive = false;
 
-            if ($gType === 'cooperative') {
-                $cWins = 0; $cLosses = 0;
-                foreach ($results as $res) {
+            foreach ($results as $res) {
+                $t = strtolower($res['game_type'] ?? '');
+                if (strpos($t, 'coop') !== false) {
+                    $hasCoop = true;
                     if (stripos($res['winner_name'], 'WIN') !== false || stripos($res['winner_name'], 'VICTORY') !== false) {
                         $cWins++;
                     } else {
                         $cLosses++;
                     }
-                }
-                $selected_game_labels = ['Victory', 'Defeat'];
-                $selected_game_data = [$cWins, $cLosses];
-            } else {
-                $wCounts = [];
-                foreach ($results as $res) {
+                } else {
+                    $hasCompetitive = true;
                     if (($res['member_status'] ?? 'active') === 'inactive') continue;
                     $wName = str_replace(' (Team)', '', $res['winner_name'] ?? '');
                     if (empty($wName) || in_array($wName, ['Unknown', 'Unknown Member', 'Unknown Team', 'Member'], true)) continue;
                     $wCounts[$wName] = ($wCounts[$wName] ?? 0) + 1;
                 }
+            }
+
+            if ($hasCoop && !$hasCompetitive) {
+                $selected_game_labels = ['Victory', 'Defeat'];
+                $selected_game_data = [$cWins, $cLosses];
+            } else {
                 arsort($wCounts);
                 $selected_game_labels = array_slice(array_keys($wCounts), 0, 6);
                 $selected_game_data = array_slice(array_values($wCounts), 0, 6);
@@ -332,7 +452,15 @@ class TableHelper {
                     </div>
                 <?php else: ?>
                     <div style="margin-bottom: 2rem;">
-                        <h3 style="font-size: 1rem; margin-bottom: 0.75rem; text-align: center;">Most Played Games (All Games)</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+                            <h3 style="font-size: 1rem; margin: 0;">Most Played Games (All Games)</h3>
+                            <div id="ignored-games-container" style="display: none; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.75rem;">
+                                <span style="color: var(--color-text-muted, #64748b);">Ignored:</span>
+                                <div id="ignored-games-tags" style="display: flex; gap: 0.25rem; flex-wrap: wrap;"></div>
+                                <button type="button" id="reset-ignored-games-btn" class="wot-btn" style="text-decoration: underline;">Reset All</button>
+                            </div>
+                        </div>
+                        <p style="font-size: 0.75rem; color: var(--color-text-muted, #64748b); margin: 0 0 0.75rem 0; text-align: center;">Click any bar to ignore a game</p>
                         <div style="position: relative; height: 260px;">
                             <canvas id="mostPlayedGamesChart"></canvas>
                         </div>
@@ -417,20 +545,79 @@ class TableHelper {
                 '#0d9488'  // Teal
             ];
 
-            const gamesLabels = <?php echo json_encode($all_games_labels ?? []); ?>;
-            const gamesData = <?php echo json_encode($all_games_data ?? []); ?>;
+            const fullGamesLabels = <?php echo json_encode($all_games_labels ?? []); ?>;
+            const fullGamesData = <?php echo json_encode($all_games_data ?? []); ?>;
+            let ignoredGames = [];
+
+            try {
+                const saved = sessionStorage.getItem('ignored_games_list');
+                if (saved) ignoredGames = JSON.parse(saved);
+            } catch (e) {}
 
             let charts = [];
-
             const ctxGames = document.getElementById('mostPlayedGamesChart');
-            if (ctxGames && gamesLabels.length > 0) {
-                charts.push(new Chart(ctxGames, {
+            let gamesChart = null;
+
+            function escapeHtml(str) {
+                return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+
+            function updateGamesChart() {
+                if (!gamesChart) return;
+                
+                const filteredLabels = [];
+                const filteredData = [];
+
+                fullGamesLabels.forEach((label, i) => {
+                    if (!ignoredGames.includes(label)) {
+                        filteredLabels.push(label);
+                        filteredData.push(fullGamesData[i]);
+                    }
+                });
+
+                gamesChart.data.labels = filteredLabels;
+                gamesChart.data.datasets[0].data = filteredData;
+                gamesChart.update();
+
+                const container = document.getElementById('ignored-games-container');
+                const tagsBox = document.getElementById('ignored-games-tags');
+                if (container && tagsBox) {
+                    if (ignoredGames.length > 0) {
+                        container.style.display = 'flex';
+                        tagsBox.innerHTML = ignoredGames.map(g => `
+                            <span class="ignored-game-tag" style="display: inline-flex; align-items: center; gap: 4px; background: var(--color-surface-muted, #e2e8f0); color: var(--color-text, #0f172a); padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; border: 1px solid var(--color-border, #cbd5e1);">
+                                ${escapeHtml(g)}
+                                <button type="button" data-game="${escapeHtml(g)}" class="remove-ignored-btn" style="border:none; background:none; cursor:pointer; font-weight:bold; padding:0 2px; color:var(--color-text-muted, #64748b);" title="Restore game">&times;</button>
+                            </span>
+                        `).join('');
+                    } else {
+                        container.style.display = 'none';
+                        tagsBox.innerHTML = '';
+                    }
+                }
+
+                try {
+                    sessionStorage.setItem('ignored_games_list', JSON.stringify(ignoredGames));
+                } catch (e) {}
+            }
+
+            if (ctxGames && fullGamesLabels.length > 0) {
+                const initialLabels = [];
+                const initialData = [];
+                fullGamesLabels.forEach((label, i) => {
+                    if (!ignoredGames.includes(label)) {
+                        initialLabels.push(label);
+                        initialData.push(fullGamesData[i]);
+                    }
+                });
+
+                gamesChart = new Chart(ctxGames, {
                     type: 'bar',
                     data: {
-                        labels: gamesLabels,
+                        labels: initialLabels,
                         datasets: [{
                             label: 'Plays',
-                            data: gamesData,
+                            data: initialData,
                             backgroundColor: colors.primary,
                             borderRadius: 6
                         }]
@@ -438,13 +625,45 @@ class TableHelper {
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    afterBody: function() {
+                                        return '(Click bar to ignore game)';
+                                    }
+                                }
+                            }
+                        },
+                        onClick: (e, elements) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const gameName = gamesChart.data.labels[index];
+                                if (gameName && !ignoredGames.includes(gameName)) {
+                                    ignoredGames.push(gameName);
+                                    updateGamesChart();
+                                }
+                            }
+                        },
                         scales: {
                             x: { ticks: { color: colors.text }, grid: { color: colors.grid } },
                             y: { ticks: { color: colors.text, stepSize: 1 }, grid: { color: colors.grid }, beginAtZero: true }
                         }
                     }
-                }));
+                });
+                charts.push(gamesChart);
+                updateGamesChart();
+
+                document.addEventListener('click', function(evt) {
+                    if (evt.target && evt.target.classList.contains('remove-ignored-btn')) {
+                        const g = evt.target.getAttribute('data-game');
+                        ignoredGames = ignoredGames.filter(name => name !== g);
+                        updateGamesChart();
+                    } else if (evt.target && evt.target.id === 'reset-ignored-games-btn') {
+                        ignoredGames = [];
+                        updateGamesChart();
+                    }
+                });
             }
 
             function makePieChart(id, labels, data) {
@@ -921,7 +1140,7 @@ class TableHelper {
                 <tbody>
                     <?php if (empty($champions)): ?>
                         <tr>
-                            <td colspan="<?php echo $isAdmin ? 5 : 4; ?>" class="text-center text-muted" style="padding: 1.5rem;">No champions recorded yet.</td>
+                            <td colspan="<?php echo $isAdmin ? 5 : 4; ?>" class="text-center text-muted" style="padding: 1.5rem;">No champions found.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($champions as $idx => $champion): ?>
@@ -1065,8 +1284,7 @@ class TableHelper {
                             <tr>
                                 <td data-label="Image">
                                     <?php
-                                    $isDemoMode = isset($_GET['demo']) || isset($_GET['preview']);
-                                    if (!empty($game['game_image']) && !$isDemoMode):
+                                    if (!empty($game['game_image'])):
                                     ?>
                                         <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'], $imagePrefix)); ?>" alt="" class="game-thumbnail" loading="lazy" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
                                         <div class="game-thumbnail game-thumbnail--skeleton" style="display:none;" title="No image uploaded">🎲</div>

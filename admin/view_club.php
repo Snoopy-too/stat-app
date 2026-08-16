@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once '../config/database.php';
 require_once '../includes/NavigationHelper.php';
 
@@ -164,11 +164,14 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="top-games">
             <h2>Most Played Games</h2>
             <?php if ($top_games): ?>
-                <ul>
+                <ul style="list-style-type: none; padding-left: 0;">
                     <?php foreach ($top_games as $game): ?>
-                        <li>
-                            <?php echo htmlspecialchars($game['game_name']); ?> - 
-                            Played <?php echo $game['play_count']; ?> times
+                        <li style="display: flex; align-items: center; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px dashed var(--color-border, #e2e8f0);">
+                            <span>
+                                <strong><?php echo htmlspecialchars($game['game_name']); ?></strong> - 
+                                Played <?php echo $game['play_count']; ?> times
+                            </span>
+                            <button type="button" title="Ignore game" style="background: none; border: none; color: var(--color-text-muted, #64748b); cursor: pointer; font-weight: bold; padding: 2px 6px; font-size: 1.1rem; line-height: 1;" onclick="this.closest('li').style.display='none';">&times;</button>
                         </li>
                     <?php endforeach; ?>
                 </ul>

@@ -35,12 +35,12 @@ if ($game_id > 0) {
         $results_stmt = $pdo->prepare("
             (SELECT
                 gr.result_id,
-                CONVERT(m.nickname USING utf8mb4) as nickname,
+                CONVERT(COALESCE(NULLIF(m.nickname, ''), m.member_name, 'Member') USING utf8mb4) as nickname,
                 gr.position,
                 gr.played_at,
-                CONVERT('individual' USING utf8mb4) as game_type
+                CASE WHEN gr.place_2 IS NOT NULL THEN CONVERT('ranked' USING utf8mb4) ELSE CONVERT('winner_losers' USING utf8mb4) END as game_type
             FROM game_results gr
-            JOIN members m ON gr.member_id = m.member_id
+            JOIN members m ON COALESCE(gr.winner, gr.member_id) = m.member_id
             WHERE gr.game_id = ?)
             UNION ALL
             (SELECT
@@ -48,9 +48,9 @@ if ($game_id > 0) {
                 CONVERT(t.team_name USING utf8mb4) as nickname,
                 tgr.position,
                 tgr.played_at,
-                CONVERT('team' USING utf8mb4) as game_type
+                CONVERT('teams' USING utf8mb4) as game_type
             FROM team_game_results tgr
-            JOIN teams t ON tgr.team_id = t.team_id
+            JOIN teams t ON tgr.winner = t.team_id
             WHERE tgr.game_id = ?)
             UNION ALL
             (SELECT
@@ -144,9 +144,9 @@ if ($game_id > 0) {
                         <tbody>
                             <?php foreach ($results as $result): ?>
                                 <?php
-                                $detail_url = 'game_play_details.php';
+                                $detail_url = 'game_play_details.php?result_id=' . urlencode((string)$result['result_id']) . '&type=' . urlencode((string)$result['game_type']);
                                 ?>
-                                <tr onclick="window.location='<?php echo $detail_url; ?>?result_id=<?php echo $result['result_id']; ?>'" class="table-row--link">
+                                <tr onclick="window.location='<?php echo $detail_url; ?>'" class="table-row--link">
                                     <td>
                                         <?php if ($result['game_type'] === 'cooperative'): ?>
                                             <?php
@@ -162,7 +162,18 @@ if ($game_id > 0) {
                                             </span>
                                         <?php endif; ?>
                                     </td>
-                                    <td><?php echo ucfirst($result['game_type']); ?></td>
+                                    <td>
+                                        <?php
+                                        $gt_display = match($result['game_type']) {
+                                            'winner_losers' => 'Winner/Losers',
+                                            'ranked' => 'Ranked',
+                                            'teams', 'team' => 'Teams',
+                                            'cooperative' => 'Cooperative',
+                                            default => ucfirst(str_replace('_', ' ', (string)$result['game_type']))
+                                        };
+                                        echo htmlspecialchars($gt_display);
+                                        ?>
+                                    </td>
                                     <td><?php echo date('Y/m/d', strtotime($result['played_at'])); ?></td>
                                 </tr>
                             <?php endforeach; ?>

@@ -4,7 +4,7 @@
  * Shows game cards for a specific club
  */
 
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/NavigationHelper.php';

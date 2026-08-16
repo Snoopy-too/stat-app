@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../config/session.php';
 
 // Clear all session variables
 $_SESSION = array();
@@ -13,5 +13,5 @@ if (isset($_COOKIE[session_name()])) {
 session_destroy();
 
 // Redirect to login page
-header('Location: ../admin/login.php');
+header('Location: https://theflyingdutchmen.games/logout?redirect=' . urlencode('https://stats.theflyingdutchmen.games/'));
 exit();

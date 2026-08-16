@@ -1,9 +1,10 @@
 <?php
-session_start();
+require_once __DIR__ . '/config/session.php';
 
 // Redirect admin users directly to their account
 if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
-    header('Location: admin/account.php');
+    $clubId = $_SESSION['current_club_id'] ?? $_SESSION['club_id'] ?? null;
+    header('Location: admin/club_new_results.php' . ($clubId ? '?club_id=' . (int)$clubId : ''));
     exit;
 }
 
@@ -71,7 +72,7 @@ if (isset($_SESSION['club_id'])) {
                 <?php else: ?>
                     <a href="admin/login.php" class="btn btn--secondary">Login</a>
                 <?php endif; ?>
-                <a href="register.php" class="btn btn--primary">Register</a>
+                <a href="admin/login.php?tab=register" class="btn btn--primary">Register</a>
             </div>
         </div>
     </section>
@@ -111,48 +112,18 @@ if (isset($_SESSION['club_id'])) {
         <div class="gallery-container">
             <div class="landing-section-header">
                 <h2>See What's Inside</h2>
+                <p>Click to open the interactive app preview carousel</p>
             </div>
-            <div class="gallery-wrapper">
-                <button class="gallery-nav-btn gallery-nav-btn--prev" id="galleryPrev" aria-label="Previous">&#10094;</button>
-                <div class="gallery-scroll" id="galleryScroll">
-                    <div class="gallery-item">
-                        <div class="gallery-item-preview">
-                            <iframe src="admin/club_new_results.php?demo=1&theme=arcade" title="Add New Result" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+            <div class="gallery-single-wrapper">
+                <div class="gallery-item gallery-item--single" id="singlePreviewTrigger" role="button" tabindex="0" aria-label="Open Interactive App Preview Modal">
+                    <div class="gallery-item-preview">
+                        <iframe src="admin/club_new_results.php?demo=1&theme=arcade" title="Interactive App Preview" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+                        <div class="preview-overlay-badge">
+                            <span>🔍 Click to Launch Interactive Preview Carousel</span>
                         </div>
-                        <div class="gallery-item-caption">Add New Result</div>
                     </div>
-                    <div class="gallery-item">
-                        <div class="gallery-item-preview">
-                            <iframe src="admin/manage_results.php?demo=1&theme=arcade" title="Results" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
-                        </div>
-                        <div class="gallery-item-caption">Results</div>
-                    </div>
-                    <div class="gallery-item">
-                        <div class="gallery-item-preview">
-                            <iframe src="admin/manage_members.php?demo=1&theme=arcade" title="Members" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
-                        </div>
-                        <div class="gallery-item-caption">Members</div>
-                    </div>
-                    <div class="gallery-item">
-                        <div class="gallery-item-preview">
-                            <iframe src="admin/manage_teams.php?demo=1&theme=arcade" title="Teams" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
-                        </div>
-                        <div class="gallery-item-caption">Teams</div>
-                    </div>
-                    <div class="gallery-item">
-                        <div class="gallery-item-preview">
-                            <iframe src="admin/manage_champions.php?demo=1&theme=arcade" title="Champions" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
-                        </div>
-                        <div class="gallery-item-caption">Champions</div>
-                    </div>
-                    <div class="gallery-item">
-                        <div class="gallery-item-preview">
-                            <iframe src="admin/manage_games.php?demo=1&theme=arcade" title="Games" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
-                        </div>
-                        <div class="gallery-item-caption">Games</div>
-                    </div>
+                    <div class="gallery-item-caption">Interactive App Preview &mdash; Click to explore all features</div>
                 </div>
-                <button class="gallery-nav-btn gallery-nav-btn--next" id="galleryNext" aria-label="Next">&#10095;</button>
             </div>
         </div>
     </section>
@@ -183,40 +154,57 @@ if (isset($_SESSION['club_id'])) {
                 <button type="button" class="preview-modal-close" id="previewModalClose" aria-label="Close">&times;</button>
             </div>
             <div class="preview-modal-body">
+                <button type="button" class="modal-nav-btn modal-nav-btn--prev" id="modalPrev" aria-label="Previous slide">&#10094;</button>
                 <iframe id="previewModalIframe" src="" title="Preview Modal" loading="lazy"></iframe>
+                <button type="button" class="modal-nav-btn modal-nav-btn--next" id="modalNext" aria-label="Next slide">&#10095;</button>
             </div>
         </div>
     </div>
 
     <script>
-    // Gallery navigation
-    const gallery = document.getElementById('galleryScroll');
-    const prevBtn = document.getElementById('galleryPrev');
-    const nextBtn = document.getElementById('galleryNext');
+    // Modal preview behavior (modal carousel)
+    const previewSlides = [
+        { title: 'Add New Result', url: 'admin/club_new_results.php?demo=1&theme=arcade' },
+        { title: 'Results', url: 'admin/manage_results.php?demo=1&theme=arcade' },
+        { title: 'Members', url: 'admin/manage_members.php?demo=1&theme=arcade' },
+        { title: 'Teams', url: 'admin/manage_teams.php?demo=1&theme=arcade' },
+        { title: 'Champions', url: 'admin/manage_champions.php?demo=1&theme=arcade' },
+        { title: 'Games', url: 'admin/manage_games.php?demo=1&theme=arcade' }
+    ];
+    let currentSlideIndex = 0;
 
-    if (gallery && prevBtn && nextBtn) {
-        const scrollAmount = 380;
-        prevBtn.addEventListener('click', () => {
-            gallery.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-        });
-        nextBtn.addEventListener('click', () => {
-            gallery.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-        });
-    }
-
-    // Modal preview behavior
     const previewModal = document.getElementById('previewModal');
     const previewModalIframe = document.getElementById('previewModalIframe');
     const previewModalTitle = document.getElementById('previewModalTitle');
     const previewModalClose = document.getElementById('previewModalClose');
+    const modalPrev = document.getElementById('modalPrev');
+    const modalNext = document.getElementById('modalNext');
+    const singlePreviewTrigger = document.getElementById('singlePreviewTrigger');
 
-    function openPreviewModal(url, title) {
-        if (!previewModal || !previewModalIframe) return;
-        previewModalIframe.src = url;
-        if (previewModalTitle) previewModalTitle.textContent = title;
+    function updateModalSlide(index) {
+        if (!previewModalIframe) return;
+        currentSlideIndex = (index + previewSlides.length) % previewSlides.length;
+        const slide = previewSlides[currentSlideIndex];
+        previewModalIframe.src = slide.url;
+        if (previewModalTitle) {
+            previewModalTitle.textContent = `${slide.title} (${currentSlideIndex + 1} of ${previewSlides.length})`;
+        }
+    }
+
+    function preventModalScroll(e) {
+        e.preventDefault();
+    }
+
+    function openPreviewModal(slideIndex = 0) {
+        if (!previewModal) return;
+        updateModalSlide(slideIndex);
         previewModal.classList.add('is-active');
         previewModal.setAttribute('aria-hidden', 'false');
+        document.documentElement.classList.add('modal-open');
+        document.body.classList.add('modal-open');
         document.body.style.overflow = 'hidden';
+        previewModal.addEventListener('wheel', preventModalScroll, { passive: false });
+        previewModal.addEventListener('touchmove', preventModalScroll, { passive: false });
     }
 
     function closePreviewModal() {
@@ -224,7 +212,35 @@ if (isset($_SESSION['club_id'])) {
         previewModal.classList.remove('is-active');
         previewModal.setAttribute('aria-hidden', 'true');
         previewModalIframe.src = '';
+        document.documentElement.classList.remove('modal-open');
+        document.body.classList.remove('modal-open');
         document.body.style.overflow = '';
+        previewModal.removeEventListener('wheel', preventModalScroll);
+        previewModal.removeEventListener('touchmove', preventModalScroll);
+    }
+
+    if (singlePreviewTrigger) {
+        singlePreviewTrigger.addEventListener('click', () => openPreviewModal(0));
+        singlePreviewTrigger.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openPreviewModal(0);
+            }
+        });
+    }
+
+    if (modalPrev) {
+        modalPrev.addEventListener('click', (e) => {
+            e.stopPropagation();
+            updateModalSlide(currentSlideIndex - 1);
+        });
+    }
+
+    if (modalNext) {
+        modalNext.addEventListener('click', (e) => {
+            e.stopPropagation();
+            updateModalSlide(currentSlideIndex + 1);
+        });
     }
 
     if (previewModalClose) {
@@ -236,20 +252,15 @@ if (isset($_SESSION['club_id'])) {
         });
     }
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && previewModal && previewModal.classList.contains('is-active')) {
-            closePreviewModal();
+        if (previewModal && previewModal.classList.contains('is-active')) {
+            if (e.key === 'Escape') {
+                closePreviewModal();
+            } else if (e.key === 'ArrowLeft') {
+                updateModalSlide(currentSlideIndex - 1);
+            } else if (e.key === 'ArrowRight') {
+                updateModalSlide(currentSlideIndex + 1);
+            }
         }
-    });
-
-    document.querySelectorAll('.gallery-item-preview').forEach(previewEl => {
-        previewEl.addEventListener('click', () => {
-            const iframe = previewEl.querySelector('iframe');
-            const item = previewEl.closest('.gallery-item');
-            const captionEl = item ? item.querySelector('.gallery-item-caption') : null;
-            const url = iframe ? iframe.getAttribute('src') : '';
-            const title = captionEl ? captionEl.textContent.trim() : 'Preview';
-            if (url) openPreviewModal(url, title);
-        });
     });
 
     // Club search

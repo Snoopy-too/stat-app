@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+    require_once __DIR__ . '/../config/session.php';
 }
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/SecurityUtils.php';
@@ -113,7 +113,9 @@ if (!$game && !$is_edit) {
     exit();
 }
 
-$club_name = ($demo || !NavigationHelper::getClubName($pdo, $club_id)) ? 'Meeple & Dice Club' : NavigationHelper::getClubName($pdo, $club_id);
+$demoClub = function_exists('get_demo_data') ? get_demo_data('club') : [];
+$defaultClubName = $demoClub['club_name'] ?? 'Meeple Mosh';
+$club_name = ($demo || !NavigationHelper::getClubName($pdo, $club_id)) ? $defaultClubName : NavigationHelper::getClubName($pdo, $club_id);
 
 // Fetch all games for switcher dropdown
 try {
@@ -135,7 +137,20 @@ try {
 
 // Fetch active teams
 try {
-    $stmt = $pdo->prepare('SELECT t.team_id as id, t.team_name as name FROM teams t WHERE t.club_id = ? ORDER BY t.team_name ASC');
+    $stmt = $pdo->prepare('
+        SELECT t.*, t.team_id as id, t.team_name as name,
+               m1.nickname as member1_nickname,
+               m2.nickname as member2_nickname,
+               m3.nickname as member3_nickname,
+               m4.nickname as member4_nickname
+        FROM teams t
+        LEFT JOIN members m1 ON t.member1_id = m1.member_id
+        LEFT JOIN members m2 ON t.member2_id = m2.member_id
+        LEFT JOIN members m3 ON t.member3_id = m3.member_id
+        LEFT JOIN members m4 ON t.member4_id = m4.member_id
+        WHERE t.club_id = ?
+        ORDER BY t.team_name ASC
+    ');
     $stmt->execute([$club_id]);
     $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Throwable $e) {
@@ -146,6 +161,28 @@ if ($demo) {
     $all_club_games = get_demo_data('games');
     $members = get_demo_data('members');
     $teams = get_demo_data('teams');
+}
+
+if (!empty($teams)) {
+    $teamMembersMap = get_team_members_map($pdo, $teams);
+    foreach ($teams as &$t) {
+        $tid = (int)($t['team_id'] ?? $t['id'] ?? 0);
+        if (isset($teamMembersMap[$tid])) {
+            $t['members_list'] = array_column($teamMembersMap[$tid], 'nickname');
+        } elseif (!isset($t['members_list'])) {
+            $raw_list = [
+                $t['member1_nickname'] ?? null,
+                $t['member2_nickname'] ?? null,
+                $t['member3_nickname'] ?? null,
+                $t['member4_nickname'] ?? null,
+            ];
+            $t['members_list'] = array_values(array_filter(array_map(function($m) {
+                return is_array($m) ? ($m['nickname'] ?? '') : (string)$m;
+            }, $raw_list)));
+        }
+        $t['members_str'] = !empty($t['members_list']) ? implode(', ', $t['members_list']) : '';
+    }
+    unset($t);
 }
 
 // Load supplementary data for edit mode
@@ -697,10 +734,12 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
                         <div class="form-group">
                             <label for="team_winner_id" class="form-label">Winning Team: <span class="required-marker">*</span></label>
                             <select id="team_winner_id" name="team_winner_id" class="form-control">
-                                <option value="">Select Winning Team</option>
+                                <option value="" data-members="[]">Select Winning Team</option>
                                 <?php foreach ($teams as $team): ?>
-                                    <option value="<?php echo $team['id']; ?>" <?php echo ($is_edit && (int)$team['id'] === $default_winner_id) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($team['name']); ?>
+                                    <option value="<?php echo $team['id']; ?>"
+                                            data-members="<?php echo htmlspecialchars(json_encode($team['members_list'] ?? [])); ?>"
+                                            <?php echo ($is_edit && (int)$team['id'] === $default_winner_id) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($team['name'] . (!empty($team['members_str']) ? ' (' . $team['members_str'] . ')' : '')); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -716,9 +755,16 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
                             </div>
                             <div id="team-losers-checkbox-list" class="checkbox-grid">
                                 <?php foreach ($teams as $team): ?>
-                                    <label for="team_loser_<?php echo $team['id']; ?>" class="form-check checkbox-item">
+                                    <label for="team_loser_<?php echo $team['id']; ?>"
+                                           class="form-check checkbox-item"
+                                           data-members="<?php echo htmlspecialchars(json_encode($team['members_list'] ?? [])); ?>">
                                         <input type="checkbox" name="team_losers[]" id="team_loser_<?php echo $team['id']; ?>" value="<?php echo $team['id']; ?>" class="form-check-input team-loser-checkbox" <?php echo ($is_edit && (int)$team['id'] === $default_place_2_id) ? 'checked' : ''; ?>>
-                                        <span class="form-check-label"><?php echo htmlspecialchars($team['name']); ?></span>
+                                        <span class="form-check-label">
+                                            <span><?php echo htmlspecialchars($team['name']); ?></span>
+                                            <?php if (!empty($team['members_str'])): ?>
+                                                <small style="display: block; font-size: 0.75rem; color: var(--color-text-muted); font-weight: normal; line-height: 1.2; margin-top: 0.1rem;">(<?php echo htmlspecialchars($team['members_str']); ?>)</small>
+                                            <?php endif; ?>
+                                        </span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
@@ -822,12 +868,41 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
                 }
             });
         } else if (gameType === 'teams') {
-            const winningTeamId = document.getElementById('team_winner_id')?.value;
+            const twSelect = document.getElementById('team_winner_id');
+            const winningTeamId = twSelect?.value;
+            const selectedOption = twSelect?.selectedOptions?.[0];
+
+            let winningMembers = [];
+            if (selectedOption && selectedOption.dataset.members) {
+                try {
+                    winningMembers = JSON.parse(selectedOption.dataset.members)
+                        .map(m => String(m).trim().toLowerCase());
+                } catch (e) {
+                    winningMembers = [];
+                }
+            }
+
             const teamLoserCheckboxes = document.querySelectorAll('.team-loser-checkbox');
 
             teamLoserCheckboxes.forEach(cb => {
                 const item = cb.closest('.checkbox-item');
-                if (winningTeamId && cb.value === winningTeamId) {
+                let shouldHide = false;
+
+                if (winningTeamId) {
+                    if (cb.value === winningTeamId) {
+                        shouldHide = true;
+                    } else if (winningMembers.length > 0 && item && item.dataset.members) {
+                        try {
+                            const loserMembers = JSON.parse(item.dataset.members)
+                                .map(m => String(m).trim().toLowerCase());
+                            if (loserMembers.length > 0 && winningMembers.every(m => loserMembers.includes(m))) {
+                                shouldHide = true;
+                            }
+                        } catch (e) {}
+                    }
+                }
+
+                if (shouldHide) {
                     if (cb.checked) {
                         cb.checked = false;
                         cb.dispatchEvent(new Event('change', { bubbles: true }));

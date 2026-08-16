@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/NavigationHelper.php';
@@ -24,7 +24,7 @@ if (!$club_id && !empty($_SESSION['club_id'])) {
 
 if (!$club_id && isset($_SESSION['admin_id'])) {
     try {
-        $stmt = $pdo->prepare("SELECT c.club_id FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ? ORDER BY c.club_name ASC LIMIT 1");
+        $stmt = $pdo->prepare("SELECT c.club_id FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ? ORDER BY ca.is_default DESC, c.club_name ASC LIMIT 1");
         $stmt->execute([$_SESSION['admin_id']]);
         $club_id = (int)$stmt->fetchColumn();
     } catch (Throwable $e) {}
@@ -45,7 +45,10 @@ if ($club_id && !$demo) {
     $stmt->execute([$club_id]);
     $club = $stmt->fetch(PDO::FETCH_ASSOC);
 }
-$club_name = ($club && !empty($club['club_name'])) ? $club['club_name'] : 'Meeple & Dice Club';
+if ($demo && function_exists('get_demo_data')) {
+    $club = get_demo_data('club');
+}
+$club_name = ($club && !empty($club['club_name'])) ? $club['club_name'] : 'Meeple Mosh';
 
 // Optional game_id filter
 $game_id = (isset($_GET['game_id']) && $_GET['game_id'] !== '') ? (int)$_GET['game_id'] : null;
@@ -144,7 +147,9 @@ try {
     if ($game_id) {
         // Individual results
         $stmt = $pdo->prepare("
-            SELECT gr.result_id, gr.played_at, COALESCE(NULLIF(m.nickname, ''), m.member_name, 'Unknown Member') as winner_name, COALESCE(g.game_type, 'winner_losers') as game_type, gr.duration, gr.notes, g.game_id, g.game_name, COALESCE(m.status, 'active') as member_status
+            SELECT gr.result_id, gr.played_at, COALESCE(NULLIF(m.nickname, ''), m.member_name, 'Unknown Member') as winner_name, 
+                   CASE WHEN gr.place_2 IS NOT NULL THEN 'ranked' ELSE 'winner_losers' END as game_type, 
+                   gr.duration, gr.notes, g.game_id, g.game_name, COALESCE(m.status, 'active') as member_status
             FROM game_results gr
             JOIN games g ON gr.game_id = g.game_id
             LEFT JOIN members m ON COALESCE(gr.winner, gr.member_id) = m.member_id
@@ -155,7 +160,9 @@ try {
 
         // Team results
         $stmt = $pdo->prepare("
-            SELECT tgr.result_id, tgr.played_at, CONCAT(COALESCE(t.team_name, 'Unknown Team'), ' (Team)') as winner_name, COALESCE(g.game_type, 'teams') as game_type, tgr.duration, tgr.notes, g.game_id, g.game_name, 'active' as member_status
+            SELECT tgr.result_id, tgr.played_at, CONCAT(COALESCE(t.team_name, 'Unknown Team'), ' (Team)') as winner_name, 
+                   'teams' as game_type, 
+                   tgr.duration, tgr.notes, g.game_id, g.game_name, 'active' as member_status
             FROM team_game_results tgr
             JOIN games g ON tgr.game_id = g.game_id
             LEFT JOIN teams t ON tgr.winner = t.team_id
@@ -166,7 +173,9 @@ try {
 
         // Cooperative results
         $stmt = $pdo->prepare("
-            SELECT cgr.result_id, cgr.played_at, CONCAT(UPPER(cgr.outcome), ' - Co-op') as winner_name, COALESCE(g.game_type, 'cooperative') as game_type, cgr.duration, cgr.notes, g.game_id, g.game_name, 'active' as member_status
+            SELECT cgr.result_id, cgr.played_at, CONCAT(UPPER(cgr.outcome), ' - Co-op') as winner_name, 
+                   'cooperative' as game_type, 
+                   cgr.duration, cgr.notes, g.game_id, g.game_name, 'active' as member_status
             FROM cooperative_game_results cgr
             JOIN games g ON cgr.game_id = g.game_id
             WHERE g.club_id = ? AND g.game_id = ?
@@ -176,7 +185,9 @@ try {
     } else {
         // Individual results
         $stmt = $pdo->prepare("
-            SELECT gr.result_id, gr.played_at, COALESCE(NULLIF(m.nickname, ''), m.member_name, 'Unknown Member') as winner_name, COALESCE(g.game_type, 'winner_losers') as game_type, gr.duration, gr.notes, g.game_id, g.game_name, COALESCE(m.status, 'active') as member_status
+            SELECT gr.result_id, gr.played_at, COALESCE(NULLIF(m.nickname, ''), m.member_name, 'Unknown Member') as winner_name, 
+                   CASE WHEN gr.place_2 IS NOT NULL THEN 'ranked' ELSE 'winner_losers' END as game_type, 
+                   gr.duration, gr.notes, g.game_id, g.game_name, COALESCE(m.status, 'active') as member_status
             FROM game_results gr
             JOIN games g ON gr.game_id = g.game_id
             LEFT JOIN members m ON COALESCE(gr.winner, gr.member_id) = m.member_id
@@ -187,7 +198,9 @@ try {
 
         // Team results
         $stmt = $pdo->prepare("
-            SELECT tgr.result_id, tgr.played_at, CONCAT(COALESCE(t.team_name, 'Unknown Team'), ' (Team)') as winner_name, COALESCE(g.game_type, 'teams') as game_type, tgr.duration, tgr.notes, g.game_id, g.game_name, 'active' as member_status
+            SELECT tgr.result_id, tgr.played_at, CONCAT(COALESCE(t.team_name, 'Unknown Team'), ' (Team)') as winner_name, 
+                   'teams' as game_type, 
+                   tgr.duration, tgr.notes, g.game_id, g.game_name, 'active' as member_status
             FROM team_game_results tgr
             JOIN games g ON tgr.game_id = g.game_id
             LEFT JOIN teams t ON tgr.winner = t.team_id
@@ -198,7 +211,9 @@ try {
 
         // Cooperative results
         $stmt = $pdo->prepare("
-            SELECT cgr.result_id, cgr.played_at, CONCAT(UPPER(cgr.outcome), ' - Co-op') as winner_name, COALESCE(g.game_type, 'cooperative') as game_type, cgr.duration, cgr.notes, g.game_id, g.game_name, 'active' as member_status
+            SELECT cgr.result_id, cgr.played_at, CONCAT(UPPER(cgr.outcome), ' - Co-op') as winner_name, 
+                   'cooperative' as game_type, 
+                   cgr.duration, cgr.notes, g.game_id, g.game_name, 'active' as member_status
             FROM cooperative_game_results cgr
             JOIN games g ON cgr.game_id = g.game_id
             WHERE g.club_id = ?

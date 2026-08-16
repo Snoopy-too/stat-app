@@ -53,6 +53,7 @@ server {
     }
 
     try_files $uri $uri/ =404;
+    client_max_body_size 64M;
 }
 EOF
 
@@ -78,6 +79,7 @@ server {
     }
 
     try_files $uri $uri/ =404;
+    client_max_body_size 64M;
 }
 EOF
 

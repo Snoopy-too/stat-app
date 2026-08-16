@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
@@ -19,15 +19,12 @@ if (!isset($_SESSION['admin_type']) && isset($_SESSION['admin_id'])) {
 
 $security = new SecurityUtils($pdo);
 
-try {
-    $pdo->exec("ALTER TABLE admin_users ADD COLUMN default_club_id INT DEFAULT NULL");
-} catch (Throwable $e) {}
+ensure_club_admins_is_default_column_exists($pdo);
 
 // Fetch current admin data
-$stmt = $pdo->prepare("SELECT username, email, created_at, default_club_id FROM admin_users WHERE admin_id = ?");
+$stmt = $pdo->prepare("SELECT username, email, created_at FROM admin_users WHERE admin_id = ?");
 $stmt->execute([$_SESSION['admin_id']]);
 $admin = $stmt->fetch(PDO::FETCH_ASSOC);
-$current_default_club_id = (int)($admin['default_club_id'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -39,21 +36,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    if ($action === 'set_default_club') {
-        $new_default = isset($_POST['default_club_id']) ? (int)$_POST['default_club_id'] : 0;
+    if ($action === 'set_default_club' || $action === 'toggle_default_club') {
+        $target_club_id = (int)($_POST['club_id'] ?? $_POST['default_club_id'] ?? 0);
+        $is_default_val = !empty($_POST['is_default']) ? 1 : 0;
         
-        if ($new_default > 0) {
-            $chk = $pdo->prepare("SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?");
-            $chk->execute([$new_default, $_SESSION['admin_id']]);
-            if ($chk->fetch()) {
-                $upd = $pdo->prepare("UPDATE admin_users SET default_club_id = ? WHERE admin_id = ?");
-                $upd->execute([$new_default, $_SESSION['admin_id']]);
-                $_SESSION['success'] = "Default club updated.";
-            }
-        } else {
-            $upd = $pdo->prepare("UPDATE admin_users SET default_club_id = NULL WHERE admin_id = ?");
-            $upd->execute([$_SESSION['admin_id']]);
-            $_SESSION['success'] = "Default club preference cleared.";
+        if ($target_club_id > 0) {
+            $upd = $pdo->prepare("UPDATE club_admins SET is_default = ? WHERE club_id = ? AND admin_id = ?");
+            $upd->execute([$is_default_val, $target_club_id, $_SESSION['admin_id']]);
+            $_SESSION['success'] = $is_default_val ? "Club set as default." : "Club removed from defaults.";
         }
         
         $active_ref = !empty($_POST['active_club_id']) ? (int)$_POST['active_club_id'] : (!empty($_GET['club_id']) ? (int)$_GET['club_id'] : 0);
@@ -255,6 +245,7 @@ $query = "SELECT c.*,
           (SELECT COUNT(*) FROM champions WHERE club_id = c.club_id) as champion_count,
           (SELECT COUNT(*) FROM teams t JOIN members m ON t.member1_id = m.member_id WHERE m.club_id = c.club_id) as team_count,
           ca.role as admin_role,
+          ca.is_default,
           (SELECT COUNT(*) FROM club_admins WHERE club_id = c.club_id) as admin_count
           FROM clubs c
           JOIN club_admins ca ON c.club_id = ca.club_id
@@ -334,9 +325,15 @@ $csrf_token = $security->generateCSRFToken();
 <body class="has-sidebar">
     <?php NavigationHelper::renderAdminSidebar('account', $active_club_id); ?>
 
-    <div class="header header--compact">
-        <?php NavigationHelper::renderSidebarToggle(); ?>
-        <?php NavigationHelper::renderCompactHeader('Account Settings'); ?>
+    <div class="header header--compact" style="display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+            <?php NavigationHelper::renderSidebarToggle(); ?>
+            <?php NavigationHelper::renderCompactHeader('Account Settings'); ?>
+        </div>
+        <a href="logout.php" class="btn btn--small" style="display:inline-flex; align-items:center; gap:0.35rem; color:#ef4444; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); border-radius:0.5rem; padding:0.4rem 0.75rem; text-decoration:none; font-weight:600; transition:all 0.2s ease;">
+            <span class="material-symbols-outlined" style="font-size:1.1rem;">logout</span>
+            <span>Logout</span>
+        </a>
     </div>
 
     <div class="container">
@@ -455,17 +452,18 @@ $csrf_token = $security->generateCSRFToken();
                                     </div>
                                 </td>
                                 <td style="text-align:center;" data-label="Default">
-                                    <?php $is_default = ((int)$club['club_id'] === $current_default_club_id); ?>
+                                    <?php $is_default = !empty($club['is_default']); ?>
                                     <form method="POST" style="margin:0; display:inline-flex; align-items:center; justify-content:center;">
                                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                                        <input type="hidden" name="action" value="set_default_club">
-                                        <input type="hidden" name="default_club_id" value="<?php echo $club['club_id']; ?>">
+                                        <input type="hidden" name="action" value="toggle_default_club">
+                                        <input type="hidden" name="club_id" value="<?php echo (int)$club['club_id']; ?>">
+                                        <input type="hidden" name="is_default" value="<?php echo $is_default ? '0' : '1'; ?>">
                                         <input type="hidden" name="active_club_id" value="<?php echo $active_club_id; ?>">
                                         <input type="checkbox" 
                                                class="default-club-checkbox"
                                                <?php echo $is_default ? 'checked' : ''; ?> 
-                                               onchange="toggleDefaultClub(this, <?php echo (int)$club['club_id']; ?>)"
-                                               title="<?php echo $is_default ? 'Uncheck to unset default' : 'Check to set as default'; ?>"
+                                               onchange="toggleDefaultClub(this)"
+                                               title="<?php echo $is_default ? 'Uncheck to remove from defaults' : 'Check to set as default'; ?>"
                                                style="cursor:pointer; width:16px; height:16px; accent-color: var(--color-primary);">
                                     </form>
                                 </td>
@@ -830,15 +828,8 @@ $csrf_token = $security->generateCSRFToken();
             }
         }
 
-        function toggleDefaultClub(checkbox, clubId) {
-            if (checkbox.checked) {
-                document.querySelectorAll('.default-club-checkbox').forEach(cb => {
-                    if (cb !== checkbox) cb.checked = false;
-                });
-                checkbox.form.querySelector('input[name="default_club_id"]').value = clubId;
-            } else {
-                checkbox.form.querySelector('input[name="default_club_id"]').value = 0;
-            }
+        function toggleDefaultClub(checkbox) {
+            checkbox.form.querySelector('input[name="is_default"]').value = checkbox.checked ? '1' : '0';
             checkbox.form.submit();
         }
     </script>

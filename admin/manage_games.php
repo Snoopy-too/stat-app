@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 ensure_game_type_column_exists($pdo);
@@ -36,12 +36,13 @@ if ($club_id > 0) {
     $_SESSION['club_id'] = $club_id;
 }
 
-$club_name = 'Meeple & Dice Club';
+$demoClub = function_exists('get_demo_data') ? get_demo_data('club') : [];
+$club_name = $demoClub['club_name'] ?? 'Meeple Mosh';
 if ($club_id && !$demo) {
     try {
         $stmt = $pdo->prepare("SELECT club_name FROM clubs WHERE club_id = ?");
         $stmt->execute([$club_id]);
-        $club_name = $stmt->fetchColumn() ?: 'Meeple & Dice Club';
+        $club_name = $stmt->fetchColumn() ?: $club_name;
     } catch (Exception $e) {}
 }
 
@@ -106,18 +107,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (isset($_FILES['game_image']) && $_FILES['game_image']['error'] !== UPLOAD_ERR_NO_FILE) {
                 if ($_FILES['game_image']['error'] === UPLOAD_ERR_OK) {
                     $file = $_FILES['game_image'];
-                    $allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
-                    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-                    $maxSize = 1 * 1024 * 1024;
+                    $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                    $maxSize = 10 * 1024 * 1024;
                     $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
                     $finfo = finfo_open(FILEINFO_MIME_TYPE);
                     $actualMime = finfo_file($finfo, $file['tmp_name']);
                     finfo_close($finfo);
 
                     if (!in_array($extension, $allowedExtensions) || !in_array($actualMime, $allowedMimes)) {
-                        $uploadError = "Invalid file type. Only JPG, PNG, and GIF allowed.";
+                        $uploadError = "Invalid file type. Only JPG, PNG, GIF, and WebP allowed.";
                     } elseif ($file['size'] > $maxSize) {
-                        $uploadError = "File is too large. Max size is 1MB.";
+                        $uploadError = "File is too large. Max size is 10MB.";
                     } else {
                         $uploadDir = '../images/game_images/';
                         if (!file_exists($uploadDir)) mkdir($uploadDir, 0777, true);
@@ -130,6 +131,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $uploadError = "Failed to move uploaded file.";
                         }
                     }
+                } elseif ($_FILES['game_image']['error'] === UPLOAD_ERR_INI_SIZE || $_FILES['game_image']['error'] === UPLOAD_ERR_FORM_SIZE) {
+                    $uploadError = "File is too large. Max size is 10MB.";
+                } else {
+                    $uploadError = "Upload error code: " . $_FILES['game_image']['error'];
                 }
             }
 

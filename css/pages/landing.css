@@ -76,7 +76,7 @@
     text-align: center;
     position: relative;
     overflow: hidden;
-    min-height: calc(100vh - 60px);
+    min-height: calc(100vh - var(--tfd-navbar-height, 48px));
     display: flex;
     flex-direction: column;
     align-items: center;

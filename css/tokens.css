@@ -1,4 +1,6 @@
 :root {
+    --tfd-navbar-height: 48px;
+    
     /* Typography */
     --font-family-base: 'Inter', system-ui, -apple-system, sans-serif;
     --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;

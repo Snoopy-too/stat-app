@@ -200,35 +200,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: account.php");
         exit();
     }
-    
-    if ($action === 'change_password') {
-        $current_password = $_POST['current_password'];
-        $new_password = $_POST['new_password'];
-        $confirm_password = $_POST['confirm_password'];
-        
-        if (strlen($new_password) < 8) {
-            $_SESSION['error'] = "New password must be at least 8 characters long";
-        } elseif ($new_password !== $confirm_password) {
-            $_SESSION['error'] = "New passwords do not match";
-        } else {
-            $stmt = $pdo->prepare("SELECT password_hash FROM admin_users WHERE admin_id = ?");
-            $stmt->execute([$_SESSION['admin_id']]);
-            $admin_pass = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if (password_verify($current_password, $admin_pass['password_hash'])) {
-                $hashed_password = $security->hashPassword($new_password);
-                
-                $stmt = $pdo->prepare("UPDATE admin_users SET password_hash = ? WHERE admin_id = ?");
-                $stmt->execute([$hashed_password, $_SESSION['admin_id']]);
-                
-                $_SESSION['success'] = "Password changed successfully";
-            } else {
-                $_SESSION['error'] = "Current password is incorrect";
-            }
-        }
-        header("Location: account.php");
-        exit();
-    }
 }
 
 // Fetch clubs for current admin
@@ -320,20 +291,15 @@ $csrf_token = $security->generateCSRFToken();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Settings - Board Game Club StatApp</title>
+    <link rel="stylesheet" href="https://theflyingdutchmen.games/stylesheets/tfd-nav.css">
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body class="has-sidebar">
     <?php NavigationHelper::renderAdminSidebar('account', $active_club_id); ?>
 
-    <div class="header header--compact" style="display:flex; align-items:center; justify-content:space-between;">
-        <div style="display:flex; align-items:center; gap:0.75rem;">
-            <?php NavigationHelper::renderSidebarToggle(); ?>
-            <?php NavigationHelper::renderCompactHeader('Account Settings'); ?>
-        </div>
-        <a href="logout.php" class="btn btn--small" style="display:inline-flex; align-items:center; gap:0.35rem; color:#ef4444; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); border-radius:0.5rem; padding:0.4rem 0.75rem; text-decoration:none; font-weight:600; transition:all 0.2s ease;">
-            <span class="material-symbols-outlined" style="font-size:1.1rem;">logout</span>
-            <span>Logout</span>
-        </a>
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader('Account Settings'); ?>
     </div>
 
     <div class="container">
@@ -535,59 +501,7 @@ $csrf_token = $security->generateCSRFToken();
             </div>
         </div>
 
-        <!-- Change Password -->
-        <div class="card">
-            <div class="card-header">
-                <h2>Change Password</h2>
-                <p class="card-subtitle">Ensure your account stays secure</p>
-            </div>
-            <form method="POST" class="stack">
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                <input type="hidden" name="action" value="change_password">
-                
-                <div class="form-group">
-                    <label for="current_password" class="form-label">Current Password</label>
-                    <input 
-                        type="password" 
-                        id="current_password" 
-                        name="current_password" 
-                        class="form-control" 
-                        required
-                    >
-                </div>
-                
-                <div class="form-group">
-                    <label for="new_password" class="form-label">New Password</label>
-                    <input 
-                        type="password" 
-                        id="new_password" 
-                        name="new_password" 
-                        class="form-control" 
-                        required
-                        minlength="8"
-                    >
-                    <small style="color: var(--color-text-muted); font-size: var(--font-size-xs);">
-                        Minimum 8 characters
-                    </small>
-                </div>
-                
-                <div class="form-group">
-                    <label for="confirm_password" class="form-label">Confirm New Password</label>
-                    <input 
-                        type="password" 
-                        id="confirm_password" 
-                        name="confirm_password" 
-                        class="form-control" 
-                        required
-                        minlength="8"
-                    >
-                </div>
-                
-                <div class="form-group">
-                    <button type="submit" class="btn btn--primary">Change Password</button>
-                </div>
-            </form>
-        </div>
+        <!-- Account Information -->
 
 
         <!-- Account Information -->

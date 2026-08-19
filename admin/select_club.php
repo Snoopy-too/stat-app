@@ -107,14 +107,8 @@ $pageTitle = 'Choose a club to manage - Board Game Club StatApp';
 $htmlAttributes = '';
 require_once '../includes/templates/header.php';
 ?>
-    <div class="header">
-        <div class="header-title-group">
-            <h1>Board Game Club StatApp</h1>
-            <p class="header-subtitle">Welcome, <?php echo htmlspecialchars($_SESSION['admin_username'] ?? 'Admin'); ?>!</p>
-        </div>
-    </div>
 
-    <div class="container container--narrow auth-shell">
+    <div class="container container--narrow auth-shell" style="margin-top: 2rem;">
         <?php display_session_message('success'); ?>
         <?php display_session_message('error'); ?>
 

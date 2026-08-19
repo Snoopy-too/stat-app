@@ -12,6 +12,7 @@ if (!isset($basePath)) {
     $basePath = (strpos($currentScript, '/admin/') !== false) ? '../' : '';
 }
 ?>
+    <script src="https://theflyingdutchmen.games/javascripts/tfd-navbar.js"></script>
     <script src="<?php echo $basePath; ?>js/mobile-menu.js"></script>
     <?php if (!empty($extraScripts)) echo $extraScripts; ?>
 </body>

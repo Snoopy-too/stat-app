@@ -8,17 +8,23 @@
     --sidebar-border: #e2e8f0;
     --sidebar-z-index: 1100;
     --sidebar-overlay-z-index: 1050;
+    --sidebar-top-offset: var(--tfd-navbar-height, 48px);
+}
+
+/* Allow TFD top navbar to scroll away naturally with the page */
+.tfd-navbar {
+    position: static !important;
 }
 
 /* Sidebar Container */
 .sidebar {
     position: fixed !important;
-    top: 0 !important;
+    top: var(--sidebar-top-offset, 48px) !important;
     left: 0 !important;
     width: 260px !important;
     width: var(--sidebar-width, 260px) !important;
-    height: 100vh !important;
-    height: 100dvh !important;
+    height: calc(100vh - var(--sidebar-top-offset, 48px)) !important;
+    height: calc(100dvh - var(--sidebar-top-offset, 48px)) !important;
     background: #ffffff !important;
     background: var(--sidebar-bg, #ffffff) !important;
     border-right: 1px solid #e2e8f0 !important;
@@ -334,9 +340,18 @@
         transform: translateX(0);
     }
 
-    /* Show toggle button */
+    /* Show toggle button as sticky/fixed button tracking below top navbar */
     .sidebar-toggle {
-        display: flex;
+        display: flex !important;
+        position: fixed !important;
+        top: calc(var(--sidebar-top-offset, 48px) + 8px) !important;
+        left: 12px !important;
+        z-index: 1080 !important;
+        width: 40px !important;
+        height: 40px !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
     }
 
     /* Show close button */
@@ -350,11 +365,19 @@
         opacity: 1;
     }
 
-    /* Reset content margin on mobile */
-    .has-sidebar .main-content,
-    .has-sidebar .header {
+    /* Reset content margin and let header scroll naturally on mobile */
+    .has-sidebar .main-content {
         margin-left: 0;
         width: 100%;
+    }
+    .has-sidebar .header {
+        margin-left: 0 !important;
+        width: 100% !important;
+        position: static !important;
+        padding-left: 3.75rem !important; /* Space for floating menu button */
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        transform: none !important;
     }
 
     /* Body scroll lock when sidebar open */

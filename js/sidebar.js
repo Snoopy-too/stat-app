@@ -14,6 +14,28 @@
 
         if (!sidebar) return;
 
+        // Ensure toggle button is attached directly to body on mobile so it is immune to ancestor containing block / filter traps
+        if (toggleButtons && toggleButtons.length > 0) {
+            toggleButtons.forEach(function(btn) {
+                if (btn.parentElement && btn.parentElement !== document.body) {
+                    document.body.appendChild(btn);
+                }
+            });
+        }
+
+        var tfdNav = document.getElementById('tfd-navbar') || document.querySelector('.tfd-navbar');
+        function updateScrollOffset() {
+            var offset = 0;
+            if (tfdNav) {
+                var rect = tfdNav.getBoundingClientRect();
+                offset = Math.max(0, Math.round(rect.bottom));
+            }
+            document.documentElement.style.setProperty('--sidebar-top-offset', offset + 'px');
+        }
+        window.addEventListener('scroll', updateScrollOffset, { passive: true });
+        window.addEventListener('resize', updateScrollOffset, { passive: true });
+        updateScrollOffset();
+
         var scrollY = 0;
 
         function closeSidebar() {

@@ -12,6 +12,6 @@ if (isset($_COOKIE[session_name()])) {
 // Destroy the session
 session_destroy();
 
-// Redirect to login page
-header('Location: https://theflyingdutchmen.games/logout?redirect=' . urlencode('https://stats.theflyingdutchmen.games/'));
+// Redirect to central home site
+header('Location: https://theflyingdutchmen.games/logout');
 exit();

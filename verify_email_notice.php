@@ -20,15 +20,15 @@ unset($_SESSION['registration_email']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registration Success - Board Game Club StatApp</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://theflyingdutchmen.games/stylesheets/tfd-nav.css">
     <link rel="stylesheet" href="css/styles.css">
-    
     <script src="js/dark-mode.js"></script>
 </head>
 <body>
-    <div class="header">
-        <h1>Board Game Club StatApp</h1>
-    </div>
-    <div class="success-container">
+    <!-- Shared Top Navigation Bar (Managed by tfd-navbar.js) -->
+    <header id="tfd-navbar" class="tfd-navbar" data-active="stats"></header>
+
+    <div class="success-container" style="margin-top: 2rem;">
         <i class="fas fa-check-circle success-icon"></i>
         <h2 class="success-title">Registration Successful!</h2>
         <p class="success-message"><?php echo htmlspecialchars($message); ?></p>
@@ -45,5 +45,6 @@ unset($_SESSION['registration_email']);
         <?php endif; ?>
         <a href="admin/login.php" class="btn">Go to Login</a>
     </div>
+    <script src="https://theflyingdutchmen.games/javascripts/tfd-navbar.js"></script>
 </body>
 </html>

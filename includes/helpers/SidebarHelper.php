@@ -189,24 +189,28 @@ class SidebarHelper {
         }
         $displayName = !empty($clubName) ? $clubName : 'StatApp';
 
+        echo '<link rel="stylesheet" href="https://theflyingdutchmen.games/stylesheets/tfd-nav.css">';
         echo '<style>
-            .sidebar{position:fixed!important;top:0!important;left:0!important;width:260px!important;height:100vh!important;height:100dvh!important;background:var(--sidebar-bg, var(--color-surface, #1e293b))!important;border-right:1px solid var(--sidebar-border, var(--color-border, #334155))!important;color:var(--color-text, #f8fafc)!important;display:flex!important;flex-direction:column!important;z-index:1100!important;overflow:hidden!important;transition:transform .3s ease, background .3s ease, border-color .3s ease!important;box-shadow:2px 0 8px rgba(0,0,0,.1)!important}
-            .has-sidebar .header{margin-left:260px!important;width:calc(100% - 260px)!important}
+            :root{--sidebar-top-offset:var(--tfd-navbar-height, 48px);--tfd-nav-h:var(--tfd-navbar-height, 48px);--tfd-navbar-height:48px}
+            .tfd-navbar{position:static!important}
+            .sidebar{position:fixed!important;top:var(--sidebar-top-offset, 48px)!important;left:0!important;width:260px!important;height:calc(100vh - var(--sidebar-top-offset, 48px))!important;height:calc(100dvh - var(--sidebar-top-offset, 48px))!important;background:var(--sidebar-bg, var(--color-surface, #1e293b))!important;border-right:1px solid var(--sidebar-border, var(--color-border, #334155))!important;color:var(--color-text, #f8fafc)!important;display:flex!important;flex-direction:column!important;z-index:1100!important;overflow:hidden!important;transition:transform .3s ease, background .3s ease, border-color .3s ease!important;box-shadow:2px 0 8px rgba(0,0,0,.1)!important}
+            .has-sidebar .header{margin-left:260px!important;width:calc(100% - 260px)!important;top:0!important}
             .has-sidebar .container{margin-left:calc(260px + max(1rem, (100% - 260px - var(--container-max, 75rem)) / 2))!important;margin-right:max(1rem, (100% - 260px - var(--container-max, 75rem)) / 2)!important;width:auto!important;max-width:calc(100% - 260px - 2rem)!important;}
             .has-sidebar .container--narrow{margin-left:calc(260px + max(1rem, (100% - 260px - 42rem) / 2))!important;margin-right:max(1rem, (100% - 260px - 42rem) / 2)!important;width:auto!important;}
             .has-sidebar .container--medium{margin-left:calc(260px + max(1rem, (100% - 260px - 64rem) / 2))!important;margin-right:max(1rem, (100% - 260px - 64rem) / 2)!important;width:auto!important;}
             .has-sidebar .container--wide{margin-left:calc(260px + max(1rem, (100% - 260px - var(--container-wide, 85rem)) / 2))!important;margin-right:max(1rem, (100% - 260px - var(--container-wide, 85rem)) / 2)!important;width:auto!important;}
             .sidebar-toggle{display:none!important;background:rgba(255,255,255,0.1)!important;border:1px solid rgba(255,255,255,0.25)!important;color:#f1f5f9!important}
             .sidebar__close{display:none!important}
-            .sidebar-overlay{display:none!important;position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;background:rgba(15,23,42,.5)!important;z-index:1050!important}
+            .sidebar-overlay{display:none!important;position:fixed!important;top:var(--sidebar-top-offset, 48px)!important;left:0!important;right:0!important;bottom:0!important;background:rgba(15,23,42,.5)!important;z-index:1050!important}
             @media(max-width:768px), (max-height:500px){
-                .sidebar{transform:translateX(-100%)!important;width:280px!important;box-shadow:4px 0 20px rgba(0,0,0,.25)!important}
+                .sidebar{transform:translateX(-100%)!important;width:280px!important;box-shadow:4px 0 20px rgba(0,0,0,.25)!important;z-index:1100!important}
                 .sidebar.sidebar--open{transform:translateX(0)!important}
                 .sidebar__close{display:flex!important}
-                .sidebar-toggle{display:flex!important}
-                .has-sidebar .header,.has-sidebar .container,.has-sidebar .container--narrow,.has-sidebar .container--medium,.has-sidebar .container--wide{margin-left:0!important;margin-right:0!important;width:100%!important;max-width:100%!important}
+                .sidebar-toggle{display:flex!important;position:fixed!important;top:calc(var(--sidebar-top-offset, 48px) + 8px)!important;left:12px!important;z-index:1080!important;width:40px!important;height:40px!important;box-shadow:0 4px 14px rgba(0,0,0,0.25)!important;backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important}
+                .has-sidebar .header{margin-left:0!important;margin-right:0!important;width:100%!important;max-width:100%!important;position:static!important;padding-left:3.75rem!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transform:none!important}
+                .has-sidebar .container,.has-sidebar .container--narrow,.has-sidebar .container--medium,.has-sidebar .container--wide{margin-left:0!important;margin-right:0!important;width:100%!important;max-width:100%!important}
                 body.sidebar-open{overflow:hidden!important;touch-action:none!important;overscroll-behavior:none!important}
-                .sidebar-overlay.sidebar-overlay--visible{display:block!important;opacity:1!important}
+                .sidebar-overlay.sidebar-overlay--visible{display:block!important;opacity:1!important;z-index:1090!important}
             }
             @media(max-height:600px){
                 .sidebar__header{padding:0.5rem 0.5rem!important}
@@ -233,7 +237,8 @@ class SidebarHelper {
             }
         </style>';
 
-        echo '<aside class="sidebar" style="position:fixed;top:0;left:0;bottom:0;width:260px;background:var(--sidebar-bg, var(--color-surface, #1e293b));border-right:1px solid var(--sidebar-border, var(--color-border, #334155));color:var(--color-text, #f8fafc);z-index:1050;display:flex;flex-direction:column;box-shadow:4px 0 12px rgba(0,0,0,0.15);transition:transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;">';
+        echo '<header id="tfd-navbar" class="tfd-navbar" data-active="stats"></header>';
+        echo '<aside class="sidebar" style="position:fixed;top:var(--sidebar-top-offset, 48px);left:0;bottom:0;width:260px;height:calc(100vh - var(--sidebar-top-offset, 48px));height:calc(100dvh - var(--sidebar-top-offset, 48px));background:var(--sidebar-bg, var(--color-surface, #1e293b));border-right:1px solid var(--sidebar-border, var(--color-border, #334155));color:var(--color-text, #f8fafc);z-index:1050;display:flex;flex-direction:column;box-shadow:4px 0 12px rgba(0,0,0,0.15);transition:transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;">';
         echo '<button class="sidebar__close" aria-label="Close menu" style="display:none;position:absolute;top:1rem;right:1rem;width:40px;height:40px;background:var(--color-surface-muted, rgba(255,255,255,0.1));border:1px solid var(--color-border, rgba(255,255,255,0.2));border-radius:0.75rem;cursor:pointer;font-size:1.25rem;color:var(--color-heading, var(--color-text, #f1f5f9));align-items:center;justify-content:center;">&times;</button>';
 
         $activeStyle = 'display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.85rem;margin:0.25rem 0.5rem;text-decoration:none;font-size:0.875rem;font-weight:500;border-radius:0.5rem;transition:all 0.2s ease;';
@@ -312,6 +317,7 @@ class SidebarHelper {
         echo '</aside>';
 
         echo '<div class="sidebar-overlay" aria-hidden="true"></div>';
+        echo '<script src="https://theflyingdutchmen.games/javascripts/tfd-navbar.js"></script>';
     }
 
     /**
@@ -340,24 +346,28 @@ class SidebarHelper {
             }
         }
 
+        echo '<link rel="stylesheet" href="https://theflyingdutchmen.games/stylesheets/tfd-nav.css">';
         echo '<style>
-            .sidebar{position:fixed!important;top:0!important;left:0!important;width:260px!important;height:100vh!important;height:100dvh!important;background:var(--sidebar-bg, var(--color-surface, #1e293b))!important;border-right:1px solid var(--sidebar-border, var(--color-border, #334155))!important;color:var(--color-text, #f8fafc)!important;display:flex!important;flex-direction:column!important;z-index:1100!important;overflow:hidden!important;transition:transform .3s ease, background .3s ease, border-color .3s ease!important;box-shadow:2px 0 8px rgba(0,0,0,.1)!important}
-            .has-sidebar .header{margin-left:260px!important;width:calc(100% - 260px)!important}
+            :root{--sidebar-top-offset:var(--tfd-navbar-height, 48px);--tfd-nav-h:var(--tfd-navbar-height, 48px);--tfd-navbar-height:48px}
+            .tfd-navbar{position:static!important}
+            .sidebar{position:fixed!important;top:var(--sidebar-top-offset, 48px)!important;left:0!important;width:260px!important;height:calc(100vh - var(--sidebar-top-offset, 48px))!important;height:calc(100dvh - var(--sidebar-top-offset, 48px))!important;background:var(--sidebar-bg, var(--color-surface, #1e293b))!important;border-right:1px solid var(--sidebar-border, var(--color-border, #334155))!important;color:var(--color-text, #f8fafc)!important;display:flex!important;flex-direction:column!important;z-index:1100!important;overflow:hidden!important;transition:transform .3s ease, background .3s ease, border-color .3s ease!important;box-shadow:2px 0 8px rgba(0,0,0,.1)!important}
+            .has-sidebar .header{margin-left:260px!important;width:calc(100% - 260px)!important;top:0!important}
             .has-sidebar .container{margin-left:calc(260px + max(1rem, (100% - 260px - var(--container-max, 75rem)) / 2))!important;margin-right:max(1rem, (100% - 260px - var(--container-max, 75rem)) / 2)!important;width:auto!important;max-width:calc(100% - 260px - 2rem)!important;}
             .has-sidebar .container--narrow{margin-left:calc(260px + max(1rem, (100% - 260px - 42rem) / 2))!important;margin-right:max(1rem, (100% - 260px - 42rem) / 2)!important;width:auto!important;}
             .has-sidebar .container--medium{margin-left:calc(260px + max(1rem, (100% - 260px - 64rem) / 2))!important;margin-right:max(1rem, (100% - 260px - 64rem) / 2)!important;width:auto!important;}
             .has-sidebar .container--wide{margin-left:calc(260px + max(1rem, (100% - 260px - var(--container-wide, 85rem)) / 2))!important;margin-right:max(1rem, (100% - 260px - var(--container-wide, 85rem)) / 2)!important;width:auto!important;}
             .sidebar-toggle{display:none!important;background:rgba(255,255,255,0.1)!important;border:1px solid rgba(255,255,255,0.25)!important;color:#f1f5f9!important}
             .sidebar__close{display:none!important}
-            .sidebar-overlay{display:none!important;position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;background:rgba(15,23,42,.5)!important;z-index:1050!important}
+            .sidebar-overlay{display:none!important;position:fixed!important;top:var(--sidebar-top-offset, 48px)!important;left:0!important;right:0!important;bottom:0!important;background:rgba(15,23,42,.5)!important;z-index:1050!important}
             @media(max-width:768px), (max-height:500px){
-                .sidebar{transform:translateX(-100%)!important;width:280px!important;box-shadow:4px 0 20px rgba(0,0,0,.25)!important}
+                .sidebar{transform:translateX(-100%)!important;width:280px!important;box-shadow:4px 0 20px rgba(0,0,0,.25)!important;z-index:1100!important}
                 .sidebar.sidebar--open{transform:translateX(0)!important}
                 .sidebar__close{display:flex!important}
-                .sidebar-toggle{display:flex!important}
-                .has-sidebar .header,.has-sidebar .container,.has-sidebar .container--narrow,.has-sidebar .container--medium,.has-sidebar .container--wide{margin-left:0!important;margin-right:0!important;width:100%!important;max-width:100%!important}
+                .sidebar-toggle{display:flex!important;position:fixed!important;top:calc(var(--sidebar-top-offset, 48px) + 8px)!important;left:12px!important;z-index:1080!important;width:40px!important;height:40px!important;box-shadow:0 4px 14px rgba(0,0,0,0.25)!important;backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important}
+                .has-sidebar .header{margin-left:0!important;margin-right:0!important;width:100%!important;max-width:100%!important;position:static!important;padding-left:3.75rem!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transform:none!important}
+                .has-sidebar .container,.has-sidebar .container--narrow,.has-sidebar .container--medium,.has-sidebar .container--wide{margin-left:0!important;margin-right:0!important;width:100%!important;max-width:100%!important}
                 body.sidebar-open{overflow:hidden!important;touch-action:none!important;overscroll-behavior:none!important}
-                .sidebar-overlay.sidebar-overlay--visible{display:block!important;opacity:1!important}
+                .sidebar-overlay.sidebar-overlay--visible{display:block!important;opacity:1!important;z-index:1090!important}
             }
             @media(max-height:600px){
                 .sidebar__header{padding:0.5rem 0.5rem!important}
@@ -491,7 +501,8 @@ class SidebarHelper {
         }
         $displayName = !empty($clubName) ? $clubName : 'StatApp Admin';
 
-        echo '<aside class="sidebar" style="position:fixed;top:0;left:0;bottom:0;width:260px;background:var(--sidebar-bg, var(--color-surface, #1e293b));border-right:1px solid var(--sidebar-border, var(--color-border, #334155));color:var(--color-text, #f8fafc);z-index:1050;display:flex;flex-direction:column;box-shadow:4px 0 12px rgba(0,0,0,0.15);transition:transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;">';
+        echo '<header id="tfd-navbar" class="tfd-navbar" data-active="stats"></header>';
+        echo '<aside class="sidebar" style="position:fixed;top:var(--sidebar-top-offset, 48px);left:0;bottom:0;width:260px;height:calc(100vh - var(--sidebar-top-offset, 48px));height:calc(100dvh - var(--sidebar-top-offset, 48px));background:var(--sidebar-bg, var(--color-surface, #1e293b));border-right:1px solid var(--sidebar-border, var(--color-border, #334155));color:var(--color-text, #f8fafc);z-index:1050;display:flex;flex-direction:column;box-shadow:4px 0 12px rgba(0,0,0,0.15);transition:transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;">';
         echo '<button class="sidebar__close" aria-label="Close menu" style="display:none;position:absolute;top:1rem;right:1rem;width:40px;height:40px;background:var(--color-surface-muted, rgba(255,255,255,0.1));border:1px solid var(--color-border, rgba(255,255,255,0.2));border-radius:0.75rem;cursor:pointer;font-size:1.25rem;color:var(--color-heading, var(--color-text, #f1f5f9));align-items:center;justify-content:center;">&times;</button>';
 
         $activeStyle = 'display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.85rem;margin:0.25rem 0.5rem;text-decoration:none;font-size:0.875rem;font-weight:500;border-radius:0.5rem;transition:all 0.2s ease;';
@@ -576,6 +587,7 @@ class SidebarHelper {
         echo '</aside>';
 
         echo '<div class="sidebar-overlay" aria-hidden="true"></div>';
+        echo '<script src="https://theflyingdutchmen.games/javascripts/tfd-navbar.js"></script>';
 
         if (!empty($_SESSION['is_impersonating'])) {
             $adminUsername = htmlspecialchars($_SESSION['admin_username'] ?? '');

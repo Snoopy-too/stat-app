@@ -27,8 +27,13 @@ $htmlAttributes = $htmlAttributes ?? '';
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
     <link rel="icon" type="image/svg+xml" href="<?php echo $basePath; ?>favicon.svg?v=4">
     <link rel="alternate icon" type="image/x-icon" href="<?php echo $basePath; ?>favicon.ico?v=4">
+    <link rel="stylesheet" href="https://theflyingdutchmen.games/stylesheets/tfd-nav.css">
     <link rel="stylesheet" href="<?php echo $basePath; ?>css/styles.css">
     <script src="<?php echo $basePath; ?>js/dark-mode.js"></script>
     <?php if (!empty($extraHead)) echo $extraHead; ?>
 </head>
 <body class="<?php echo htmlspecialchars($bodyClass); ?>">
+<?php if (!isset($hideNavbar) || !$hideNavbar): ?>
+    <!-- Shared Top Navigation Bar (Managed by tfd-navbar.js) -->
+    <header id="tfd-navbar" class="tfd-navbar" data-active="stats"></header>
+<?php endif; ?>

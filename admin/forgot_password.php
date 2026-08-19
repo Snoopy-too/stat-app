@@ -84,12 +84,6 @@ $htmlAttributes = 'data-club-theme="light" data-theme="light" data-theme-locked'
 require_once '../includes/templates/header.php';
 ?>
 
-<header class="landing-header">
-    <a href="../index.php" class="logo-brand">
-        <span>🎲</span> StatApp
-    </a>
-</header>
-
 <div class="landing-hero">
     <!-- Background Wave & Grid Contour Overlays -->
     <div class="hero-contour-waves"></div>

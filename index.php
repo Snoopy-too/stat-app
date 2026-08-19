@@ -33,15 +33,12 @@ if (isset($_SESSION['club_id'])) {
     <title>StatApp - Track Your Board Game Club Stats</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg?v=4">
     <link rel="alternate icon" type="image/x-icon" href="favicon.ico?v=4">
+    <link rel="stylesheet" href="https://theflyingdutchmen.games/stylesheets/tfd-nav.css">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <!-- Header -->
-    <header class="landing-header">
-        <a href="index.php" class="logo-brand">
-            <span>🎲</span> StatApp
-        </a>
-    </header>
+    <!-- Shared Top Navigation Bar (Managed by tfd-navbar.js) -->
+    <header id="tfd-navbar" class="tfd-navbar" data-active="stats"></header>
 
     <!-- Hero Section -->
     <section class="landing-hero">
@@ -299,6 +296,7 @@ if (isset($_SESSION['club_id'])) {
         });
     }
     </script>
+    <script src="https://theflyingdutchmen.games/javascripts/tfd-navbar.js"></script>
     <script src="js/mobile-menu.js"></script>
 </body>
 </html>

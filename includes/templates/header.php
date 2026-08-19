@@ -30,6 +30,7 @@ $htmlAttributes = $htmlAttributes ?? '';
     <link rel="stylesheet" href="https://theflyingdutchmen.games/stylesheets/tfd-nav.css">
     <link rel="stylesheet" href="<?php echo $basePath; ?>css/styles.css">
     <script src="<?php echo $basePath; ?>js/dark-mode.js"></script>
+    <script src="<?php echo $basePath; ?>js/i18n.js"></script>
     <?php if (!empty($extraHead)) echo $extraHead; ?>
 </head>
 <body class="<?php echo htmlspecialchars($bodyClass); ?>">

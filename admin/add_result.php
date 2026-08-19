@@ -514,6 +514,7 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
     <title><?php echo $page_title; ?> - <?php echo htmlspecialchars($game['game_name'] ?? 'Game'); ?></title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
+    <script src="../js/i18n.js"></script>
     <style>
         .required-marker { color: var(--color-error, #ef4444); font-weight: bold; }
         .checkbox-grid {
@@ -562,7 +563,7 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
 
                 <?php if (!$is_edit && !empty($all_club_games)): ?>
                     <div class="form-group">
-                        <label for="game_id_select" class="form-label">Game: <span class="required-marker">*</span></label>
+                        <label for="game_id_select" class="form-label"><span data-i18n="results.game">Game</span>: <span class="required-marker">*</span></label>
                         <select id="game_id_select" class="form-control" onchange="if(this.value) window.location.href='add_result.php?club_id=<?php echo $club_id; ?>&game_id=' + this.value;">
                             <?php foreach ($all_club_games as $cg): ?>
                                 <option value="<?php echo $cg['game_id']; ?>" <?php echo ($cg['game_id'] == $game_id) ? 'selected' : ''; ?>>
@@ -573,18 +574,18 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
                     </div>
                 <?php else: ?>
                     <div class="form-group">
-                        <label class="form-label">Game:</label>
+                        <label class="form-label"><span data-i18n="results.game">Game</span>:</label>
                         <input type="text" class="form-control" value="<?php echo htmlspecialchars($game['game_name'] ?? ''); ?>" disabled style="background: var(--color-surface-muted);">
                     </div>
                 <?php endif; ?>
 
                 <div class="form-group">
-                    <label for="played_at" class="form-label">Date Played: <span class="required-marker">*</span></label>
+                    <label for="played_at" class="form-label"><span data-i18n="results.datePlayed">Date Played</span>: <span class="required-marker">*</span></label>
                     <input type="datetime-local" id="played_at" name="played_at" value="<?php echo $default_played_at; ?>" class="form-control" required>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Duration: <span class="required-marker">*</span></label>
+                    <label class="form-label"><span data-i18n="results.duration">Duration</span>: <span class="required-marker">*</span></label>
                     <div style="display: flex; gap: 0.75rem; align-items: center;">
                         <div style="flex: 1; display: flex; align-items: center; gap: 0.35rem;">
                             <select name="duration_hours" id="duration_hours" class="form-control" style="flex: 1;">
@@ -592,7 +593,7 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
                                     <option value="<?php echo $h; ?>" <?php echo ($h === (int)$default_duration_hours) ? 'selected' : ''; ?>><?php echo $h; ?></option>
                                 <?php endfor; ?>
                             </select>
-                            <span style="font-size: 0.875rem; color: var(--color-text-muted);">hrs</span>
+                            <span style="font-size: 0.875rem; color: var(--color-text-muted);" data-i18n="results.hours">hrs</span>
                         </div>
                         <div style="flex: 1; display: flex; align-items: center; gap: 0.35rem;">
                             <select name="duration_minutes" id="duration_minutes" class="form-control" style="flex: 1;">
@@ -600,33 +601,33 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
                                     <option value="<?php echo $m; ?>" <?php echo ($m === (int)$default_duration_minutes) ? 'selected' : ''; ?>><?php echo $m; ?></option>
                                 <?php endfor; ?>
                             </select>
-                            <span style="font-size: 0.875rem; color: var(--color-text-muted);">mins</span>
+                            <span style="font-size: 0.875rem; color: var(--color-text-muted);" data-i18n="results.minutes">mins</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Game Type:</label>
+                    <label class="form-label" data-i18n="admin.matchType">Game Type:</label>
                     <div class="radio-group">
                         <label class="radio-label" style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
-                            <input type="radio" name="game_type" value="winner_losers" class="form-check-input" <?php echo ($default_game_type === 'winner_losers') ? 'checked' : ''; ?> onchange="toggleGameType()"> Winner/Losers
+                            <input type="radio" name="game_type" value="winner_losers" class="form-check-input" <?php echo ($default_game_type === 'winner_losers') ? 'checked' : ''; ?> onchange="toggleGameType()"> <span data-i18n="gametype.winner_losers">Winner/Losers</span>
                         </label>
                         <label class="radio-label" style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
-                            <input type="radio" name="game_type" value="ranked" class="form-check-input" <?php echo ($default_game_type === 'ranked') ? 'checked' : ''; ?> onchange="toggleGameType()"> Ranked (1st, 2nd, 3rd...)
+                            <input type="radio" name="game_type" value="ranked" class="form-check-input" <?php echo ($default_game_type === 'ranked') ? 'checked' : ''; ?> onchange="toggleGameType()"> <span data-i18n="gametype.ranked">Ranked (1st, 2nd, 3rd...)</span>
                         </label>
                         <label class="radio-label" style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
-                            <input type="radio" name="game_type" value="teams" class="form-check-input" <?php echo ($default_game_type === 'teams') ? 'checked' : ''; ?> onchange="toggleGameType()"> Teams
+                            <input type="radio" name="game_type" value="teams" class="form-check-input" <?php echo ($default_game_type === 'teams') ? 'checked' : ''; ?> onchange="toggleGameType()"> <span data-i18n="gametype.teams">Teams</span>
                         </label>
                         <label class="radio-label" style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
-                            <input type="radio" name="game_type" value="cooperative" class="form-check-input" <?php echo ($default_game_type === 'cooperative') ? 'checked' : ''; ?> onchange="toggleGameType()"> Cooperative
+                            <input type="radio" name="game_type" value="cooperative" class="form-check-input" <?php echo ($default_game_type === 'cooperative') ? 'checked' : ''; ?> onchange="toggleGameType()"> <span data-i18n="gametype.cooperative">Cooperative</span>
                         </label>
                     </div>
                 </div>
 
                 <div class="form-group" id="winner-section">
-                    <label for="winner_id" class="form-label">Winner: <span class="required-marker">*</span></label>
+                    <label for="winner_id" class="form-label"><span data-i18n="common.winner">Winner</span>: <span class="required-marker">*</span></label>
                     <select id="winner_id" name="winner_id" class="form-control">
-                        <option value="">Select Winner</option>
+                        <option value="" data-i18n="results.selectWinner">Select Winner</option>
                         <?php foreach ($members as $member): ?>
                             <option value="<?php echo $member['id']; ?>" <?php echo ((int)$member['id'] === $default_winner_id) ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars($member['name']); ?>
@@ -637,9 +638,9 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
 
                 <div id="ranked-section" style="display: none;">
                     <div class="form-group">
-                        <label for="second_place_id" class="form-label">Second Place: <span class="required-marker">*</span></label>
+                        <label for="second_place_id" class="form-label"><span data-i18n="results.secondPlace">Second Place</span>: <span class="required-marker">*</span></label>
                         <select id="second_place_id" name="second_place_id" class="form-control">
-                            <option value="">Select Second Place</option>
+                            <option value="" data-i18n="results.selectSecondPlace">Select Second Place</option>
                             <?php foreach ($members as $member): ?>
                                 <option value="<?php echo $member['id']; ?>" <?php echo ((int)$member['id'] === $default_place_2_id) ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($member['name']); ?>
@@ -657,10 +658,10 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
                             <div class="form-group additional-place-group" style="margin-bottom: 1rem;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
                                     <label class="form-label" style="margin:0;"><?php echo $place_label; ?>:</label>
-                                    <button type="button" class="btn btn--subtle btn--small remove-place-btn" style="padding:0.1rem 0.4rem; font-size:0.75rem; color:var(--color-danger, #ef4444);" onclick="this.closest('.additional-place-group').remove(); reindexAdditionalPlaces(); updateAddPlaceButtonState();">Remove</button>
+                                    <button type="button" class="btn btn--subtle btn--small remove-place-btn" style="padding:0.1rem 0.4rem; font-size:0.75rem; color:var(--color-danger, #ef4444);" onclick="this.closest('.additional-place-group').remove(); reindexAdditionalPlaces(); updateAddPlaceButtonState();" data-i18n="common.delete">Remove</button>
                                 </div>
                                 <select name="additional_places[]" class="form-control">
-                                    <option value="">Select <?php echo $place_label; ?></option>
+                                    <option value="" data-i18n="results.selectPlace" data-i18n-params='{"place": "<?php echo $place_label; ?>"}'>Select <?php echo $place_label; ?></option>
                                     <?php foreach ($members as $member): ?>
                                         <option value="<?php echo $member['id']; ?>" <?php echo ((int)$member['id'] === $selected_member_id) ? 'selected' : ''; ?>>
                                             <?php echo htmlspecialchars($member['name']); ?>
@@ -671,16 +672,16 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
                         <?php endforeach; ?>
                     </div>
                     <div class="form-group">
-                        <button type="button" id="add-place" class="btn">Add Place</button>
+                        <button type="button" id="add-place" class="btn" data-i18n="results.addPlace">Add Place</button>
                     </div>
                 </div>
 
                 <div id="losers-section">
                     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
-                        <label class="form-label" style="margin:0;">Select Losers: <span class="required-marker">*</span></label>
+                        <label class="form-label" style="margin:0;"><span data-i18n="results.selectLosers">Select Losers:</span> <span class="required-marker">*</span></label>
                         <div style="display:flex; gap:0.5rem;">
-                            <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.loser-checkbox', true)">Select All</button>
-                            <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.loser-checkbox', false)">Uncheck All</button>
+                            <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.loser-checkbox', true)" data-i18n="common.selectAll">Select All</button>
+                            <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.loser-checkbox', false)" data-i18n="common.uncheckAll">Uncheck All</button>
                         </div>
                     </div>
                     <div id="losers-checkbox-list" class="checkbox-grid">
@@ -695,23 +696,23 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
 
                 <div id="cooperative-section" style="display: none;">
                     <div class="form-group">
-                        <label class="form-label">Outcome: <span class="required-marker">*</span></label>
+                        <label class="form-label"><span data-i18n="results.outcome">Outcome:</span> <span class="required-marker">*</span></label>
                         <div class="radio-group" style="display:flex; gap:1.5rem;">
                             <label class="radio-label" style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
-                                <input type="radio" name="coop_outcome" value="win" class="form-check-input" <?php echo ($default_coop_outcome === 'win') ? 'checked' : ''; ?>> Victory
+                                <input type="radio" name="coop_outcome" value="win" class="form-check-input" <?php echo ($default_coop_outcome === 'win') ? 'checked' : ''; ?>> <span data-i18n="results.victory">Victory</span>
                             </label>
                             <label class="radio-label" style="display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
-                                <input type="radio" name="coop_outcome" value="loss" class="form-check-input" <?php echo ($default_coop_outcome === 'loss') ? 'checked' : ''; ?>> Defeat
+                                <input type="radio" name="coop_outcome" value="loss" class="form-check-input" <?php echo ($default_coop_outcome === 'loss') ? 'checked' : ''; ?>> <span data-i18n="results.defeat">Defeat</span>
                             </label>
                         </div>
                     </div>
 
                     <div class="form-group">
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
-                            <label class="form-label" style="margin:0;">Select Players: <span class="required-marker">*</span></label>
+                            <label class="form-label" style="margin:0;"><span data-i18n="results.selectPlayers">Select Players:</span> <span class="required-marker">*</span></label>
                             <div style="display:flex; gap:0.5rem;">
-                                <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.coop-checkbox', true)">Select All</button>
-                                <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.coop-checkbox', false)">Uncheck All</button>
+                                <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.coop-checkbox', true)" data-i18n="common.selectAll">Select All</button>
+                                <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.coop-checkbox', false)" data-i18n="common.uncheckAll">Uncheck All</button>
                             </div>
                         </div>
                         <div id="coop-checkbox-list" class="checkbox-grid">
@@ -732,7 +733,7 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
                         </div>
                     <?php else: ?>
                         <div class="form-group">
-                            <label for="team_winner_id" class="form-label">Winning Team: <span class="required-marker">*</span></label>
+                            <label for="team_winner_id" class="form-label"><span data-i18n="results.winningTeam">Winning Team:</span> <span class="required-marker">*</span></label>
                             <select id="team_winner_id" name="team_winner_id" class="form-control">
                                 <option value="" data-members="[]">Select Winning Team</option>
                                 <?php foreach ($teams as $team): ?>
@@ -747,10 +748,10 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
 
                         <div class="form-group">
                             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
-                                <label class="form-label" style="margin:0;">Select Losing Team(s): <span class="required-marker">*</span></label>
+                                <label class="form-label" style="margin:0;"><span data-i18n="results.selectLosingTeams">Select Losing Team(s):</span> <span class="required-marker">*</span></label>
                                 <div style="display:flex; gap:0.5rem;">
-                                    <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.team-loser-checkbox', true)">Select All</button>
-                                    <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.team-loser-checkbox', false)">Uncheck All</button>
+                                    <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.team-loser-checkbox', true)" data-i18n="common.selectAll">Select All</button>
+                                    <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.team-loser-checkbox', false)" data-i18n="common.uncheckAll">Uncheck All</button>
                                 </div>
                             </div>
                             <div id="team-losers-checkbox-list" class="checkbox-grid">
@@ -773,15 +774,15 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
                 </div>
 
                 <div class="form-group">
-                    <label for="notes" class="form-label">Notes:</label>
+                    <label for="notes" class="form-label" data-i18n="results.notes">Notes:</label>
                     <textarea id="notes" name="notes" class="form-control" rows="4"><?php echo htmlspecialchars($default_notes); ?></textarea>
                 </div>
 
                 <div style="display:flex; gap:0.5rem; margin-top: 1rem; align-items:center; flex-wrap:wrap;">
-                    <button type="submit" class="btn btn--primary"><?php echo $is_edit ? 'Save Changes' : 'Save Result'; ?></button>
-                    <a href="manage_results.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle">Back to Results</a>
+                    <button type="submit" class="btn btn--primary" data-i18n="<?php echo $is_edit ? 'common.saveChanges' : 'admin.saveResult'; ?>"><?php echo $is_edit ? 'Save Changes' : 'Save Result'; ?></button>
+                    <a href="manage_results.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle" data-i18n="results.backToResults">Back to Results</a>
                     <?php if ($is_edit): ?>
-                        <button type="button" class="btn btn--danger" style="margin-left: auto;" onclick="if (typeof showConfirmDialog === 'function') { showConfirmDialog(event, { title: '⚠️ Delete Result?', message: 'Are you sure you want to delete this result? This action cannot be undone.', confirmText: 'Delete Result', cancelText: 'Cancel', type: 'danger', onConfirm: () => document.getElementById('delete-form').submit() }); } else if (confirm('Are you sure you want to delete this result?')) { document.getElementById('delete-form').submit(); }">Delete Result</button>
+                        <button type="button" class="btn btn--danger" style="margin-left: auto;" onclick="if (typeof showConfirmDialog === 'function') { showConfirmDialog(event, { title: '⚠️ Delete Result?', message: 'Are you sure you want to delete this result? This action cannot be undone.', confirmText: 'Delete Result', cancelText: 'Cancel', type: 'danger', onConfirm: () => document.getElementById('delete-form').submit() }); } else if (confirm('Are you sure you want to delete this result?')) { document.getElementById('delete-form').submit(); }" data-i18n="results.deleteResult">Delete Result</button>
                     <?php endif; ?>
                 </div>
             </form>

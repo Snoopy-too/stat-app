@@ -15,18 +15,22 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const href = this.getAttribute('href');
             const form = this.closest('form');
+            const defaultMsg = window.tfdI18n ? window.tfdI18n.t('confirm.deleteMessage') : 'Are you sure you want to delete this item?';
             const message = this.getAttribute('data-confirm-message') ||
                           (this.getAttribute('data-confirm') && this.getAttribute('data-confirm') !== 'true' ? this.getAttribute('data-confirm') : null) ||
-                          'Are you sure you want to delete this item?';
+                          defaultMsg;
 
             const itemName = this.getAttribute('data-item-name');
             const fullMessage = itemName ? `${message} (<strong>${itemName}</strong>)` : message;
+            const deleteTitle = window.tfdI18n ? window.tfdI18n.t('confirm.deleteTitle') : 'Confirm Deletion';
+            const deleteBtn = window.tfdI18n ? window.tfdI18n.t('confirm.deleteButton') : 'Delete';
+            const cancelBtn = window.tfdI18n ? window.tfdI18n.t('confirm.cancelButton') : 'Cancel';
 
             showConfirmDialog(e, {
-                title: '⚠️ Confirm Action',
+                title: `⚠️ ${deleteTitle}`,
                 message: fullMessage,
-                confirmText: 'Delete',
-                cancelText: 'Cancel',
+                confirmText: deleteBtn,
+                cancelText: cancelBtn,
                 type: 'danger',
                 onConfirm: () => {
                     if (href && href !== '#' && !href.startsWith('javascript:')) {

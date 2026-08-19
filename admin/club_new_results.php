@@ -69,6 +69,7 @@ if ($demo) {
     <title>Select Game - <?php echo htmlspecialchars($club['club_name']); ?> - StatApp</title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
+    <script src="../js/i18n.js"></script>
     <style>
         .game-grid {
             display: grid;
@@ -91,6 +92,7 @@ if ($demo) {
             box-shadow: 0 8px 24px rgba(0,0,0,0.12);
         }
         .game-card__image {
+            position: relative;
             width: 100%;
             height: 140px;
             background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
@@ -99,12 +101,31 @@ if ($demo) {
             justify-content: center;
             overflow: hidden;
         }
-        .game-card__image img {
+        .game-card__bg-img {
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
+            filter: blur(8px);
+            transform: scale(1.15);
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .game-card__image .img-fluid,
+        .game-card__fg-img {
+            position: relative;
+            z-index: 1;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
         }
         .game-card__placeholder {
+            position: relative;
+            z-index: 1;
             font-size: 3rem;
             opacity: 0.4;
         }
@@ -169,10 +190,10 @@ if ($demo) {
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: var(--spacing-4);">
             <?php if (!empty($games)): ?>
                 <div style="flex: 1; min-width: 200px; max-width: 350px;">
-                    <input type="text" id="gameSearchInput" class="form-control" placeholder="Search games..." aria-label="Search games">
+                    <input type="text" id="gameSearchInput" class="form-control" placeholder="Search games..." data-i18n-placeholder="games.searchPlaceholder" aria-label="Search games">
                 </div>
             <?php endif; ?>
-            <a href="manage_games.php?club_id=<?php echo $club_id; ?>&action=add" class="btn btn--primary">
+            <a href="manage_games.php?club_id=<?php echo $club_id; ?>&action=add" class="btn btn--primary" data-i18n="admin.addNewGame">
                 Add a Game
             </a>
         </div>
@@ -181,9 +202,9 @@ if ($demo) {
             <div class="card">
                 <div class="empty-state" style="text-align: center; padding: 3rem;">
                     <div style="font-size: 3rem; margin-bottom: 1rem;">🎲</div>
-                    <h3 style="margin: 0 0 0.5rem;">No Games Yet</h3>
-                    <p style="color: var(--text-secondary); margin: 0 0 1.5rem;">Add some games to your club before recording results.</p>
-                    <a href="manage_games.php?club_id=<?php echo $club_id; ?>&action=add" class="btn">Add Games</a>
+                    <h3 style="margin: 0 0 0.5rem;" data-i18n="empty.noGames">No Games Yet</h3>
+                    <p style="color: var(--text-secondary); margin: 0 0 1.5rem;" data-i18n="empty.noGamesDesc">Add some games to your club before recording results.</p>
+                    <a href="manage_games.php?club_id=<?php echo $club_id; ?>&action=add" class="btn" data-i18n="admin.addNewGame">Add Games</a>
                 </div>
             </div>
         <?php else: ?>
@@ -191,8 +212,11 @@ if ($demo) {
                 <?php foreach ($games as $game): ?>
                     <a href="add_result.php?club_id=<?php echo $club_id; ?>&game_id=<?php echo $game['game_id']; ?>" class="game-card">
                         <div class="game-card__image">
-                            <?php if (!empty($game['game_image'])): ?>
-                                <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'], '../')); ?>" alt="<?php echo htmlspecialchars($game['game_name']); ?>" loading="lazy" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
+                            <?php if (!empty($game['game_image'])): 
+                                $img_url = htmlspecialchars(get_game_image_url($game['game_image'], '../'));
+                            ?>
+                                <img src="<?php echo $img_url; ?>" alt="" aria-hidden="true" class="game-card__bg-img" loading="lazy" onerror="this.style.display='none';">
+                                <img src="<?php echo $img_url; ?>" alt="<?php echo htmlspecialchars($game['game_name']); ?>" class="img-fluid game-card__fg-img" loading="lazy" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
                                 <span class="game-card__placeholder" style="display:none;">🎲</span>
                             <?php else: ?>
                                 <span class="game-card__placeholder">🎲</span>
@@ -203,8 +227,8 @@ if ($demo) {
                                 <?php echo htmlspecialchars($game['game_name']); ?>
                             </h3>
                             <div class="game-card__meta">
-                                <span><?php echo $game['min_players']; ?>-<?php echo $game['max_players']; ?> players</span>
-                                <span class="game-card__plays"><?php echo $game['play_count']; ?> plays</span>
+                                <span><?php echo $game['min_players']; ?>-<?php echo $game['max_players']; ?> <span data-i18n="common.players">players</span></span>
+                                <span class="game-card__plays"><?php echo $game['play_count']; ?> <span data-i18n="common.plays">plays</span></span>
                             </div>
                         </div>
                     </a>

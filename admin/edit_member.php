@@ -167,6 +167,7 @@ $coop_win_rate = $coop_total > 0 ? number_format(($coop_wins / $coop_total) * 10
     <title>View/Edit Member - <?php echo htmlspecialchars($member['member_name']); ?></title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
+    <script src="../js/i18n.js"></script>
 </head>
 <body class="has-sidebar">
     <?php NavigationHelper::renderAdminSidebar('members', $club_id); ?>
@@ -181,29 +182,29 @@ $coop_win_rate = $coop_total > 0 ? number_format(($coop_wins / $coop_total) * 10
 
         <div class="card">
             <div class="card-header">
-                <h2>Member Details</h2>
+                <h2 data-i18n="admin.memberDetails">Member Details</h2>
             </div>
             <form method="POST" class="stack" style="padding: var(--spacing-6, 1.5rem);">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 
                 <div class="grid grid--columns-2" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem;">
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label for="member_name" class="form-label">Full Name <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                        <label for="member_name" class="form-label"><span data-i18n="admin.fullName">Full Name</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
                         <input type="text" id="member_name" name="member_name" value="<?php echo htmlspecialchars($member['member_name']); ?>" required class="form-control">
                     </div>
                     
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label for="nickname" class="form-label">Nickname (for public display) <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                        <label for="nickname" class="form-label"><span data-i18n="admin.nickname">Nickname (for public display)</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
                         <input type="text" id="nickname" name="nickname" value="<?php echo htmlspecialchars($member['nickname']); ?>" required class="form-control">
                     </div>
 
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label for="email" class="form-label">Email Address <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                        <label for="email" class="form-label"><span data-i18n="admin.email">Email Address</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
                         <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($member['email']); ?>" required class="form-control">
                     </div>
 
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label for="club_id" class="form-label">Club <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                        <label for="club_id" class="form-label"><span data-i18n="admin.club">Club</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
                         <select id="club_id" name="club_id" required class="form-control">
                             <?php foreach ($admin_clubs as $club_item): ?>
                                 <option value="<?php echo $club_item['club_id']; ?>" <?php echo ($member['club_id'] == $club_item['club_id']) ? 'selected' : ''; ?>>
@@ -214,18 +215,18 @@ $coop_win_rate = $coop_total > 0 ? number_format(($coop_wins / $coop_total) * 10
                     </div>
 
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label for="status" class="form-label">Status</label>
+                        <label for="status" class="form-label" data-i18n="admin.status">Status</label>
                         <select id="status" name="status" class="form-control">
-                            <option value="active" <?php echo $member['status'] === 'active' ? 'selected' : ''; ?>>Active</option>
-                            <option value="inactive" <?php echo $member['status'] === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
+                            <option value="active" <?php echo $member['status'] === 'active' ? 'selected' : ''; ?> data-i18n="members.active">Active</option>
+                            <option value="inactive" <?php echo $member['status'] === 'inactive' ? 'selected' : ''; ?> data-i18n="members.inactive">Inactive</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="form-actions" style="margin-top: 1.5rem; display: flex; gap: 0.5rem; justify-content: flex-start; flex-wrap: wrap;">
-                    <button type="submit" class="btn btn--primary">Update Member</button>
-                    <a href="manage_members.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle">Cancel</a>
-                    <button type="button" class="btn btn--danger" style="margin-left: auto;"
+                    <button type="submit" class="btn btn--primary" data-i18n="admin.updateMember">Update Member</button>
+                    <a href="manage_members.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle" data-i18n="common.cancel">Cancel</a>
+                    <button type="button" class="btn btn--danger" style="margin-left: auto;" data-i18n="admin.deleteMember"
                             onclick="showConfirmDialog(event, {
                                 title: '⚠️ Delete Member',
                                 message: 'Are you sure you want to delete <strong><?php echo addslashes(htmlspecialchars($member['member_name'])); ?></strong>?',

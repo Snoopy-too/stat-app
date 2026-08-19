@@ -14,33 +14,33 @@ class SidebarHelper {
         
         echo '<a href="index.php" class="nav-card' . ($currentPage === 'home' ? ' nav-card--active' : '') . '">';
         echo '<div class="nav-card__icon"><span class="material-symbols-outlined">home</span></div>';
-        echo '<div class="nav-card__label">Home</div>';
+        echo '<div class="nav-card__label" data-i18n="nav.home">Home</div>';
         echo '</a>';
         
         if ($clubId) {
             echo '<a href="club_members.php?id=' . (int)$clubId . '" class="nav-card' . ($currentPage === 'members' ? ' nav-card--active' : '') . '">';
             echo '<div class="nav-card__icon"><span class="material-symbols-outlined">group</span></div>';
-            echo '<div class="nav-card__label">Members</div>';
+            echo '<div class="nav-card__label" data-i18n="nav.members">Members</div>';
             echo '</a>';
 
             echo '<a href="club_teams.php?id=' . (int)$clubId . '" class="nav-card' . ($currentPage === 'teams' ? ' nav-card--active' : '') . '">';
             echo '<div class="nav-card__icon"><span class="material-symbols-outlined">groups</span></div>';
-            echo '<div class="nav-card__label">Teams</div>';
+            echo '<div class="nav-card__label" data-i18n="nav.teams">Teams</div>';
             echo '</a>';
 
             echo '<a href="club_champions.php?id=' . (int)$clubId . '" class="nav-card' . ($currentPage === 'champions' ? ' nav-card--active' : '') . '">';
             echo '<div class="nav-card__icon"><span class="material-symbols-outlined">emoji_events</span></div>';
-            echo '<div class="nav-card__label">Champions</div>';
+            echo '<div class="nav-card__label" data-i18n="nav.champions">Champions</div>';
             echo '</a>';
 
             echo '<a href="club_game_list.php?id=' . (int)$clubId . '" class="nav-card' . ($currentPage === 'games' ? ' nav-card--active' : '') . '">';
             echo '<div class="nav-card__icon"><span class="material-symbols-outlined">casino</span></div>';
-            echo '<div class="nav-card__label">Games</div>';
+            echo '<div class="nav-card__label" data-i18n="nav.games">Games</div>';
             echo '</a>';
             
             echo '<a href="club_game_results.php?id=' . (int)$clubId . '" class="nav-card' . ($currentPage === 'results' ? ' nav-card--active' : '') . '">';
             echo '<div class="nav-card__icon"><span class="material-symbols-outlined">leaderboard</span></div>';
-            echo '<div class="nav-card__label">Results</div>';
+            echo '<div class="nav-card__label" data-i18n="nav.results">Results</div>';
             echo '</a>';
         }
         
@@ -52,14 +52,14 @@ class SidebarHelper {
      */
     public static function renderPublicNav($currentPage = '', $clubId = null) {
         echo '<nav class="main-nav" aria-label="Main navigation">';
-        echo '<a href="index.php" class="nav-link ' . ($currentPage === 'home' ? 'active' : '') . '">Home</a>';
+        echo '<a href="index.php" class="nav-link ' . ($currentPage === 'home' ? 'active' : '') . '" data-i18n="nav.home">Home</a>';
 
         if ($clubId) {
-            echo '<a href="club_members.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'members' ? 'active' : '') . '">Members</a>';
-            echo '<a href="club_teams.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'teams' ? 'active' : '') . '">Teams</a>';
-            echo '<a href="club_champions.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'champions' ? 'active' : '') . '">Champions</a>';
-            echo '<a href="club_game_list.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'games' ? 'active' : '') . '">Games</a>';
-            echo '<a href="club_game_results.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'results' ? 'active' : '') . '">Results</a>';
+            echo '<a href="club_members.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'members' ? 'active' : '') . '" data-i18n="nav.members">Members</a>';
+            echo '<a href="club_teams.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'teams' ? 'active' : '') . '" data-i18n="nav.teams">Teams</a>';
+            echo '<a href="club_champions.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'champions' ? 'active' : '') . '" data-i18n="nav.champions">Champions</a>';
+            echo '<a href="club_game_list.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'games' ? 'active' : '') . '" data-i18n="nav.games">Games</a>';
+            echo '<a href="club_game_results.php?id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'results' ? 'active' : '') . '" data-i18n="nav.results">Results</a>';
         }
 
         echo '</nav>';
@@ -70,14 +70,14 @@ class SidebarHelper {
      */
     public static function renderAdminNav($currentPage = '', $clubId = null) {
         echo '<nav class="admin-nav" aria-label="Admin navigation">';
-        echo '<a href="account.php" class="nav-link ' . ($currentPage === 'account' ? 'active' : '') . '">Account</a>';
+        echo '<a href="account.php" class="nav-link ' . ($currentPage === 'account' ? 'active' : '') . '" data-i18n="nav.account">Account</a>';
 
         if ($clubId) {
-            echo '<a href="manage_members.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'members' ? 'active' : '') . '">Members</a>';
-            echo '<a href="manage_teams.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'teams' ? 'active' : '') . '">Teams</a>';
-            echo '<a href="manage_champions.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'champions' ? 'active' : '') . '">Champions</a>';
-            echo '<a href="manage_games.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'games' ? 'active' : '') . '">Games</a>';
-            echo '<a href="manage_results.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'results' ? 'active' : '') . '">Results</a>';
+            echo '<a href="manage_members.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'members' ? 'active' : '') . '" data-i18n="nav.members">Members</a>';
+            echo '<a href="manage_teams.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'teams' ? 'active' : '') . '" data-i18n="nav.teams">Teams</a>';
+            echo '<a href="manage_champions.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'champions' ? 'active' : '') . '" data-i18n="nav.champions">Champions</a>';
+            echo '<a href="manage_games.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'games' ? 'active' : '') . '" data-i18n="nav.games">Games</a>';
+            echo '<a href="manage_results.php?club_id=' . (int)$clubId . '" class="nav-link ' . ($currentPage === 'results' ? 'active' : '') . '" data-i18n="nav.results">Results</a>';
         }
 
         echo '</nav>';
@@ -265,42 +265,42 @@ class SidebarHelper {
         echo '<div style="display:flex;align-items:center;gap:0.35rem;margin:0 0.5rem 0.5rem 0.5rem;">';
         echo '<a href="index.php" class="sidebar__link' . ($currentPage === 'home' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'home' ? $activeLinkStyle : $normalLinkStyle) . ';flex:1;margin:0;">';
         echo '<span class="sidebar__link-icon" style="' . $iconStyle . '"><span class="material-symbols-outlined">home</span></span>';
-        echo '<span>Home</span>';
+        echo '<span data-i18n="nav.home">Home</span>';
         echo '</a>';
         echo '</div>';
 
         if ($clubId) {
             echo '<div class="sidebar__section" style="margin-bottom:0.5rem;">';
 
-            $mLabel = 'Members' . ($memberCount !== null ? ' (' . $memberCount . ')' : '');
-            $tLabel = 'Teams' . ($teamCount !== null ? ' (' . $teamCount . ')' : '');
-            $cLabel = 'Champions' . ($championCount !== null ? ' (' . $championCount . ')' : '');
-            $gLabel = 'Games' . ($gameCount !== null ? ' (' . $gameCount . ')' : '');
-            $rLabel = 'Results' . ($resultCount !== null ? ' (' . $resultCount . ')' : '');
+            $mCount = $memberCount !== null ? ' (' . $memberCount . ')' : '';
+            $tCount = $teamCount !== null ? ' (' . $teamCount . ')' : '';
+            $cCount = $championCount !== null ? ' (' . $championCount . ')' : '';
+            $gCount = $gameCount !== null ? ' (' . $gameCount . ')' : '';
+            $rCount = $resultCount !== null ? ' (' . $resultCount . ')' : '';
 
             echo '<a href="club_game_results.php' . $clubQuery . '" class="sidebar__link' . ($currentPage === 'results' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'results' ? $activeLinkStyle : $normalLinkStyle) . '">';
             echo '<span class="sidebar__link-icon" style="' . $iconStyle . '"><span class="material-symbols-outlined">leaderboard</span></span>';
-            echo '<span>' . htmlspecialchars($rLabel) . '</span>';
+            echo '<span><span data-i18n="nav.results">Results</span>' . htmlspecialchars($rCount) . '</span>';
             echo '</a>';
 
             echo '<a href="club_members.php' . $clubQuery . '" class="sidebar__link' . ($currentPage === 'members' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'members' ? $activeLinkStyle : $normalLinkStyle) . '">';
             echo '<span class="sidebar__link-icon" style="' . $iconStyle . '"><span class="material-symbols-outlined">group</span></span>';
-            echo '<span>' . htmlspecialchars($mLabel) . '</span>';
+            echo '<span><span data-i18n="nav.members">Members</span>' . htmlspecialchars($mCount) . '</span>';
             echo '</a>';
 
             echo '<a href="club_teams.php' . $clubQuery . '" class="sidebar__link' . ($currentPage === 'teams' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'teams' ? $activeLinkStyle : $normalLinkStyle) . '">';
             echo '<span class="sidebar__link-icon" style="' . $iconStyle . '"><span class="material-symbols-outlined">groups</span></span>';
-            echo '<span>' . htmlspecialchars($tLabel) . '</span>';
+            echo '<span><span data-i18n="nav.teams">Teams</span>' . htmlspecialchars($tCount) . '</span>';
             echo '</a>';
 
             echo '<a href="club_champions.php' . $clubQuery . '" class="sidebar__link' . ($currentPage === 'champions' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'champions' ? $activeLinkStyle : $normalLinkStyle) . '">';
             echo '<span class="sidebar__link-icon" style="' . $iconStyle . '"><span class="material-symbols-outlined">emoji_events</span></span>';
-            echo '<span>' . htmlspecialchars($cLabel) . '</span>';
+            echo '<span><span data-i18n="nav.champions">Champions</span>' . htmlspecialchars($cCount) . '</span>';
             echo '</a>';
 
             echo '<a href="club_game_list.php' . $clubQuery . '" class="sidebar__link' . ($currentPage === 'games' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'games' ? $activeLinkStyle : $normalLinkStyle) . '">';
             echo '<span class="sidebar__link-icon" style="' . $iconStyle . '"><span class="material-symbols-outlined">casino</span></span>';
-            echo '<span>' . htmlspecialchars($gLabel) . '</span>';
+            echo '<span><span data-i18n="nav.games">Games</span>' . htmlspecialchars($gCount) . '</span>';
             echo '</a>';
 
             echo '</div>';
@@ -308,7 +308,7 @@ class SidebarHelper {
             echo '<div class="sidebar__section" style="margin-bottom:0.5rem;">';
             echo '<a href="index.php#clubs" class="sidebar__link' . ($currentPage === 'search' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'search' ? $activeLinkStyle : $normalLinkStyle) . '">';
             echo '<span class="sidebar__link-icon" style="' . $iconStyle . '"><span class="material-symbols-outlined">search</span></span>';
-            echo '<span>Find a Club</span>';
+            echo '<span data-i18n="nav.findClub">Find a Club</span>';
             echo '</a>';
             echo '</div>';
         }
@@ -318,6 +318,7 @@ class SidebarHelper {
 
         echo '<div class="sidebar-overlay" aria-hidden="true"></div>';
         echo '<script src="https://theflyingdutchmen.games/javascripts/tfd-navbar.js"></script>';
+        echo '<script src="js/i18n.js"></script>';
     }
 
     /**
@@ -536,8 +537,8 @@ class SidebarHelper {
         } else {
             $newResultStyle .= 'color:var(--color-text, #f8fafc);background:var(--color-surface-muted, rgba(255,255,255,0.08));border:1px solid var(--color-border, #334155);font-weight:500;';
         }
-        echo '<a href="club_new_results.php' . $clubQuery . '" class="sidebar__link' . ($newResultActive ? ' sidebar__link--active' : '') . '" style="' . $newResultStyle . '" title="Add Result">';
-        echo '<span>Add Result</span>';
+        echo '<a href="club_new_results.php' . $clubQuery . '" class="sidebar__link' . ($newResultActive ? ' sidebar__link--active' : '') . '" style="' . $newResultStyle . '" title="Add Result" data-i18n-title="admin.addResult">';
+        echo '<span data-i18n="admin.addResult">Add Result</span>';
         echo '</a>';
 
         $accountActive = ($currentPage === 'account');
@@ -552,35 +553,35 @@ class SidebarHelper {
         echo '</a>';
         echo '</div>';
         // Navigation Items (No hr divider)
-        $mLabel = 'Members' . ($memberCount !== null ? ' (' . $memberCount . ')' : '');
-        $tLabel = 'Teams' . ($teamCount !== null ? ' (' . $teamCount . ')' : '');
-        $cLabel = 'Champions' . ($championCount !== null ? ' (' . $championCount . ')' : '');
-        $gLabel = 'Games' . ($gameCount !== null ? ' (' . $gameCount . ')' : '');
-        $rLabel = 'Results' . ($resultCount !== null ? ' (' . $resultCount . ')' : '');
+        $mCount = $memberCount !== null ? ' (' . $memberCount . ')' : '';
+        $tCount = $teamCount !== null ? ' (' . $teamCount . ')' : '';
+        $cCount = $championCount !== null ? ' (' . $championCount . ')' : '';
+        $gCount = $gameCount !== null ? ' (' . $gameCount . ')' : '';
+        $rCount = $resultCount !== null ? ' (' . $resultCount . ')' : '';
 
         echo '<a href="manage_results.php' . $clubQuery . '" class="sidebar__link' . ($currentPage === 'results' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'results' ? $activeLinkStyle : $normalLinkStyle) . '">';
         echo '<span class="sidebar__link-icon" style="' . $iconStyle . '"><span class="material-symbols-outlined">leaderboard</span></span>';
-        echo '<span>' . htmlspecialchars($rLabel) . '</span>';
+        echo '<span><span data-i18n="nav.results">Results</span>' . htmlspecialchars($rCount) . '</span>';
         echo '</a>';
 
         echo '<a href="manage_members.php' . $clubQuery . '" class="sidebar__link' . ($currentPage === 'members' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'members' ? $activeLinkStyle : $normalLinkStyle) . '">';
         echo '<span class="sidebar__link-icon" style="' . $iconStyle . '"><span class="material-symbols-outlined">group</span></span>';
-        echo '<span>' . htmlspecialchars($mLabel) . '</span>';
+        echo '<span><span data-i18n="nav.members">Members</span>' . htmlspecialchars($mCount) . '</span>';
         echo '</a>';
 
         echo '<a href="manage_teams.php' . $clubQuery . '" class="sidebar__link' . ($currentPage === 'teams' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'teams' ? $activeLinkStyle : $normalLinkStyle) . '">';
         echo '<span class="sidebar__link-icon" style="' . $iconStyle . '"><span class="material-symbols-outlined">groups</span></span>';
-        echo '<span>' . htmlspecialchars($tLabel) . '</span>';
+        echo '<span><span data-i18n="nav.teams">Teams</span>' . htmlspecialchars($tCount) . '</span>';
         echo '</a>';
 
         echo '<a href="manage_champions.php' . $clubQuery . '" class="sidebar__link' . ($currentPage === 'champions' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'champions' ? $activeLinkStyle : $normalLinkStyle) . '">';
         echo '<span class="sidebar__link-icon" style="' . $iconStyle . '"><span class="material-symbols-outlined">emoji_events</span></span>';
-        echo '<span>' . htmlspecialchars($cLabel) . '</span>';
+        echo '<span><span data-i18n="nav.champions">Champions</span>' . htmlspecialchars($cCount) . '</span>';
         echo '</a>';
 
         echo '<a href="manage_games.php' . $clubQuery . '" class="sidebar__link' . ($currentPage === 'games' ? ' sidebar__link--active' : '') . '" style="' . ($currentPage === 'games' ? $activeLinkStyle : $normalLinkStyle) . '">';
         echo '<span class="sidebar__link-icon" style="' . $iconStyle . '"><span class="material-symbols-outlined">casino</span></span>';
-        echo '<span>' . htmlspecialchars($gLabel) . '</span>';
+        echo '<span><span data-i18n="nav.games">Games</span>' . htmlspecialchars($gCount) . '</span>';
         echo '</a>';
 
         echo '</nav>';
@@ -588,6 +589,7 @@ class SidebarHelper {
 
         echo '<div class="sidebar-overlay" aria-hidden="true"></div>';
         echo '<script src="https://theflyingdutchmen.games/javascripts/tfd-navbar.js"></script>';
+        echo '<script src="../js/i18n.js"></script>';
 
         if (!empty($_SESSION['is_impersonating'])) {
             $adminUsername = htmlspecialchars($_SESSION['admin_username'] ?? '');

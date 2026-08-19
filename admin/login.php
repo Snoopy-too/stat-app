@@ -180,64 +180,53 @@ require_once '../includes/templates/header.php';
 
             <!-- Tab Switcher -->
             <div class="auth-tabs" role="tablist">
-                <button type="button" class="auth-tab-btn <?php echo $activeTab === 'login' ? 'active' : ''; ?>" id="tab-btn-login" data-tab="login" role="tab" aria-selected="<?php echo $activeTab === 'login' ? 'true' : 'false'; ?>">Sign In</button>
-                <button type="button" class="auth-tab-btn <?php echo $activeTab === 'register' ? 'active' : ''; ?>" id="tab-btn-register" data-tab="register" role="tab" aria-selected="<?php echo $activeTab === 'register' ? 'true' : 'false'; ?>">Create Account</button>
+                <button type="button" class="auth-tab-btn <?php echo $activeTab === 'login' ? 'active' : ''; ?>" id="tab-btn-login" data-tab="login" role="tab" aria-selected="<?php echo $activeTab === 'login' ? 'true' : 'false'; ?>" data-i18n="auth.signIn">Sign In</button>
+                <button type="button" class="auth-tab-btn <?php echo $activeTab === 'register' ? 'active' : ''; ?>" id="tab-btn-register" data-tab="register" role="tab" aria-selected="<?php echo $activeTab === 'register' ? 'true' : 'false'; ?>" data-i18n="auth.createAccount">Create Account</button>
             </div>
 
             <!-- Sign In Panel -->
             <div class="auth-panel <?php echo $activeTab === 'login' ? 'active' : ''; ?>" id="panel-login" role="tabpanel">
                 <form action="login.php" method="POST" class="stack">
                     <div class="form-group">
-                        <label for="username" class="form-label form-label--required">Username or Email</label>
+                        <label for="username" class="form-label form-label--required" data-i18n="auth.username">Username or Email</label>
                         <div class="input-with-icon">
                             <span class="input-icon">👤</span>
-                            <input type="text" id="username" name="username" required class="form-control" placeholder="Enter your username or email" autofocus autocomplete="username">
+                            <input type="text" id="username" name="username" required class="form-control" placeholder="Enter your username or email" data-i18n-placeholder="auth.usernamePlaceholder" autofocus autocomplete="username">
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="password" class="form-label form-label--required">Password</label>
+                        <label for="password" class="form-label form-label--required" data-i18n="auth.password">Password</label>
                         <div class="input-with-icon">
                             <span class="input-icon">🔒</span>
-                            <input type="password" id="password" name="password" required class="form-control" placeholder="Enter your password" autocomplete="current-password">
+                            <input type="password" id="password" name="password" required class="form-control" placeholder="Enter your password" data-i18n-placeholder="auth.passwordPlaceholder" autocomplete="current-password">
                         </div>
                     </div>
 
                     <div class="auth-options-row">
                         <label>
                             <input type="checkbox" name="remember_me" value="1" class="form-check-input">
-                            <span>Keep me logged in</span>
+                            <span data-i18n="auth.rememberMe">Keep me logged in</span>
                         </label>
-                        <a href="forgot_password.php">Forgot Password?</a>
+                        <a href="forgot_password.php" data-i18n="auth.forgotPassword">Forgot Password?</a>
                     </div>
 
-                    <button type="submit" class="btn btn--primary btn--block" style="width: 100%; justify-content: center;">Sign In</button>
+                    <button type="submit" class="btn btn--primary btn--block" style="width: 100%; justify-content: center;" data-i18n="auth.signIn">Sign In</button>
                 </form>
 
                 <div style="margin: 1.25rem 0 0.5rem; text-align: center;">
                     <div style="display: flex; align-items: center; margin-bottom: 1rem;">
                         <hr style="flex: 1; border: 0; border-top: 1px solid var(--card-border, rgba(255,255,255,0.15));">
-                        <span style="padding: 0 10px; color: var(--text-muted, #8b949e); font-size: 0.85rem;">or</span>
+                        <span style="padding: 0 10px; color: var(--text-muted, #8b949e); font-size: 0.85rem;" data-i18n="common.or">or</span>
                         <hr style="flex: 1; border: 0; border-top: 1px solid var(--card-border, rgba(255,255,255,0.15));">
                     </div>
                     <a href="https://theflyingdutchmen.games/oauth/authorize?response_type=code&client_id=stats-app-756c55ba&response_type=code&redirect_uri=https://stats.theflyingdutchmen.games/auth_callback.php&scope=openid%20profile%20email" class="btn btn--secondary btn--block" style="width: 100%; justify-content: center; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
-                        <span>🎮</span> Sign in with The Flying Dutchmen
-                    </a>
-                </div>
-
-                <div style="margin: 1.25rem 0 0.5rem; text-align: center;">
-                    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
-                        <hr style="flex: 1; border: 0; border-top: 1px solid var(--card-border, rgba(255,255,255,0.15));">
-                        <span style="padding: 0 10px; color: var(--text-muted, #8b949e); font-size: 0.85rem;">or</span>
-                        <hr style="flex: 1; border: 0; border-top: 1px solid var(--card-border, rgba(255,255,255,0.15));">
-                    </div>
-                    <a href="https://theflyingdutchmen.games/oauth/authorize?response_type=code&client_id=stats-app-756c55ba&response_type=code&redirect_uri=https://stats.theflyingdutchmen.games/auth_callback.php&scope=openid%20profile%20email" class="btn btn--secondary btn--block" style="width: 100%; justify-content: center; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
-                        <span>🎮</span> Sign in with The Flying Dutchmen
+                        <span>🎮</span> <span data-i18n="auth.signInWithTFD">Sign in with The Flying Dutchmen</span>
                     </a>
                 </div>
 
                 <p class="auth-switch-text">
-                    Don't have an account? <button type="button" class="btn-link-inline" onclick="setAuthTab('register')">Create one</button>
+                    <span data-i18n="auth.noAccount">Don't have an account?</span> <button type="button" class="btn-link-inline" onclick="setAuthTab('register')" data-i18n="auth.createOne">Create one</button>
                 </p>
             </div>
 
@@ -247,7 +236,7 @@ require_once '../includes/templates/header.php';
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
 
                     <div class="form-group">
-                        <label for="reg_username" class="form-label form-label--required">Username</label>
+                        <label for="reg_username" class="form-label form-label--required" data-i18n="auth.usernameOnly">Username</label>
                         <div class="input-with-icon">
                             <span class="input-icon">👤</span>
                             <input type="text" id="reg_username" name="username" required class="form-control"
@@ -255,31 +244,31 @@ require_once '../includes/templates/header.php';
                                    pattern="^[a-zA-Z0-9_]+$" title="Only letters, numbers, and underscores allowed"
                                    autocomplete="username">
                         </div>
-                        <small class="help-text">2 to 50 characters (letters, numbers, underscores).</small>
+                        <small class="help-text" data-i18n="auth.usernameHelp">2 to 50 characters (letters, numbers, underscores).</small>
                     </div>
 
                     <div class="form-group">
-                        <label for="reg_email" class="form-label form-label--required">Club Admin Email</label>
+                        <label for="reg_email" class="form-label form-label--required" data-i18n="admin.email">Club Admin Email</label>
                         <div class="input-with-icon">
                             <span class="input-icon">✉️</span>
                             <input type="email" id="reg_email" name="email" required class="form-control"
                                    placeholder="admin@yourdomain.com" autocomplete="email">
                         </div>
-                        <small class="help-text">Used for admin login and notifications.</small>
+                        <small class="help-text" data-i18n="auth.emailHelp">Used for admin login and notifications.</small>
                     </div>
 
                     <div class="form-group">
-                        <label for="reg_password" class="form-label form-label--required">Password</label>
+                        <label for="reg_password" class="form-label form-label--required" data-i18n="auth.password">Password</label>
                         <div class="input-with-icon">
                             <span class="input-icon">🔒</span>
                             <input type="password" id="reg_password" name="password" required class="form-control"
                                    minlength="8" placeholder="Create a strong password" autocomplete="new-password">
                         </div>
-                        <small class="help-text">Min 8 characters with uppercase, lowercase, number, and symbol.</small>
+                        <small class="help-text" data-i18n="auth.passwordHelp">Min 8 characters with uppercase, lowercase, number, and symbol.</small>
                     </div>
 
                     <div class="form-group">
-                        <label for="confirm_password" class="form-label form-label--required">Confirm Password</label>
+                        <label for="confirm_password" class="form-label form-label--required" data-i18n="auth.confirmPassword">Confirm Password</label>
                         <div class="input-with-icon">
                             <span class="input-icon">🔑</span>
                             <input type="password" id="confirm_password" name="confirm_password" required class="form-control"
@@ -287,11 +276,11 @@ require_once '../includes/templates/header.php';
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn--primary btn--block" style="width: 100%; justify-content: center; margin-top: 0.5rem;">Register Account</button>
+                    <button type="submit" class="btn btn--primary btn--block" style="width: 100%; justify-content: center; margin-top: 0.5rem;" data-i18n="auth.registerAccount">Register Account</button>
                 </form>
 
                 <p class="auth-switch-text">
-                    Already have an account? <button type="button" class="btn-link-inline" onclick="setAuthTab('login')">Sign In</button>
+                    <span data-i18n="auth.haveAccount">Already have an account?</span> <button type="button" class="btn-link-inline" onclick="setAuthTab('login')" data-i18n="auth.signIn">Sign In</button>
                 </p>
             </div>
         </div>

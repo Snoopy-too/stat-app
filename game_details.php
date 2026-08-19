@@ -112,15 +112,15 @@ if ($game_id > 0) {
                     <h1 class="game-hero__title"><?php echo htmlspecialchars($game['game_name']); ?></h1>
                     <div class="game-hero__stats">
                         <div class="game-stat">
-                            <span class="game-stat__label">Recommended Players</span>
+                            <span class="game-stat__label" data-i18n="club.recommendedPlayers">Recommended Players</span>
                             <span class="game-stat__value"><?php echo $game['min_players'] . '-' . $game['max_players']; ?></span>
                         </div>
                         <div class="game-stat">
-                            <span class="game-stat__label">Total Recorded Matches</span>
+                            <span class="game-stat__label" data-i18n="club.totalRecordedMatches">Total Recorded Matches</span>
                             <span class="game-stat__value"><?php echo count($results); ?></span>
                         </div>
                         <div class="game-stat">
-                            <span class="game-stat__label">Club</span>
+                            <span class="game-stat__label" data-i18n="admin.club">Club</span>
                             <span class="game-stat__value"><?php echo htmlspecialchars($game['club_name']); ?></span>
                         </div>
                     </div>
@@ -129,16 +129,16 @@ if ($game_id > 0) {
 
             <div class="card">
                 <div class="card-header">
-                    <h2>Match History</h2>
+                    <h2 data-i18n="club.matchHistory">Match History</h2>
                 </div>
 
                 <?php if (count($results) > 0): ?>
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th><a href="?id=<?php echo $game_id; ?>&sort=nickname&order=<?php echo ($sort === 'nickname' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()">Winner <?php if ($sort === 'nickname') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
-                                <th><a href="?id=<?php echo $game_id; ?>&sort=game_type&order=<?php echo ($sort === 'game_type' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()">Type <?php if ($sort === 'game_type') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
-                                <th><a href="?id=<?php echo $game_id; ?>&sort=played_at&order=<?php echo ($sort === 'played_at' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()">Date Played <?php if ($sort === 'played_at') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
+                                <th><a href="?id=<?php echo $game_id; ?>&sort=nickname&order=<?php echo ($sort === 'nickname' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()"><span data-i18n="common.winner">Winner</span> <?php if ($sort === 'nickname') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
+                                <th><a href="?id=<?php echo $game_id; ?>&sort=game_type&order=<?php echo ($sort === 'game_type' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()"><span data-i18n="admin.matchType">Type</span> <?php if ($sort === 'game_type') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
+                                <th><a href="?id=<?php echo $game_id; ?>&sort=played_at&order=<?php echo ($sort === 'played_at' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()"><span data-i18n="results.datePlayed">Date Played</span> <?php if ($sort === 'played_at') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
                             </tr>
                         </thead>
                         <tbody>

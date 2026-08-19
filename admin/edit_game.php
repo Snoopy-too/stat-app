@@ -197,6 +197,7 @@ $csrf_token = $security->generateCSRFToken();
     <title>View and Edit <?php echo htmlspecialchars($game['game_name']); ?> - Board Game StatApp</title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
+    <script src="../js/i18n.js"></script>
     <style>
         .form-grid-2 {
             display: grid;
@@ -302,9 +303,9 @@ $csrf_token = $security->generateCSRFToken();
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
                 <div>
                     <h3 style="margin: 0; font-size: 1.15rem; color: var(--color-heading); display: flex; align-items: center; gap: 0.5rem;">
-                        <span>📊</span> Game Overview & Infographics
+                        <span>📊</span> <span data-i18n="admin.gameOverview">Game Overview & Infographics</span>
                     </h3>
-                    <p style="margin: 0.2rem 0 0; font-size: 0.85rem; color: var(--color-text-muted);">Key statistics and activity summary for <?php echo htmlspecialchars($game['game_name']); ?>.</p>
+                    <p style="margin: 0.2rem 0 0; font-size: 0.85rem; color: var(--color-text-muted);" data-i18n="admin.gameOverviewDesc">Key statistics and activity summary for this game.</p>
                 </div>
                 <span class="badge badge--neutral" style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $game['game_type'] ?? 'winner_losers'))); ?></span>
             </div>
@@ -312,29 +313,29 @@ $csrf_token = $security->generateCSRFToken();
                 <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem 1rem; text-align: center;">
                     <div style="font-size: 2rem; margin-bottom: 0.35rem;">🎲</div>
                     <div style="font-size: 1.6rem; font-weight: 800; color: var(--color-primary); line-height: 1;"><?php echo $total_plays; ?></div>
-                    <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 600; margin-top: 0.4rem;">Total Plays</div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 600; margin-top: 0.4rem;" data-i18n="club.totalPlays">Total Plays</div>
                 </div>
                 <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem 1rem; text-align: center;">
                     <div style="font-size: 2rem; margin-bottom: 0.35rem;">📅</div>
                     <div style="font-size: 1.2rem; font-weight: 700; color: var(--color-heading); line-height: 1.2; margin-top: 0.2rem;"><?php echo $last_played; ?></div>
-                    <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 600; margin-top: 0.4rem;">Last Match Played</div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 600; margin-top: 0.4rem;" data-i18n="club.lastMatchPlayed">Last Match Played</div>
                 </div>
                 <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem 1rem; text-align: center;">
                     <div style="font-size: 2rem; margin-bottom: 0.35rem;">🏆</div>
                     <div style="font-size: 1.1rem; font-weight: 700; color: var(--color-heading); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?php echo htmlspecialchars($top_winner); ?></div>
-                    <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 600; margin-top: 0.4rem;"><?php echo $top_winner_wins > 0 ? $top_winner_wins . ' ' . ($top_winner_wins === 1 ? 'victory' : 'victories') : 'Top Champion'; ?></div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 600; margin-top: 0.4rem;" data-i18n="club.topChampion"><?php echo $top_winner_wins > 0 ? $top_winner_wins . ' ' . ($top_winner_wins === 1 ? 'victory' : 'victories') : 'Top Champion'; ?></div>
                 </div>
                 <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem 1rem; text-align: center;">
                     <div style="font-size: 2rem; margin-bottom: 0.35rem;">👥</div>
                     <div style="font-size: 1.4rem; font-weight: 800; color: var(--color-heading); line-height: 1;"><?php echo (int)$game['min_players'] . ' - ' . (int)$game['max_players']; ?></div>
-                    <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 600; margin-top: 0.4rem;">Player Capacity</div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 600; margin-top: 0.4rem;" data-i18n="club.playerCapacity">Player Capacity</div>
                 </div>
             </div>
         </div>
 
         <div class="card" style="padding: 1.5rem;">
             <div class="card-header" style="margin-bottom: 1.25rem;">
-                <h2 style="margin:0;">View and Edit <?php echo htmlspecialchars($game['game_name']); ?></h2>
+                <h2 style="margin:0;" data-i18n="admin.gameDetails">Game Details</h2>
             </div>
                 <form method="POST" class="form" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
@@ -342,13 +343,13 @@ $csrf_token = $security->generateCSRFToken();
                     
                     <?php if (!empty($game['game_image'])): ?>
                         <div class="form-group" style="margin-bottom: 1.25rem;">
-                            <label class="form-label">Current Image</label>
+                            <label class="form-label" data-i18n="admin.currentImage">Current Image</label>
                             <div style="display: flex; align-items: center; gap: 1rem;">
                                 <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'], '../')); ?>" alt="Game Image" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--color-border);" loading="lazy" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
                                 <div style="display:none;width:64px;height:64px;border-radius:8px;border:1px solid var(--color-border);background:var(--color-surface-muted);align-items:center;justify-content:center;font-size:1.5rem;">🎲</div>
                                 <label class="form-check" style="display:flex; align-items:center; gap:0.35rem; cursor:pointer;">
                                     <input type="checkbox" name="remove_image" value="1" class="form-check-input">
-                                    <span class="form-check-label" style="font-size:0.9rem;">Remove current image</span>
+                                    <span class="form-check-label" style="font-size:0.9rem;" data-i18n="admin.removeCurrentImage">Remove current image</span>
                                 </label>
                             </div>
                         </div>
@@ -356,50 +357,50 @@ $csrf_token = $security->generateCSRFToken();
 
                     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label for="game_name" class="form-label">Game Name <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                            <label for="game_name" class="form-label"><span data-i18n="games.gameName">Game Name</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
                             <input type="text" name="game_name" id="game_name" placeholder="e.g. Catan" value="<?php echo htmlspecialchars($game['game_name']); ?>" required class="form-control">
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label for="min_players" class="form-label">Min Players</label>
+                            <label for="min_players" class="form-label" data-i18n="games.minPlayers">Min Players</label>
                             <input type="number" name="min_players" id="min_players" placeholder="Min Players" value="<?php echo htmlspecialchars((string)$game['min_players']); ?>" required min="1" max="99" class="form-control">
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label for="max_players" class="form-label">Max Players</label>
+                            <label for="max_players" class="form-label" data-i18n="games.maxPlayers">Max Players</label>
                             <input type="number" name="max_players" id="max_players" placeholder="Max Players" value="<?php echo htmlspecialchars((string)$game['max_players']); ?>" required min="1" max="99" class="form-control">
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label for="game_type" class="form-label">Game Type <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                            <label for="game_type" class="form-label"><span data-i18n="admin.matchType">Game Type</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
                             <select name="game_type" id="game_type" class="form-control">
-                                <option value="winner_losers" <?php echo (($game['game_type'] ?? 'winner_losers') === 'winner_losers') ? 'selected' : ''; ?>>Winner/Losers</option>
-                                <option value="ranked" <?php echo (($game['game_type'] ?? '') === 'ranked') ? 'selected' : ''; ?>>Ranked (1st, 2nd, 3rd...)</option>
-                                <option value="teams" <?php echo (($game['game_type'] ?? '') === 'teams') ? 'selected' : ''; ?>>Teams</option>
-                                <option value="cooperative" <?php echo (($game['game_type'] ?? '') === 'cooperative') ? 'selected' : ''; ?>>Cooperative</option>
+                                <option value="winner_losers" <?php echo (($game['game_type'] ?? 'winner_losers') === 'winner_losers') ? 'selected' : ''; ?> data-i18n="admin.winnerLosers">Winner/Losers</option>
+                                <option value="ranked" <?php echo (($game['game_type'] ?? '') === 'ranked') ? 'selected' : ''; ?> data-i18n="admin.ranked">Ranked (1st, 2nd, 3rd...)</option>
+                                <option value="teams" <?php echo (($game['game_type'] ?? '') === 'teams') ? 'selected' : ''; ?> data-i18n="admin.teams">Teams</option>
+                                <option value="cooperative" <?php echo (($game['game_type'] ?? '') === 'cooperative') ? 'selected' : ''; ?> data-i18n="admin.cooperative">Cooperative</option>
                             </select>
                         </div>
                     </div>
 
                     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label">Game Image</label>
+                            <label class="form-label" data-i18n="admin.gameImage">Game Image</label>
                             <div class="upload-zone" id="upload-zone" style="border: 2px dashed var(--color-border); border-radius: 8px; padding: 1rem; text-align: center; background: var(--color-surface); cursor: pointer; position: relative;">
                                 <span class="upload-zone__icon" style="font-size: 1.5rem; display: block; margin-bottom: 0.25rem;">🖼️</span>
-                                <span class="upload-zone__text" style="font-size: 0.9rem; color: var(--color-text);">Click to replace or drag & drop file</span>
-                                <span class="upload-zone__hint" style="font-size: 0.75rem; color: var(--color-text-muted); display: block; margin-top: 0.25rem;">JPG, PNG, GIF (Max 1MB)</span>
+                                <span class="upload-zone__text" style="font-size: 0.9rem; color: var(--color-text);" data-i18n="admin.uploadZoneText">Click to replace or drag & drop file</span>
+                                <span class="upload-zone__hint" style="font-size: 0.75rem; color: var(--color-text-muted); display: block; margin-top: 0.25rem;" data-i18n="admin.uploadZoneHint">JPG, PNG, GIF (Max 1MB)</span>
                                 <input type="file" name="game_image" id="game_image" accept="image/jpeg,image/png,image/gif" style="position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer;">
                             </div>
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label for="image_url" class="form-label">Or Image Link / URL</label>
+                            <label for="image_url" class="form-label" data-i18n="admin.orImageUrl">Or Image Link / URL</label>
                             <input type="url" name="image_url" id="image_url" placeholder="https://..." class="form-control">
-                            <small style="color: var(--color-text-muted); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Paste a direct web link to an image file</small>
+                            <small style="color: var(--color-text-muted); font-size: 0.75rem; display: block; margin-top: 0.25rem;" data-i18n="admin.imageUrlHint">Paste a direct web link to an image file</small>
                         </div>
                     </div>
 
                     <div class="form-group" style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0; flex-wrap:wrap;">
-                        <button type="submit" class="btn btn--primary">Save Game</button>
-                        <a href="manage_games.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle">Cancel</a>
+                        <button type="submit" class="btn btn--primary" data-i18n="common.save">Save Game</button>
+                        <a href="manage_games.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle" data-i18n="common.cancel">Cancel</a>
                         <?php if ($total_plays === 0): ?>
-                            <button type="button" class="btn btn--danger" style="margin-left: auto;"
+                            <button type="button" class="btn btn--danger" style="margin-left: auto;" data-i18n="admin.deleteGame"
                                     onclick="showConfirmDialog(event, {
                                         title: '⚠️ Delete Game',
                                         message: 'Are you sure you want to permanently delete <strong><?php echo addslashes(htmlspecialchars($game['game_name'])); ?></strong>? This action cannot be undone.',
@@ -409,7 +410,7 @@ $csrf_token = $security->generateCSRFToken();
                                         onConfirm: () => document.getElementById('delete-game-form').submit()
                                     })">Delete Game</button>
                         <?php else: ?>
-                            <button type="button" class="btn btn--danger" style="margin-left: auto;"
+                            <button type="button" class="btn btn--danger" style="margin-left: auto;" data-i18n="admin.deleteGame"
                                     onclick="showConfirmDialog(event, {
                                         title: 'Deletion Restricted',
                                         message: 'This game has <?php echo $total_plays; ?> match result(s). Remove all related records before deleting.',

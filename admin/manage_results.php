@@ -254,6 +254,7 @@ $baseUrl = 'manage_results.php?club_id=' . $club_id;
     <link rel="stylesheet" href="../css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../js/dark-mode.js"></script>
+    <script src="../js/i18n.js"></script>
 </head>
 <body class="has-sidebar">
     <?php NavigationHelper::renderAdminSidebar('results', $club_id, $club_name); ?>

@@ -21,13 +21,13 @@ class TableHelper {
             <summary style="cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; user-select: none; padding: 0.25rem 0;">
                 <h2 style="margin: 0; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.25rem;">
                     <span class="material-symbols-outlined" style="font-size: 1.35rem;">monitoring</span>
-                    <span>Analytics & Trends</span>
+                    <span data-i18n="analytics.title">Analytics & Trends</span>
                 </h2>
                 <span class="material-symbols-outlined accordion-icon" style="transition: transform 0.2s ease;">expand_more</span>
             </summary>
             <div style="margin-top: 1rem; border-top: 1px solid var(--color-border); padding-top: 1rem;">
                 <div>
-                    <h3 style="font-size: 1rem; margin-bottom: 0.75rem; text-align: center;">Wins for Members and Their Teams</h3>
+                    <h3 style="font-size: 1rem; margin-bottom: 0.75rem; text-align: center;" data-i18n="analytics.memberWinsTitle">Wins for Members and Their Teams</h3>
                     <div style="position: relative; height: 260px;">
                         <canvas id="memberWinsChart"></canvas>
                     </div>
@@ -73,12 +73,12 @@ class TableHelper {
                         }
                     </style>
                     <div class="wot-header-container">
-                        <h3 style="font-size: 1rem; margin: 0;">Cumulative Wins Over Time</h3>
+                        <h3 style="font-size: 1rem; margin: 0;" data-i18n="club.cumulativeWins">Cumulative Wins Over Time</h3>
                         <div class="wot-timeframe-selector" role="group" aria-label="Timeframe selector">
-                            <button type="button" class="wot-btn" data-range="6m">Last 6 Months</button>
-                            <button type="button" class="wot-btn" data-range="1y">1 Year</button>
-                            <button type="button" class="wot-btn" data-range="2y">2 Years</button>
-                            <button type="button" class="wot-btn active" data-range="all">All Time</button>
+                            <button type="button" class="wot-btn" data-range="6m" data-i18n="club.last6Months">Last 6 Months</button>
+                            <button type="button" class="wot-btn" data-range="1y" data-i18n="club.oneYear">1 Year</button>
+                            <button type="button" class="wot-btn" data-range="2y" data-i18n="club.twoYears">2 Years</button>
+                            <button type="button" class="wot-btn active" data-range="all" data-i18n="club.allTime">All Time</button>
                         </div>
                     </div>
                     <div style="position: relative; height: 260px;">
@@ -124,13 +124,13 @@ class TableHelper {
                         labels: memberNames,
                         datasets: [
                             {
-                                label: 'Individual Wins',
+                                label: (window.tfdI18n ? window.tfdI18n.t('analytics.individualWins') : 'Individual Wins'),
                                 data: indWins,
                                 backgroundColor: '#3b82f6',
                                 borderRadius: 4
                             },
                             {
-                                label: 'Team Wins',
+                                label: (window.tfdI18n ? window.tfdI18n.t('analytics.teamWins') : 'Team Wins'),
                                 data: teamWins,
                                 backgroundColor: '#8b5cf6',
                                 borderRadius: 4
@@ -436,7 +436,7 @@ class TableHelper {
             <summary style="cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; user-select: none; padding: 0.25rem 0;">
                 <h2 style="margin: 0; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.25rem;">
                     <span class="material-symbols-outlined" style="font-size: 1.35rem;">monitoring</span>
-                    <span>Analytics & Trends</span>
+                    <span data-i18n="analytics.title">Analytics & Trends</span>
                 </h2>
                 <span class="material-symbols-outlined accordion-icon" style="transition: transform 0.2s ease;">expand_more</span>
             </summary>
@@ -453,25 +453,25 @@ class TableHelper {
                 <?php else: ?>
                     <div style="margin-bottom: 2rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
-                            <h3 style="font-size: 1rem; margin: 0;">Most Played Games (All Games)</h3>
+                            <h3 style="font-size: 1rem; margin: 0;" data-i18n="analytics.mostPlayedGames">Most Played Games (All Games)</h3>
                             <div id="ignored-games-container" style="display: none; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.75rem;">
-                                <span style="color: var(--color-text-muted, #64748b);">Ignored:</span>
+                                <span style="color: var(--color-text-muted, #64748b);" data-i18n="analytics.ignored">Ignored:</span>
                                 <div id="ignored-games-tags" style="display: flex; gap: 0.25rem; flex-wrap: wrap;"></div>
-                                <button type="button" id="reset-ignored-games-btn" class="wot-btn" style="text-decoration: underline;">Reset All</button>
+                                <button type="button" id="reset-ignored-games-btn" class="wot-btn" style="text-decoration: underline;" data-i18n="analytics.resetAll">Reset All</button>
                             </div>
                         </div>
-                        <p style="font-size: 0.75rem; color: var(--color-text-muted, #64748b); margin: 0 0 0.75rem 0; text-align: center;">Click any bar to ignore a game</p>
+                        <p style="font-size: 0.75rem; color: var(--color-text-muted, #64748b); margin: 0 0 0.75rem 0; text-align: center;" data-i18n="analytics.clickBarHint">Click any bar to ignore a game</p>
                         <div style="position: relative; height: 260px;">
                             <canvas id="mostPlayedGamesChart"></canvas>
                         </div>
                     </div>
 
                     <div>
-                        <h3 style="font-size: 1rem; margin-bottom: 1rem; text-align: center;">Win Rates by Game Type</h3>
+                        <h3 style="font-size: 1rem; margin-bottom: 1rem; text-align: center;" data-i18n="analytics.winRatesByGameType">Win Rates by Game Type</h3>
                         <div class="results-pie-grid">
                             <?php if (!empty($indiv_labels)): ?>
                             <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem;">
-                                <h4 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; text-align: center;">Winner/Losers Games</h4>
+                                <h4 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; text-align: center;" data-i18n="analytics.winnerLosersGames">Winner/Losers Games</h4>
                                 <div style="position: relative; height: 220px;">
                                     <canvas id="indivWinChart"></canvas>
                                 </div>
@@ -480,7 +480,7 @@ class TableHelper {
 
                             <?php if (!empty($ranked_labels)): ?>
                             <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem;">
-                                <h4 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; text-align: center;">Ranked Games (1st Place)</h4>
+                                <h4 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; text-align: center;" data-i18n="analytics.rankedGames">Ranked Games (1st Place)</h4>
                                 <div style="position: relative; height: 220px;">
                                     <canvas id="rankedWinChart"></canvas>
                                 </div>
@@ -489,7 +489,7 @@ class TableHelper {
 
                             <?php if (!empty($team_labels)): ?>
                             <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem;">
-                                <h4 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; text-align: center;">Team Games</h4>
+                                <h4 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; text-align: center;" data-i18n="analytics.teamGames">Team Games</h4>
                                 <div style="position: relative; height: 220px;">
                                     <canvas id="teamWinChart"></canvas>
                                 </div>
@@ -498,7 +498,7 @@ class TableHelper {
 
                             <?php if (!empty($coop_labels)): ?>
                             <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem;">
-                                <h4 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; text-align: center;">Cooperative Games</h4>
+                                <h4 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; text-align: center;" data-i18n="analytics.coopGames">Cooperative Games</h4>
                                 <div style="position: relative; height: 220px;">
                                     <canvas id="coopWinChart"></canvas>
                                 </div>
@@ -616,7 +616,7 @@ class TableHelper {
                     data: {
                         labels: initialLabels,
                         datasets: [{
-                            label: 'Plays',
+                            label: (window.tfdI18n ? window.tfdI18n.t('common.plays') : 'Plays'),
                             data: initialData,
                             backgroundColor: colors.primary,
                             borderRadius: 6
@@ -630,7 +630,7 @@ class TableHelper {
                             tooltip: {
                                 callbacks: {
                                     afterBody: function() {
-                                        return '(Click bar to ignore game)';
+                                        return (window.tfdI18n ? window.tfdI18n.t('analytics.clickBarTooltip') : '(Click bar to ignore game)');
                                     }
                                 }
                             }
@@ -753,7 +753,7 @@ class TableHelper {
         ?>
         <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
             <?php if ($isAdmin): ?>
-                <button type="button" class="btn btn--primary" id="add-member-btn" onclick="toggleAddMemberForm()" style="white-space: nowrap; flex-shrink: 0; <?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? 'visibility:hidden;' : ''; ?>">
+                <button type="button" class="btn btn--primary" id="add-member-btn" onclick="toggleAddMemberForm()" data-i18n="admin.addNewMember" style="white-space: nowrap; flex-shrink: 0; <?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? 'visibility:hidden;' : ''; ?>">
                     Add a Member
                 </button>
             <?php else: ?>
@@ -776,11 +776,11 @@ class TableHelper {
                     <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
                     <input type="hidden" name="order" value="<?php echo htmlspecialchars($order); ?>">
                     <div class="input-group" style="display: flex; gap: 0;">
-                        <input type="text" name="search" placeholder="Search members..." value="<?php echo htmlspecialchars($search); ?>" class="form-control" style="width: 220px;" oninput="filterTableRows(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();filterTableRows(this);}" <?php echo $search !== '' ? 'autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length)"' : ''; ?>>
+                        <input type="text" name="search" placeholder="Search members..." data-i18n-placeholder="members.searchPlaceholder" value="<?php echo htmlspecialchars($search); ?>" class="form-control" style="width: 220px;" oninput="filterTableRows(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();filterTableRows(this);}" <?php echo $search !== '' ? 'autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length)"' : ''; ?>>
                         <select name="status" id="status-filter" class="form-control form-control--sm" onchange="this.form.submit()" style="width: 120px;">
-                            <option value="all" <?php echo $statusFilter === 'all' ? 'selected' : ''; ?>>All Status</option>
-                            <option value="active" <?php echo $statusFilter === 'active' ? 'selected' : ''; ?>>Active</option>
-                            <option value="inactive" <?php echo $statusFilter === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
+                            <option value="all" <?php echo $statusFilter === 'all' ? 'selected' : ''; ?> data-i18n="members.allStatus">All Status</option>
+                            <option value="active" <?php echo $statusFilter === 'active' ? 'selected' : ''; ?> data-i18n="members.active">Active</option>
+                            <option value="inactive" <?php echo $statusFilter === 'inactive' ? 'selected' : ''; ?> data-i18n="members.inactive">Inactive</option>
                         </select>
                     </div>
                 </form>
@@ -790,11 +790,10 @@ class TableHelper {
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($options['csrf_token'] ?? ''); ?>">
                         <input type="hidden" name="club_id" value="<?php echo $clubId; ?>">
                         <select name="bulk_action" id="bulk-action-select" class="form-control form-control--sm" onchange="executeBulkAction(this)" style="width: 140px;">
-                            <option value="">Bulk Actions</option>
-                            <option value="bulk_activate">Activate Selected</option>
-                            <option value="bulk_deactivate">Deactivate Selected</option>
-                            <option value="bulk_email">Send Email to</option>
-                            <option value="bulk_delete">Delete Selected</option>
+                            <option value="" data-i18n="common.bulkActions">Bulk Actions</option>
+                            <option value="bulk_activate" data-i18n="admin.activateSelected">Activate Selected</option>
+                            <option value="bulk_deactivate" data-i18n="admin.deactivateSelected">Deactivate Selected</option>
+                            <option value="bulk_delete" data-i18n="admin.deleteSelected">Delete Selected</option>
                         </select>
                     </form>
                 <?php endif; ?>
@@ -809,7 +808,7 @@ class TableHelper {
                             <th style="width: 40px; text-align: center;"><input type="checkbox" id="select-all" class="form-check-input"></th>
                             <th>
                                 <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'member_name', 'order' => ($sort === 'member_name' ? $oppositeOrder : 'asc'), 'search' => $search, 'status' => $statusFilter]); ?>" class="table-sort-link sort-link">
-                                    <span>Name</span>
+                                    <span data-i18n="members.name">Name</span>
                                     <?php if ($sort === 'member_name'): ?>
                                         <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
                                     <?php endif; ?>
@@ -818,16 +817,16 @@ class TableHelper {
                         <?php endif; ?>
                         <th>
                             <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'nickname', 'order' => ($sort === 'nickname' ? $oppositeOrder : 'asc'), 'search' => $search, 'status' => $statusFilter]); ?>" class="table-sort-link sort-link">
-                                <span>Nickname</span>
+                                <span data-i18n="members.nickname">Nickname</span>
                                 <?php if ($sort === 'nickname'): ?>
                                     <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
                                 <?php endif; ?>
                             </a>
                         </th>
-                        <th>Teams</th>
+                        <th data-i18n="club.teams">Teams</th>
                         <th>
                             <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'total_wins', 'order' => ($sort === 'total_wins' ? $oppositeOrder : 'desc'), 'search' => $search, 'status' => $statusFilter]); ?>" class="table-sort-link sort-link">
-                                <span>Total Wins</span>
+                                <span data-i18n="members.totalWins">Total Wins</span>
                                 <?php if ($sort === 'total_wins'): ?>
                                     <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
                                 <?php endif; ?>
@@ -835,15 +834,15 @@ class TableHelper {
                         </th>
                         <th>
                             <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'championships_count', 'order' => ($sort === 'championships_count' ? $oppositeOrder : 'desc'), 'search' => $search, 'status' => $statusFilter]); ?>" class="table-sort-link sort-link">
-                                <span>Trophies</span>
+                                <span data-i18n="members.trophies">Trophies</span>
                                 <?php if ($sort === 'championships_count'): ?>
                                     <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
                                 <?php endif; ?>
                             </a>
                         </th>
-                        <th>Status</th>
+                        <th data-i18n="members.status">Status</th>
                         <?php if ($isAdmin): ?>
-                            <th>Actions</th>
+                            <th data-i18n="common.actions">Actions</th>
                         <?php endif; ?>
                     </tr>
                 </thead>
@@ -861,19 +860,19 @@ class TableHelper {
                                 <?php endif; ?>
                                 <td data-label="Nickname"><strong><?php echo htmlspecialchars($m['nickname'] ?: 'Member'); ?></strong></td>
                                 <td data-label="Teams"><?php echo htmlspecialchars($m['member_teams'] ?? '—'); ?></td>
-                                <td data-label="Total Wins"><span class="badge badge--success"><?php echo (int)($m['total_wins'] ?? 0); ?> wins</span></td>
+                                <td data-label="Total Wins"><span class="badge badge--success"><?php echo (int)($m['total_wins'] ?? 0); ?> <span data-i18n="common.wins">wins</span></span></td>
                                 <td data-label="Trophies"><?php echo (int)($m['championships_count'] ?? 0) > 0 ? '🏆 ' . (int)$m['championships_count'] : '—'; ?></td>
                                 <td data-label="Status">
                                     <?php if (($m['status'] ?? 'active') === 'active'): ?>
-                                        <span class="badge badge--success">Active</span>
+                                        <span class="badge badge--success" data-i18n="members.active">Active</span>
                                     <?php else: ?>
-                                        <span class="badge badge--neutral">Inactive</span>
+                                        <span class="badge badge--neutral" data-i18n="members.inactive">Inactive</span>
                                     <?php endif; ?>
                                 </td>
                                 <?php if ($isAdmin): ?>
                                     <td data-label="Actions">
                                         <div style="display:flex; gap:0.5rem; align-items:center;">
-                                            <a href="edit_member.php?member_id=<?php echo $m['member_id']; ?>&club_id=<?php echo $clubId; ?>" class="btn btn--small btn--secondary">View/Edit</a>
+                                            <a href="edit_member.php?member_id=<?php echo $m['member_id']; ?>&club_id=<?php echo $clubId; ?>" class="btn btn--small btn--secondary" data-i18n="common.viewEdit">View/Edit</a>
                                         </div>
                                     </td>
                                 <?php endif; ?>
@@ -967,7 +966,7 @@ class TableHelper {
         ?>
         <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
             <?php if ($isAdmin): ?>
-                <button type="button" class="btn btn--primary" id="toggle-add-team-btn" onclick="toggleAddTeamForm()" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create_team') ? 'visibility:hidden;' : ''; ?>">
+                <button type="button" class="btn btn--primary" id="toggle-add-team-btn" onclick="toggleAddTeamForm()" data-i18n="admin.addNewTeam" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create_team') ? 'visibility:hidden;' : ''; ?>">
                     Add a Team
                 </button>
             <?php else: ?>
@@ -988,7 +987,7 @@ class TableHelper {
                     }
                     ?>
                     <div class="input-group" style="display: flex; gap: 0;">
-                        <input type="text" name="search" placeholder="Search teams..." value="<?php echo htmlspecialchars($search); ?>" class="form-control" style="width: 220px;" oninput="filterTableRows(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();filterTableRows(this);}" <?php echo $search !== '' ? 'autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length)"' : ''; ?>>
+                        <input type="text" name="search" placeholder="Search teams..." data-i18n-placeholder="teams.searchPlaceholder" value="<?php echo htmlspecialchars($search); ?>" class="form-control" style="width: 220px;" oninput="filterTableRows(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();filterTableRows(this);}" <?php echo $search !== '' ? 'autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length)"' : ''; ?>>
                     </div>
                 </form>
             </div>
@@ -998,13 +997,13 @@ class TableHelper {
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th style="text-align:left;">Team Name</th>
-                        <th style="text-align:left;">Members</th>
-                        <th style="text-align:left;">Created</th>
-                        <th style="text-align:left;">Total Plays</th>
-                        <th style="text-align:left;">Wins</th>
+                        <th style="text-align:left;" data-i18n="teams.teamName">Team Name</th>
+                        <th style="text-align:left;" data-i18n="club.members">Members</th>
+                        <th style="text-align:left;" data-i18n="teams.created">Created</th>
+                        <th style="text-align:left;" data-i18n="club.totalPlays">Total Plays</th>
+                        <th style="text-align:left;" data-i18n="club.wins">Wins</th>
                         <?php if ($isAdmin): ?>
-                            <th>Actions</th>
+                            <th data-i18n="common.actions">Actions</th>
                         <?php endif; ?>
                     </tr>
                 </thead>
@@ -1041,11 +1040,11 @@ class TableHelper {
                                 </td>
                                 <td data-label="Created" style="font-size:0.85rem;color:var(--color-text-muted);"><?php echo !empty($team['created_at']) ? date('Y/m/d', strtotime($team['created_at'])) : '—'; ?></td>
                                 <td data-label="Total Plays"><?php echo (int)($team['total_plays'] ?? 0); ?></td>
-                                <td data-label="Wins"><span class="badge badge--success"><?php echo (int)($team['wins'] ?? $team['win_count'] ?? 0); ?> wins</span></td>
+                                <td data-label="Wins"><span class="badge badge--success"><?php echo (int)($team['wins'] ?? $team['win_count'] ?? 0); ?> <span data-i18n="common.wins">wins</span></span></td>
                                 <?php if ($isAdmin): ?>
                                     <td data-label="Actions">
                                         <div style="display:flex; gap:0.5rem; align-items:center;">
-                                            <a href="edit_team.php?team_id=<?php echo $team['team_id']; ?>&club_id=<?php echo $clubId; ?>" class="btn btn--small btn--secondary">View/Edit</a>
+                                            <a href="edit_team.php?team_id=<?php echo $team['team_id']; ?>&club_id=<?php echo $clubId; ?>" class="btn btn--small btn--secondary" data-i18n="common.viewEdit">View/Edit</a>
                                         </div>
                                     </td>
                                 <?php endif; ?>
@@ -1073,7 +1072,7 @@ class TableHelper {
         ?>
         <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
             <?php if ($isAdmin): ?>
-                <button type="button" class="btn btn--primary" id="add-champion-btn" onclick="toggleAddChampionForm()" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? 'visibility:hidden;' : ''; ?>">
+                <button type="button" class="btn btn--primary" id="add-champion-btn" onclick="toggleAddChampionForm()" data-i18n="admin.crownChampion" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? 'visibility:hidden;' : ''; ?>">
                     Add Champion
                 </button>
             <?php else: ?>
@@ -1096,7 +1095,7 @@ class TableHelper {
                     <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
                     <input type="hidden" name="order" value="<?php echo htmlspecialchars($order); ?>">
                     <div class="input-group" style="display: flex; gap: 0;">
-                        <input type="text" name="search" placeholder="Search champions..." value="<?php echo htmlspecialchars($search); ?>" class="form-control" style="width: 220px;" oninput="filterTableRows(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();filterTableRows(this);}" <?php echo $search !== '' ? 'autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length)"' : ''; ?>>
+                        <input type="text" name="search" placeholder="Search champions..." data-i18n-placeholder="champions.searchPlaceholder" value="<?php echo htmlspecialchars($search); ?>" class="form-control" style="width: 220px;" oninput="filterTableRows(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();filterTableRows(this);}" <?php echo $search !== '' ? 'autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length)"' : ''; ?>>
                     </div>
                 </form>
             </div>
@@ -1106,11 +1105,11 @@ class TableHelper {
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Status</th>
+                        <th data-i18n="members.status">Status</th>
                         <?php $isMemberSort = ($sort === 'member_name' || $sort === 'nickname'); ?>
                         <th>
                             <a href="<?php echo self::buildUrl($baseUrl, ['sort' => ($isAdmin ? 'member_name' : 'nickname'), 'order' => ($isMemberSort ? $oppositeOrder : 'asc'), 'search' => $search]); ?>" class="table-sort-link sort-link">
-                                <span>Member</span>
+                                <span data-i18n="members.nickname">Member</span>
                                 <?php if ($isMemberSort): ?>
                                     <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
                                 <?php endif; ?>
@@ -1118,7 +1117,7 @@ class TableHelper {
                         </th>
                         <th>
                             <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'date', 'order' => ($sort === 'date' ? $oppositeOrder : 'desc'), 'search' => $search]); ?>" class="table-sort-link sort-link">
-                                <span>Date Awarded</span>
+                                <span data-i18n="champions.awarded">Date Awarded</span>
                                 <?php if ($sort === 'date'): ?>
                                     <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
                                 <?php endif; ?>
@@ -1126,14 +1125,14 @@ class TableHelper {
                         </th>
                         <th>
                             <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'champ_comments', 'order' => ($sort === 'champ_comments' ? $oppositeOrder : 'asc'), 'search' => $search]); ?>" class="table-sort-link sort-link">
-                                <span>Title / Award</span>
+                                <span data-i18n="champions.seasonTitle">Title / Award</span>
                                 <?php if ($sort === 'champ_comments'): ?>
                                     <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
                                 <?php endif; ?>
                             </a>
                         </th>
                         <?php if ($isAdmin): ?>
-                            <th>Actions</th>
+                            <th data-i18n="common.actions">Actions</th>
                         <?php endif; ?>
                     </tr>
                 </thead>
@@ -1148,14 +1147,14 @@ class TableHelper {
                             <tr>
                                 <td data-label="Status">
                                     <?php if (!empty($champion['is_current']) || $isCurrent): ?>
-                                        <span class="badge badge--success">👑 Current Champion</span>
+                                        <span class="badge badge--success" data-i18n="champions.currentChampion">👑 Current Champion</span>
                                     <?php else: ?>
-                                        <span class="badge badge--neutral">Former Champion</span>
+                                        <span class="badge badge--neutral" data-i18n="champions.formerChampion">Former Champion</span>
                                     <?php endif; ?>
                                 </td>
                                 <td data-label="Member">
                                     <strong>
-                                        <?php
+                                         <?php
                                         if ($isAdmin) {
                                             $disp = htmlspecialchars($champion['member_name'] ?? 'Member');
                                             if (!empty($champion['nickname'])) {
@@ -1173,7 +1172,7 @@ class TableHelper {
                                 <?php if ($isAdmin): ?>
                                     <td data-label="Actions">
                                         <div style="display:flex; gap:0.5rem; align-items:center;">
-                                            <a href="edit_champion.php?club_id=<?php echo $clubId; ?>&champion_id=<?php echo $champion['ID']; ?>" class="btn btn--small btn--secondary">View/Edit</a>
+                                            <a href="edit_champion.php?club_id=<?php echo $clubId; ?>&champion_id=<?php echo $champion['ID']; ?>" class="btn btn--small btn--secondary" data-i18n="common.viewEdit">View/Edit</a>
                                         </div>
                                     </td>
                                 <?php endif; ?>
@@ -1202,7 +1201,7 @@ class TableHelper {
         ?>
         <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
             <?php if ($isAdmin): ?>
-                <button type="button" class="btn btn--primary" id="add-game-btn" onclick="toggleAddGameForm()" style="<?php echo ((isset($_POST['action']) && $_POST['action'] === 'create') || (isset($_GET['action']) && $_GET['action'] === 'add')) ? 'visibility:hidden;' : ''; ?>">
+                <button type="button" class="btn btn--primary" id="add-game-btn" onclick="toggleAddGameForm()" data-i18n="admin.addNewGame" style="<?php echo ((isset($_POST['action']) && $_POST['action'] === 'create') || (isset($_GET['action']) && $_GET['action'] === 'add')) ? 'visibility:hidden;' : ''; ?>">
                     Add a Game
                 </button>
             <?php else: ?>
@@ -1225,7 +1224,7 @@ class TableHelper {
                     <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
                     <input type="hidden" name="order" value="<?php echo htmlspecialchars($order); ?>">
                     <div class="input-group" style="display: flex; gap: 0;">
-                        <input type="text" name="search" placeholder="Search games..." value="<?php echo htmlspecialchars($search); ?>" class="form-control" style="width: 220px;" oninput="filterTableRows(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();filterTableRows(this);}" <?php echo $search !== '' ? 'autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length)"' : ''; ?>>
+                        <input type="text" name="search" placeholder="Search games..." data-i18n-placeholder="games.searchPlaceholder" value="<?php echo htmlspecialchars($search); ?>" class="form-control" style="width: 220px;" oninput="filterTableRows(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();filterTableRows(this);}" <?php echo $search !== '' ? 'autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length)"' : ''; ?>>
                     </div>
                 </form>
             </div>
@@ -1235,19 +1234,19 @@ class TableHelper {
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th style="width: 50px; text-align: left;">Image</th>
+                        <th style="width: 50px; text-align: left;" data-i18n="games.image">Image</th>
                         <th style="text-align: left;">
                             <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'game_name', 'order' => ($sort === 'game_name' ? $oppositeOrder : 'asc'), 'search' => $search]); ?>" class="table-sort-link sort-link">
-                                <span>Game Name</span>
+                                <span data-i18n="games.gameName">Game Name</span>
                                 <?php if ($sort === 'game_name'): ?>
                                     <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
                                 <?php endif; ?>
                             </a>
                         </th>
-                        <th>Players</th>
+                        <th data-i18n="games.players">Players</th>
                         <th>
                             <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'game_type', 'order' => ($sort === 'game_type' ? $oppositeOrder : 'asc'), 'search' => $search]); ?>" class="table-sort-link sort-link">
-                                <span>Type</span>
+                                <span data-i18n="common.details">Type</span>
                                 <?php if ($sort === 'game_type'): ?>
                                     <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
                                 <?php endif; ?>
@@ -1255,7 +1254,7 @@ class TableHelper {
                         </th>
                         <th>
                             <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'last_played', 'order' => ($sort === 'last_played' ? $oppositeOrder : 'desc'), 'search' => $search]); ?>" class="table-sort-link sort-link">
-                                <span>Last Played</span>
+                                <span data-i18n="common.date">Last Played</span>
                                 <?php if ($sort === 'last_played'): ?>
                                     <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
                                 <?php endif; ?>
@@ -1263,14 +1262,14 @@ class TableHelper {
                         </th>
                         <th>
                             <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'total_plays', 'order' => ($sort === 'total_plays' ? $oppositeOrder : 'desc'), 'search' => $search]); ?>" class="table-sort-link sort-link">
-                                <span>Total Plays</span>
+                                <span data-i18n="club.totalPlays">Total Plays</span>
                                 <?php if ($sort === 'total_plays'): ?>
                                     <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
                                 <?php endif; ?>
                             </a>
                         </th>
                         <?php if ($isAdmin): ?>
-                            <th>Actions</th>
+                            <th data-i18n="common.actions">Actions</th>
                         <?php endif; ?>
                     </tr>
                 </thead>
@@ -1294,14 +1293,14 @@ class TableHelper {
                                 </td>
                                 <td data-label="Game Name" style="text-align: left;"><strong><?php echo htmlspecialchars($game['game_name']); ?></strong></td>
                                 <td data-label="Players"><?php echo ($game['min_players'] ?? 1) . '-' . ($game['max_players'] ?? 4); ?></td>
-                                <td data-label="Type"><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $game['game_type'] ?? 'winner_losers'))); ?></td>
+                                <td data-label="Type"><span data-i18n="gametype.<?php echo $game['game_type'] ?? 'winner_losers'; ?>"><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $game['game_type'] ?? 'winner_losers'))); ?></span></td>
                                 <td data-label="Last Played"><?php echo !empty($game['last_played']) ? date('Y/m/d', strtotime($game['last_played'])) : '—'; ?></td>
                                 <td data-label="Total Plays"><?php echo (int)($game['total_plays'] ?? 0); ?></td>
                                 <?php if ($isAdmin): ?>
                                     <td>
                                         <div class="btn-group">
-                                            <a href="edit_game.php?club_id=<?php echo $game['club_id']; ?>&game_id=<?php echo $game['game_id']; ?>" class="btn btn--small btn--secondary">View/Edit</a>
-                                            <a href="manage_results.php?club_id=<?php echo $game['club_id']; ?>&game_id=<?php echo $game['game_id']; ?>" class="btn btn--small btn--subtle">Results</a>
+                                            <a href="edit_game.php?club_id=<?php echo $game['club_id']; ?>&game_id=<?php echo $game['game_id']; ?>" class="btn btn--small btn--secondary" data-i18n="common.viewEdit">View/Edit</a>
+                                            <a href="manage_results.php?club_id=<?php echo $game['club_id']; ?>&game_id=<?php echo $game['game_id']; ?>" class="btn btn--small btn--subtle" data-i18n="club.results">Results</a>
                                         </div>
                                     </td>
                                 <?php endif; ?>
@@ -1334,7 +1333,7 @@ class TableHelper {
         ?>
         <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
             <?php if ($isAdmin): ?>
-                <a href="<?php echo $gameId ? 'add_result.php?club_id=' . $clubId . '&game_id=' . $gameId : 'club_new_results.php?club_id=' . $clubId; ?>" class="btn btn--primary" style="white-space: nowrap; flex-shrink: 0;">
+                <a href="<?php echo $gameId ? 'add_result.php?club_id=' . $clubId . '&game_id=' . $gameId : 'club_new_results.php?club_id=' . $clubId; ?>" class="btn btn--primary" style="white-space: nowrap; flex-shrink: 0;" data-i18n="admin.addResult">
                     Add Result
                 </a>
             <?php else: ?>
@@ -1357,9 +1356,9 @@ class TableHelper {
                     <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
                     <input type="hidden" name="order" value="<?php echo htmlspecialchars($order); ?>">
                     <div class="input-group" style="display: flex; gap: 0;">
-                        <input type="text" name="search" placeholder="Search results..." class="form-control" style="width: 220px;" oninput="filterTableRows(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();filterTableRows(this);}">
+                        <input type="text" name="search" placeholder="Search results..." data-i18n-placeholder="results.searchPlaceholder" class="form-control" style="width: 220px;" oninput="filterTableRows(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();filterTableRows(this);}">
                         <select name="game_id" class="form-control form-control--sm" onchange="this.form.submit()" style="width: 140px;">
-                            <option value="">All Games</option>
+                            <option value="" data-i18n="club.allGames">All Games</option>
                             <?php foreach ($all_games as $g_opt): ?>
                                 <option value="<?php echo $g_opt['game_id']; ?>" <?php echo ($gameId == $g_opt['game_id']) ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($g_opt['game_name']); ?>
@@ -1374,8 +1373,8 @@ class TableHelper {
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($options['csrf_token'] ?? ''); ?>">
                         <input type="hidden" name="club_id" value="<?php echo $clubId; ?>">
                         <select name="bulk_action" id="bulk-results-select" class="form-control form-control--sm" onchange="executeBulkResultsAction(this)" style="width: 140px;">
-                            <option value="">Bulk Actions</option>
-                            <option value="bulk_delete">Delete Selected</option>
+                            <option value="" data-i18n="common.bulkActions">Bulk Actions</option>
+                            <option value="bulk_delete" data-i18n="admin.deleteSelected">Delete Selected</option>
                         </select>
                     </form>
                 <?php endif; ?>
@@ -1392,7 +1391,7 @@ class TableHelper {
                         <?php if (!$gameId): ?>
                             <th>
                                 <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'game_name', 'order' => ($sort === 'game_name' ? $oppositeOrder : 'asc'), 'game_id' => $gameId]); ?>" class="table-sort-link sort-link">
-                                    <span>Game</span>
+                                    <span data-i18n="results.game">Game</span>
                                     <?php if ($sort === 'game_name'): ?>
                                         <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
                                     <?php endif; ?>
@@ -1401,7 +1400,7 @@ class TableHelper {
                         <?php endif; ?>
                         <th>
                             <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'played_at', 'order' => ($sort === 'played_at' ? $oppositeOrder : 'asc'), 'game_id' => $gameId]); ?>" class="table-sort-link sort-link">
-                                <span>Date Played</span>
+                                <span data-i18n="common.date">Date Played</span>
                                 <?php if ($sort === 'played_at'): ?>
                                     <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
                                 <?php endif; ?>
@@ -1409,7 +1408,7 @@ class TableHelper {
                         </th>
                         <th>
                             <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'winner_name', 'order' => ($sort === 'winner_name' ? $oppositeOrder : 'asc'), 'game_id' => $gameId]); ?>" class="table-sort-link sort-link">
-                                <span>Winner / Outcome</span>
+                                <span data-i18n="results.winner">Winner / Outcome</span>
                                 <?php if ($sort === 'winner_name'): ?>
                                     <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
                                 <?php endif; ?>
@@ -1417,15 +1416,15 @@ class TableHelper {
                         </th>
                         <th>
                             <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'game_type', 'order' => ($sort === 'game_type' ? $oppositeOrder : 'asc'), 'game_id' => $gameId]); ?>" class="table-sort-link sort-link">
-                                <span>Type</span>
+                                <span data-i18n="common.details">Type</span>
                                 <?php if ($sort === 'game_type'): ?>
                                     <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
                                 <?php endif; ?>
                             </a>
                         </th>
-                        <th>Duration</th>
+                        <th data-i18n="results.duration">Duration</th>
                         <?php if ($isAdmin): ?>
-                            <th>Actions</th>
+                            <th data-i18n="common.actions">Actions</th>
                         <?php endif; ?>
                     </tr>
                 </thead>
@@ -1452,7 +1451,7 @@ class TableHelper {
                             <td data-label="Date Played"><?php echo date('Y/m/d', strtotime($result['played_at'])); ?></td>
                             <td data-label="Winner / Outcome"><?php echo htmlspecialchars($result['winner_name'] ?? ''); ?></td>
                             <td data-label="Type">
-                                <span class="club-stat-pill">
+                                <span class="club-stat-pill" data-i18n="gametype.<?php echo $result['game_type'] ?? 'winner_losers'; ?>">
                                     <?php
                                     $gt_label = match($result['game_type'] ?? '') {
                                         'winner_losers' => 'Winner/Losers',
@@ -1469,7 +1468,7 @@ class TableHelper {
                             <?php if ($isAdmin): ?>
                                 <td data-label="Actions">
                                     <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                        <a href="add_result.php?result_id=<?php echo $result['result_id']; ?>&type=<?php echo $result['game_type']; ?>" class="btn btn--small btn--secondary">View/Edit</a>
+                                        <a href="add_result.php?result_id=<?php echo $result['result_id']; ?>&type=<?php echo $result['game_type']; ?>" class="btn btn--small btn--secondary" data-i18n="common.viewEdit">View/Edit</a>
                                     </div>
                                 </td>
                             <?php endif; ?>

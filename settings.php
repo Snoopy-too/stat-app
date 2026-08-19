@@ -49,6 +49,7 @@ $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Su
     <title>Club Settings - Board Game Club StatApp</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/dark-mode.js"></script>
+    <script src="js/i18n.js"></script>
 </head>
 <body>
     <div class="header">

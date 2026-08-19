@@ -151,6 +151,7 @@ $baseUrl = 'manage_teams.php?club_id=' . $club_id;
     <title>Manage Teams - <?php echo htmlspecialchars($club_name); ?></title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
+    <script src="../js/i18n.js"></script>
 </head>
 <body class="has-sidebar">
     <?php NavigationHelper::renderAdminSidebar('teams', $club_id, $club_name); ?>
@@ -165,21 +166,21 @@ $baseUrl = 'manage_teams.php?club_id=' . $club_id;
         <?php display_session_message('error'); ?>
 
         <div id="add-team-form-wrapper" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create_team') ? '' : 'display:none;'; ?> margin: 1rem 0 1.25rem 0; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 0.75rem); background: var(--color-surface-muted);">
-            <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);">Add a Team</h3>
+            <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);" data-i18n="admin.addNewTeam">Add a Team</h3>
             <form method="POST" class="form">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <input type="hidden" name="action" value="create_team">
                 <div style="margin-bottom: 1.25rem;">
                     <div class="form-group" style="margin-bottom: 1rem;">
-                        <label for="team_name">Team Name <span style="color:var(--color-error,#ef4444);">*</span></label>
-                        <input type="text" id="team_name" name="team_name" placeholder="Team Name" required class="form-control" style="max-width: 400px;">
+                        <label for="team_name"><span data-i18n="teams.teamName">Team Name</span> <span style="color:var(--color-error,#ef4444);">*</span></label>
+                        <input type="text" id="team_name" name="team_name" placeholder="Team Name" data-i18n-placeholder="teams.teamName" required class="form-control" style="max-width: 400px;">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
-                            <label class="form-label" style="margin:0;">Select Team Members: <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                            <label class="form-label" style="margin:0;"><span data-i18n="teams.selectTeamMembers">Select Team Members:</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
                             <div style="display:flex; gap:0.5rem;">
-                                <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.team-member-checkbox', true)">Select All</button>
-                                <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.team-member-checkbox', false)">Uncheck All</button>
+                                <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.team-member-checkbox', true)" data-i18n="common.selectAll">Select All</button>
+                                <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.team-member-checkbox', false)" data-i18n="common.uncheckAll">Uncheck All</button>
                             </div>
                         </div>
                         <div id="team-members-checkbox-list" class="checkbox-grid">
@@ -193,8 +194,8 @@ $baseUrl = 'manage_teams.php?club_id=' . $club_id;
                     </div>
                 </div>
                 <div class="form-group" style="display:flex; gap:0.5rem; margin-bottom:0;">
-                    <button type="submit" class="btn btn--primary">Save Team</button>
-                    <button type="button" class="btn btn--subtle" onclick="toggleAddTeamForm()">Cancel</button>
+                    <button type="submit" class="btn btn--primary" data-i18n="admin.saveTeam">Save Team</button>
+                    <button type="button" class="btn btn--subtle" onclick="toggleAddTeamForm()" data-i18n="common.cancel">Cancel</button>
                 </div>
             </form>
         </div>

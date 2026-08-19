@@ -76,8 +76,8 @@ if ($result_id > 0) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cooperative Game Details - Board Game StatApp</title>
     <link rel="stylesheet" href="css/styles.css">
-
     <script src="js/dark-mode.js"></script>
+    <script src="js/i18n.js"></script>
     <style>
         .game-hero {
             display: flex;

@@ -293,6 +293,7 @@ $csrf_token = $security->generateCSRFToken();
     <title>Account Settings - Board Game Club StatApp</title>
     <link rel="stylesheet" href="https://theflyingdutchmen.games/stylesheets/tfd-nav.css">
     <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/i18n.js"></script>
 </head>
 <body class="has-sidebar">
     <?php NavigationHelper::renderAdminSidebar('account', $active_club_id); ?>
@@ -314,17 +315,17 @@ $csrf_token = $security->generateCSRFToken();
         <!-- Your Clubs Section -->
         <div class="card">
             <div class="card-header">
-                <h2>Your Clubs (<?php echo $club_count; ?>)</h2>
+                <h2><span data-i18n="account.yourClubs">Your Clubs</span> (<?php echo $club_count; ?>)</h2>
             </div>
 
             <?php if ($can_add_club): ?>
             <div id="add-club-form-wrapper" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? '' : 'display:none;'; ?> margin: 1rem 0 1.25rem 0; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 0.75rem); background: var(--color-surface-muted);">
-                <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);">Create New Club</h3>
+                <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);" data-i18n="account.createNewClub">Create New Club</h3>
                 <form method="POST" class="form">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label for="club_name">Club Name <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                            <label for="club_name"><span data-i18n="admin.clubNameLabel">Club Name</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
                             <input type="text" id="club_name" name="club_name" placeholder="e.g. Wednesday Game Night" required class="form-control" pattern="[a-zA-Z0-9 _\-]+" title="Only letters, numbers, spaces, dashes and underscores are allowed">
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
@@ -334,8 +335,8 @@ $csrf_token = $security->generateCSRFToken();
                     </div>
                     <div class="form-group" style="display:flex; gap:0.5rem; margin-bottom:0;">
                         <input type="hidden" name="action" value="create">
-                        <button type="submit" class="btn btn--primary">Save Club</button>
-                        <button type="button" class="btn btn--subtle" onclick="toggleAddClubForm()">Cancel</button>
+                        <button type="submit" class="btn btn--primary" data-i18n="common.save">Save Club</button>
+                        <button type="button" class="btn btn--subtle" onclick="toggleAddClubForm()" data-i18n="common.cancel">Cancel</button>
                     </div>
                 </form>
             </div>
@@ -343,7 +344,7 @@ $csrf_token = $security->generateCSRFToken();
 
             <div class="card-toolbar">
                 <?php if ($can_add_club): ?>
-                    <button type="button" class="btn btn--primary" id="add-club-btn" onclick="toggleAddClubForm()" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? 'visibility:hidden;' : ''; ?>">
+                    <button type="button" class="btn btn--primary" id="add-club-btn" onclick="toggleAddClubForm()" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? 'visibility:hidden;' : ''; ?>" data-i18n="admin.addNewClub">
                         Add a Club
                     </button>
                 <?php endif; ?>
@@ -353,15 +354,15 @@ $csrf_token = $security->generateCSRFToken();
                 <table class="clubs-table data-table">
                     <thead>
                         <tr>
-                            <th>Club Name</th>
+                            <th data-i18n="admin.clubNameLabel">Club Name</th>
 
-                            <th class="th-sideways"><span class="th-sideways-inner">Results</span></th>
-                            <th class="th-sideways"><span class="th-sideways-inner">Members</span></th>
-                            <th class="th-sideways"><span class="th-sideways-inner">Teams</span></th>
-                            <th class="th-sideways"><span class="th-sideways-inner">Champs</span></th>
-                            <th class="th-sideways"><span class="th-sideways-inner">Games</span></th>
+                            <th class="th-sideways"><span class="th-sideways-inner" data-i18n="club.results">Results</span></th>
+                            <th class="th-sideways"><span class="th-sideways-inner" data-i18n="club.members">Members</span></th>
+                            <th class="th-sideways"><span class="th-sideways-inner" data-i18n="club.teams">Teams</span></th>
+                            <th class="th-sideways"><span class="th-sideways-inner" data-i18n="club.champions">Champs</span></th>
+                            <th class="th-sideways"><span class="th-sideways-inner" data-i18n="club.games">Games</span></th>
                             <th class="actions-header"></th>
-                            <th class="th-sideways"><span class="th-sideways-inner">Default</span></th>
+                            <th class="th-sideways"><span class="th-sideways-inner" data-i18n="account.default">Default</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -403,15 +404,15 @@ $csrf_token = $security->generateCSRFToken();
                                 <td class="actions-cell" data-label="Actions" style="text-align:right;">
                                     <div style="display:flex;align-items:center;justify-content:flex-end;gap:0.5rem;">
                                         <?php if ($is_active): ?>
-                                            <span class="badge badge--primary" style="font-weight:600;">Managing</span>
+                                            <span class="badge badge--primary" style="font-weight:600;" data-i18n="account.managing">Managing</span>
                                         <?php else: ?>
-                                            <a href="account.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--small btn--secondary">Manage</a>
+                                            <a href="account.php?club_id=<?php echo $club['club_id']; ?>" class="btn btn--small btn--secondary" data-i18n="account.manage">Manage</a>
                                         <?php endif; ?>
                                         <?php if ($club['admin_role'] === 'owner'): ?>
-                                            <a href="edit_club.php?id=<?php echo $club['club_id']; ?>&from=account" class="btn btn--small btn--secondary">View/Edit</a>
+                                            <a href="edit_club.php?id=<?php echo $club['club_id']; ?>&from=account" class="btn btn--small btn--secondary" data-i18n="common.viewEdit">View/Edit</a>
                                         <?php else: ?>
                                             <button type="button" class="btn btn--small btn--danger"
-                                                    onclick="confirmLeaveClub(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>')">
+                                                    onclick="confirmLeaveClub(<?php echo $club['club_id']; ?>, '<?php echo addslashes($club['club_name']); ?>')" data-i18n="common.delete">
                                                 Delete
                                             </button>
                                         <?php endif; ?>
@@ -439,7 +440,7 @@ $csrf_token = $security->generateCSRFToken();
                     <?php if (!empty($clubs)): ?>
                     <tfoot>
                         <tr>
-                            <td>Total (<?php echo $club_count; ?> <?php echo $club_count === 1 ? 'Club' : 'Clubs'; ?>)</td>
+                            <td><span data-i18n="account.total">Total</span> (<?php echo $club_count; ?> <?php echo $club_count === 1 ? 'Club' : 'Clubs'; ?>)</td>
                             <td style="text-align:center;" data-label="Total Results"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_plays; ?></span></td>
                             <td style="text-align:center;" data-label="Total Members"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_members; ?></span></td>
                             <td style="text-align:center;" data-label="Total Teams"><span class="club-stat-pill" style="background:var(--color-primary);color:white;"><?php echo $total_teams; ?></span></td>
@@ -457,7 +458,7 @@ $csrf_token = $security->generateCSRFToken();
         <!-- Theme for [Club Name] Card -->
         <div class="card">
             <div class="card-header">
-                <h2>Theme for <?php echo htmlspecialchars($active_club_name); ?></h2>
+                <h2><span data-i18n="account.themeFor">Theme for</span> <?php echo htmlspecialchars($active_club_name); ?></h2>
             </div>
             <div class="theme-grid">
                 <?php
@@ -491,9 +492,9 @@ $csrf_token = $security->generateCSRFToken();
                                 <?php echo htmlspecialchars($t_info['name']); ?>
                             </div>
                             <?php if ($is_selected): ?>
-                                <span style="display:inline-block; font-size:0.75rem; font-weight:700; color:var(--color-primary); background:var(--color-primary-soft); padding:0.15rem 0.5rem; border-radius:0.375rem;">Active Theme</span>
+                                <span style="display:inline-block; font-size:0.75rem; font-weight:700; color:var(--color-primary); background:var(--color-primary-soft); padding:0.15rem 0.5rem; border-radius:0.375rem;" data-i18n="account.activeTheme">Active Theme</span>
                             <?php else: ?>
-                                <span style="display:inline-block; font-size:0.75rem; font-weight:500; color:var(--color-text-muted);">Click to apply</span>
+                                <span style="display:inline-block; font-size:0.75rem; font-weight:500; color:var(--color-text-muted);" data-i18n="account.clickToApply">Click to apply</span>
                             <?php endif; ?>
                         </button>
                     </form>
@@ -502,42 +503,39 @@ $csrf_token = $security->generateCSRFToken();
         </div>
 
         <!-- Account Information -->
-
-
-        <!-- Account Information -->
         <div class="card card--flat">
             <div class="card-header" style="margin-bottom: 1.25rem;">
-                <h3 style="margin: 0; font-size: 1.25rem; color: var(--color-heading);">Account Information</h3>
+                <h3 style="margin: 0; font-size: 1.25rem; color: var(--color-heading);" data-i18n="account.accountInfo">Account Information</h3>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
                 
                 <!-- Profile Info Group -->
                 <div style="background: var(--color-surface-muted); padding: 1.1rem; border-radius: var(--radius-md, 0.5rem); border: 1px solid var(--color-border);">
-                    <div style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-primary); margin-bottom: 0.75rem;">👤 Administrator Details</div>
+                    <div style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-primary); margin-bottom: 0.75rem;" data-i18n="account.adminDetails">👤 Administrator Details</div>
                     <div style="display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.875rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: var(--color-text-muted);">Username</span>
+                            <span style="color: var(--color-text-muted);" data-i18n="auth.usernameOnly">Username</span>
                             <strong style="color: var(--color-heading);"><?php echo htmlspecialchars($admin['username'] ?? $_SESSION['admin_username'] ?? 'N/A'); ?></strong>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: var(--color-text-muted);">Email</span>
+                            <span style="color: var(--color-text-muted);" data-i18n="admin.email">Email</span>
                             <strong style="color: var(--color-heading);"><?php echo htmlspecialchars($admin['email'] ?? 'N/A'); ?></strong>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: var(--color-text-muted);">Account ID</span>
+                            <span style="color: var(--color-text-muted);" data-i18n="account.accountId">Account ID</span>
                             <span style="font-family: monospace; font-weight: 600; background: rgba(99,102,241,0.12); color: var(--color-primary); padding: 0.1rem 0.45rem; border-radius: 0.25rem;">#<?php echo (int)$_SESSION['admin_id']; ?></span>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: var(--color-text-muted);">Account Type</span>
+                            <span style="color: var(--color-text-muted);" data-i18n="account.accountType">Account Type</span>
                             <strong style="color: var(--color-heading); text-transform: capitalize;"><?php echo str_replace('_', ' ', $admin_type); ?></strong>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: var(--color-text-muted);">Club Quota</span>
+                            <span style="color: var(--color-text-muted);" data-i18n="account.clubQuota">Club Quota</span>
                             <strong style="color: var(--color-heading);"><?php echo $total_clubs_unfiltered; ?> / <?php echo $club_limit; ?> Clubs</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: var(--color-text-muted);">Member Since</span>
+                            <span style="color: var(--color-text-muted);" data-i18n="account.memberSince">Member Since</span>
                             <strong style="color: var(--color-heading);"><?php echo date('Y/m/d', strtotime($admin['created_at'])); ?></strong>
                         </div>
                     </div>
@@ -545,26 +543,26 @@ $csrf_token = $security->generateCSRFToken();
 
                 <!-- Global Portfolio Statistics -->
                 <div style="background: var(--color-surface-muted); padding: 1.1rem; border-radius: var(--radius-md, 0.5rem); border: 1px solid var(--color-border);">
-                    <div style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-primary); margin-bottom: 0.75rem;">📊 Portfolio Statistics</div>
+                    <div style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-primary); margin-bottom: 0.75rem;" data-i18n="account.portfolioStats">📊 Portfolio Statistics</div>
                     <div style="display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.875rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: var(--color-text-muted);">Total Members</span>
+                            <span style="color: var(--color-text-muted);" data-i18n="account.totalMembers">Total Members</span>
                             <strong style="color: var(--color-heading);"><?php echo (int)$total_members; ?></strong>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: var(--color-text-muted);">Total Games</span>
+                            <span style="color: var(--color-text-muted);" data-i18n="account.totalGames">Total Games</span>
                             <strong style="color: var(--color-heading);"><?php echo (int)$total_games; ?></strong>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: var(--color-text-muted);">Total Plays Logged</span>
+                            <span style="color: var(--color-text-muted);" data-i18n="account.totalPlaysLogged">Total Plays Logged</span>
                             <strong style="color: var(--color-heading);"><?php echo (int)$total_plays; ?></strong>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: var(--color-text-muted);">Champions Crowned</span>
+                            <span style="color: var(--color-text-muted);" data-i18n="account.championsCrowned">Champions Crowned</span>
                             <strong style="color: var(--color-heading);"><?php echo (int)$total_champions; ?></strong>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: var(--color-text-muted);">Teams Registered</span>
+                            <span style="color: var(--color-text-muted);" data-i18n="account.teamsRegistered">Teams Registered</span>
                             <strong style="color: var(--color-heading);"><?php echo (int)$total_teams; ?></strong>
                         </div>
                     </div>
@@ -572,22 +570,22 @@ $csrf_token = $security->generateCSRFToken();
 
                 <!-- Active Context Group -->
                 <div style="background: var(--color-surface-muted); padding: 1.1rem; border-radius: var(--radius-md, 0.5rem); border: 1px solid var(--color-border);">
-                    <div style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-primary); margin-bottom: 0.75rem;">🎯 Active Context</div>
+                    <div style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-primary); margin-bottom: 0.75rem;" data-i18n="account.activeContext">🎯 Active Context</div>
                     <div style="display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.875rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: var(--color-text-muted);">Active Club</span>
+                            <span style="color: var(--color-text-muted);" data-i18n="account.activeClub">Active Club</span>
                             <strong style="color: var(--color-heading);"><?php echo htmlspecialchars($active_club_name); ?></strong>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: var(--color-text-muted);">Club ID</span>
+                            <span style="color: var(--color-text-muted);" data-i18n="account.clubId">Club ID</span>
                             <span style="font-family: monospace; font-weight: 600; background: rgba(99,102,241,0.12); color: var(--color-primary); padding: 0.1rem 0.45rem; border-radius: 0.25rem;">#<?php echo (int)$active_club_id; ?></span>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: var(--color-text-muted);">Club Owner</span>
+                            <span style="color: var(--color-text-muted);" data-i18n="account.clubOwner">Club Owner</span>
                             <strong style="color: var(--color-heading);"><?php echo htmlspecialchars($active_club_owner ?: 'N/A'); ?></strong>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
-                            <span style="color: var(--color-text-muted);">Administrators</span>
+                            <span style="color: var(--color-text-muted);" data-i18n="account.administrators">Administrators</span>
                             <span style="color: var(--color-heading); font-weight: 500; text-align: right; word-break: break-word;">
                                 <?php 
                                 if (!empty($active_club_admins)) {
@@ -599,7 +597,7 @@ $csrf_token = $security->generateCSRFToken();
                             </span>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: var(--color-text-muted);">Active Theme</span>
+                            <span style="color: var(--color-text-muted);" data-i18n="account.activeTheme">Active Theme</span>
                             <strong style="color: var(--color-heading); text-transform: capitalize;"><?php echo htmlspecialchars($active_club_theme ?: 'midnight'); ?></strong>
                         </div>
                     </div>

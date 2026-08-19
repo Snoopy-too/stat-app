@@ -116,6 +116,7 @@ $csrf_token = $security->generateCSRFToken();
     <title>Edit Team</title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
+    <script src="../js/i18n.js"></script>
     <style>
         .checkbox-grid {
             display: grid;
@@ -154,7 +155,7 @@ $csrf_token = $security->generateCSRFToken();
 
         <div class="card">
             <div class="card-header">
-                <h2>Edit Team</h2>
+                <h2 data-i18n="admin.teamDetails">Edit Team</h2>
             </div>
             <form method="POST" action="edit_team.php?team_id=<?php echo $team_id; ?>&club_id=<?php echo $club_id; ?>" class="stack">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
@@ -162,7 +163,7 @@ $csrf_token = $security->generateCSRFToken();
                 <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
                 <div class="grid grid--columns-2">
                     <div class="form-group" style="grid-column: 1 / -1;">
-                        <label for="team_name">Team Name</label>
+                        <label for="team_name" data-i18n="teams.teamName">Team Name</label>
                         <input type="text" id="team_name" name="team_name" value="<?php echo htmlspecialchars($team['team_name']); ?>" required class="form-control">
                     </div>
 
@@ -171,10 +172,10 @@ $csrf_token = $security->generateCSRFToken();
                         ?>
                         <div class="form-group" style="grid-column: 1 / -1;">
                             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
-                                <label class="form-label" style="margin:0;">Select Team Members: <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                                <label class="form-label" style="margin:0;"><span data-i18n="teams.selectTeamMembers">Select Team Members:</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
                                 <div style="display:flex; gap:0.5rem;">
-                                    <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.team-member-checkbox', true)">Select All</button>
-                                    <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.team-member-checkbox', false)">Uncheck All</button>
+                                    <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.team-member-checkbox', true)" data-i18n="common.selectAll">Select All</button>
+                                    <button type="button" class="btn btn--subtle btn--small" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="toggleAllCheckboxes('.team-member-checkbox', false)" data-i18n="common.uncheckAll">Uncheck All</button>
                                 </div>
                             </div>
                             <div id="team-members-checkbox-list" class="checkbox-grid">
@@ -190,9 +191,9 @@ $csrf_token = $security->generateCSRFToken();
 
                 <div class="form-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-start; flex-wrap: wrap;">
                     <input type="hidden" name="update_team" value="1">
-                    <button type="submit" class="btn btn--primary">Update Team</button>
-                    <a href="manage_teams.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle">Cancel</a>
-                    <button type="button" class="btn btn--danger" style="margin-left: auto;"
+                    <button type="submit" class="btn btn--primary" data-i18n="admin.updateTeam">Update Team</button>
+                    <a href="manage_teams.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle" data-i18n="common.cancel">Cancel</a>
+                    <button type="button" class="btn btn--danger" style="margin-left: auto;" data-i18n="admin.deleteTeam"
                             onclick="showConfirmDialog(event, {
                                 title: '⚠️ Delete Team',
                                 message: 'Are you sure you want to delete <strong><?php echo addslashes(htmlspecialchars($team['team_name'])); ?></strong>?',

@@ -338,6 +338,7 @@ $baseUrl = 'manage_members.php?club_id=' . $club_id;
     <link rel="stylesheet" href="../css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../js/dark-mode.js"></script>
+    <script src="../js/i18n.js"></script>
 </head>
 <body class="has-sidebar">
     <?php NavigationHelper::renderAdminSidebar('members', $club_id, $club['club_name']); ?>
@@ -354,28 +355,28 @@ $baseUrl = 'manage_members.php?club_id=' . $club_id;
         <?php TableHelper::renderMembersAnalytics($chart_member_names, $chart_individual_wins, $chart_team_wins, $wot_labels, $wot_datasets, ['is_admin' => true, 'open' => true, 'all_months' => $wot_all_months, 'monthly_wins' => $wot_monthly_wins]); ?>
 
         <div id="add-member-form-wrapper" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? '' : 'display:none;'; ?> margin: 1rem 0 1.25rem 0; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 0.75rem); background: var(--color-surface-muted);">
-            <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);">Add New Member</h3>
+            <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);" data-i18n="admin.addNewMember">Add New Member</h3>
             <form method="POST" class="form">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <input type="hidden" name="action" value="create">
                 <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label for="member_name">Full Name <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
-                        <input type="text" id="member_name" name="member_name" placeholder="Full Name" required class="form-control">
+                        <label for="member_name"><span data-i18n="admin.fullName">Full Name</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                        <input type="text" id="member_name" name="member_name" placeholder="Full Name" data-i18n-placeholder="admin.fullName" required class="form-control">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label for="nickname">Nickname <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
-                        <input type="text" id="nickname" name="nickname" placeholder="Nickname (for public display)" required class="form-control">
+                        <label for="nickname"><span data-i18n="admin.nickname">Nickname</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                        <input type="text" id="nickname" name="nickname" placeholder="Nickname (for public display)" data-i18n-placeholder="admin.nickname" required class="form-control">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label for="email">Email Address <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
-                        <input type="email" id="email" name="email" placeholder="Email Address" required class="form-control">
+                        <label for="email"><span data-i18n="admin.email">Email Address</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                        <input type="email" id="email" name="email" placeholder="Email Address" data-i18n-placeholder="admin.email" required class="form-control">
                     </div>
                 </div>
                 <div class="form-group" style="display:flex; gap:0.5rem; margin-bottom:0;">
-                    <button type="submit" class="btn btn--primary">Save Member</button>
-                    <button type="button" class="btn btn--subtle" onclick="toggleAddMemberForm()">Cancel</button>
+                    <button type="submit" class="btn btn--primary" data-i18n="admin.saveMember">Save Member</button>
+                    <button type="button" class="btn btn--subtle" onclick="toggleAddMemberForm()" data-i18n="common.cancel">Cancel</button>
                 </div>
             </form>
         </div>

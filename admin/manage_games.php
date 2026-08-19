@@ -239,6 +239,7 @@ $baseUrl = 'manage_games.php?club_id=' . $club_id;
     <title>Manage Games - <?php echo htmlspecialchars($club_name); ?></title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
+    <script src="../js/i18n.js"></script>
 </head>
 <body class="has-sidebar">
     <?php NavigationHelper::renderAdminSidebar('games', $club_id, $club_name); ?>
@@ -253,27 +254,27 @@ $baseUrl = 'manage_games.php?club_id=' . $club_id;
         <?php display_session_message('error'); ?>
 
         <div id="add-game-form-wrapper" style="<?php echo ((isset($_POST['action']) && $_POST['action'] === 'create') || (isset($_GET['action']) && $_GET['action'] === 'add')) ? '' : 'display:none;'; ?> margin: 1rem 0 1.25rem 0; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 0.75rem); background: var(--color-surface-muted);">
-            <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);">Add a Game</h3>
+            <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);" data-i18n="admin.addNewGame">Add a Game</h3>
             <form method="POST" enctype="multipart/form-data" class="form">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <input type="hidden" name="action" value="create">
                 <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
                     <div class="form-group" style="margin-bottom:0;">
-                        <label for="game_name">Game Name <span style="color:var(--color-error,#ef4444);">*</span></label>
-                        <input type="text" id="game_name" name="game_name" required placeholder="Game Name" class="form-control"<?php echo ((isset($_POST['action']) && $_POST['action'] === 'create') || (isset($_GET['action']) && $_GET['action'] === 'add')) ? ' autofocus' : ''; ?>>
+                        <label for="game_name"><span data-i18n="games.gameName">Game Name</span> <span style="color:var(--color-error,#ef4444);">*</span></label>
+                        <input type="text" id="game_name" name="game_name" required placeholder="Game Name" data-i18n-placeholder="games.gameName" class="form-control"<?php echo ((isset($_POST['action']) && $_POST['action'] === 'create') || (isset($_GET['action']) && $_GET['action'] === 'add')) ? ' autofocus' : ''; ?>>
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
-                        <label for="game_type">Game Type</label>
+                        <label for="game_type" data-i18n="admin.matchType">Game Type</label>
                         <select id="game_type" name="game_type" class="form-control">
-                            <option value="winner_losers">Winner / Losers</option>
-                            <option value="ranked">Ranked (1st, 2nd, etc.)</option>
-                            <option value="teams">Teams</option>
-                            <option value="cooperative">Cooperative</option>
+                            <option value="winner_losers" data-i18n="admin.winnerLosers">Winner / Losers</option>
+                            <option value="ranked" data-i18n="admin.ranked">Ranked (1st, 2nd, etc.)</option>
+                            <option value="teams" data-i18n="admin.teams">Teams</option>
+                            <option value="cooperative" data-i18n="admin.cooperative">Cooperative</option>
                         </select>
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
-                        <label>Players (Min &ndash; Max)</label>
+                        <label data-i18n="games.players">Players (Min &ndash; Max)</label>
                         <div style="display:flex; gap:0.5rem; align-items:center;">
                             <input type="number" id="min_players" name="min_players" value="1" min="1" max="99" placeholder="Min" class="form-control" style="flex:1;">
                             <span style="color:var(--color-text-muted); font-weight:bold;">&ndash;</span>
@@ -283,23 +284,23 @@ $baseUrl = 'manage_games.php?club_id=' . $club_id;
                 </div>
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label class="form-label">Game Image File</label>
+                        <label class="form-label" data-i18n="admin.gameImage">Game Image File</label>
                         <div class="upload-zone" id="upload-zone" style="border: 2px dashed var(--color-border); border-radius: 8px; padding: 1rem; text-align: center; background: var(--color-surface); cursor: pointer; position: relative;">
                             <span class="upload-zone__icon" style="font-size: 1.5rem; display: block; margin-bottom: 0.25rem;">🖼️</span>
-                            <span class="upload-zone__text" style="font-size: 0.85rem; color: var(--color-text); font-weight: 500;">Click to upload or drag &amp; drop file</span>
-                            <span class="upload-zone__hint" style="font-size: 0.75rem; color: var(--color-text-muted); display: block; margin-top: 0.25rem;">JPG, PNG, GIF (Max 1MB)</span>
+                            <span class="upload-zone__text" style="font-size: 0.85rem; color: var(--color-text); font-weight: 500;" data-i18n="admin.uploadZoneText">Click to upload or drag &amp; drop file</span>
+                            <span class="upload-zone__hint" style="font-size: 0.75rem; color: var(--color-text-muted); display: block; margin-top: 0.25rem;" data-i18n="admin.uploadZoneHint">JPG, PNG, GIF (Max 1MB)</span>
                             <input type="file" name="game_image" id="game_image" accept="image/jpeg,image/png,image/gif" style="position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer;">
                         </div>
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label for="image_url" class="form-label">Or Image Link / URL</label>
+                        <label for="image_url" class="form-label" data-i18n="admin.orImageUrl">Or Image Link / URL</label>
                         <input type="url" name="image_url" id="image_url" placeholder="https://..." class="form-control">
-                        <small style="color: var(--color-text-muted); font-size: 0.75rem; display: block; margin-top: 0.35rem;">Paste a direct web link to an image file</small>
+                        <small style="color: var(--color-text-muted); font-size: 0.75rem; display: block; margin-top: 0.35rem;" data-i18n="admin.imageUrlHint">Paste a direct web link to an image file</small>
                     </div>
                 </div>
                 <div class="form-group" style="display:flex; gap:0.5rem; margin-bottom:0;">
-                    <button type="submit" class="btn btn--primary">Save Game</button>
-                    <button type="button" class="btn btn--subtle" onclick="toggleAddGameForm()">Cancel</button>
+                    <button type="submit" class="btn btn--primary" data-i18n="admin.saveGame">Save Game</button>
+                    <button type="button" class="btn btn--subtle" onclick="toggleAddGameForm()" data-i18n="common.cancel">Cancel</button>
                 </div>
             </form>
         </div>

@@ -134,6 +134,7 @@ if ($result_id > 0) {
     <title><?php echo $result ? htmlspecialchars($result['game_name']) . ' - Details' : 'Play Details'; ?> - Board Game StatApp</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/dark-mode.js"></script>
+    <script src="js/i18n.js"></script>
     <style>
         .game-hero {
             display: flex;

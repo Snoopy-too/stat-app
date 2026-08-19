@@ -43,7 +43,7 @@ class ContextBarHelper {
     public static function renderCompactHeader($title, $subtitle = '', $actions = []) {
         echo '<div class="compact-header-content">';
         echo '<div>';
-        echo '<h1 class="compact-header__title">' . htmlspecialchars($title) . '</h1>';
+        echo '<h1 class="compact-header__title" data-header-raw="' . htmlspecialchars($title) . '">' . htmlspecialchars($title) . '</h1>';
         echo '</div>';
         echo '</div>';
     }

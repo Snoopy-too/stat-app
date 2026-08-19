@@ -284,6 +284,7 @@ $csrf_token = $security->generateCSRFToken();
     <title>Edit Club - Board Game Club StatApp</title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
+    <script src="../js/i18n.js"></script>
 </head>
 <body class="has-sidebar">
     <?php NavigationHelper::renderAdminSidebar('clubs', $club_id, $club['club_name'], $club['logo_image'] ?? null); ?>
@@ -310,7 +311,7 @@ $csrf_token = $security->generateCSRFToken();
 
                 <div class="form-group">
                     <label for="club_name" style="display:flex; align-items:baseline; gap:0.5rem; flex-wrap:wrap;">
-                        <strong>Club Name:</strong>
+                        <strong data-i18n="admin.clubName">Club Name:</strong>
                         <?php if (!empty($club['created_at'])): ?>
                             <span style="font-size:0.8rem; font-weight:normal; color:var(--color-text-muted);">Created <?php echo date('Y/m/d', strtotime($club['created_at'])); ?></span>
                         <?php endif; ?>
@@ -320,26 +321,26 @@ $csrf_token = $security->generateCSRFToken();
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label"><strong>Club Logo:</strong></label>
+                    <label class="form-label"><strong data-i18n="admin.clubLogo">Club Logo:</strong></label>
                     <div id="logo-preview-container" style="display:<?php echo !empty($club['logo_image']) ? 'flex' : 'none'; ?>; align-items:center; gap:1rem; margin-bottom:0.75rem;">
                         <img id="logo-preview-img" src="<?php echo !empty($club['logo_image']) ? '../images/club_logos/' . htmlspecialchars($club['logo_image']) : ''; ?>" alt="Club Logo" style="width:64px; height:64px; border-radius:0.5rem; object-fit:cover; border:1px solid var(--color-border);">
                         <?php if (!empty($club['logo_image'])): ?>
                             <label id="remove-logo-label" style="display:inline-flex; align-items:center; gap:0.5rem; cursor:pointer; font-weight:normal;">
                                 <input type="checkbox" name="remove_logo" value="1" id="remove_logo_checkbox">
-                                <span>Remove current logo</span>
+                                <span data-i18n="admin.removeCurrentLogo">Remove current logo</span>
                             </label>
                         <?php endif; ?>
                     </div>
                     <div class="upload-zone" id="upload-zone">
                         <span class="upload-zone__icon">🎯</span>
-                        <span class="upload-zone__text">Click to upload or drag & drop club logo</span>
-                        <span class="upload-zone__hint">JPG, PNG, GIF (Max 1MB)</span>
+                        <span class="upload-zone__text" data-i18n="admin.uploadLogoText">Click to upload or drag & drop club logo</span>
+                        <span class="upload-zone__hint" data-i18n="admin.uploadZoneHint">JPG, PNG, GIF (Max 1MB)</span>
                         <input type="file" id="logo" name="logo" accept="image/jpeg,image/png,image/gif" onchange="previewLogo(this)">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="slug"><strong>Club URL Slug (optional):</strong>
-                    <small style="color:var(--text-light);">
+                    <label for="slug"><strong data-i18n="admin.clubSlug">Club URL Slug (optional):</strong>
+                    <small style="color:var(--text-light);" data-i18n="admin.clubSlugDesc">
                         If set, club will be accessible at domain.com/slug
                     </small></label>
                     <input type="text" id="slug" name="slug" class="form-control"
@@ -347,7 +348,7 @@ $csrf_token = $security->generateCSRFToken();
                            value="<?php echo htmlspecialchars($club['slug'] ?? ''); ?>">
                     <?php if (!empty($club['slug'])): ?>
                         <div class="form-group" style="margin-top:1rem;">
-                            <label for="vanity-url"><strong>Current Vanity URL:</strong></label>
+                            <label for="vanity-url"><strong data-i18n="admin.vanityUrl">Current Vanity URL:</strong></label>
                             <div style="display:flex; gap:0.5rem; align-items:center;">
                                 <code id="vanity-url" class="code-field" style="flex:1; word-break:break-all;">
                                     <?php
@@ -358,14 +359,14 @@ $csrf_token = $security->generateCSRFToken();
                                     echo htmlspecialchars($base_url . '/' . $club['slug']);
                                     ?>
                                 </code>
-                                <button type="button" class="btn btn--small btn--subtle" onclick="copyUrlFromElement('vanity-url', this)">Copy</button>
+                                <button type="button" class="btn btn--small btn--subtle" onclick="copyUrlFromElement('vanity-url', this)" data-i18n="common.copy">Copy</button>
                             </div>
                         </div>
                     <?php endif; ?>
 
                     <div class="form-group" style="margin-top:1rem;">
-                        <label for="json-api-url"><strong>JSON URL:</strong>
-                        <small style="color:var(--text-light);">
+                        <label for="json-api-url"><strong data-i18n="admin.jsonUrl">JSON URL:</strong>
+                        <small style="color:var(--text-light);" data-i18n="admin.jsonUrlDesc">
                             This link will return a JSON object of your club stats.
                         </small></label>
                         <div style="display:flex; gap:0.5rem; align-items:center;">
@@ -380,14 +381,14 @@ $csrf_token = $security->generateCSRFToken();
                                 echo htmlspecialchars($base_url . '/club_json.php?id=' . $club['club_id']);
                                 ?>
                             </code>
-                            <button type="button" class="btn btn--small btn--subtle" onclick="copyUrlFromElement('json-api-url', this)">Copy</button>
+                            <button type="button" class="btn btn--small btn--subtle" onclick="copyUrlFromElement('json-api-url', this)" data-i18n="common.copy">Copy</button>
                         </div>
                     </div>
                 </div>
                 <div class="form-actions" style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
-                    <button type="submit" class="btn btn--primary">Save Changes</button>
-                    <a href="<?php echo (!empty($_GET['from']) && $_GET['from'] === 'account') ? 'account.php' : 'view_club.php?id=' . $club_id; ?>" class="btn btn--subtle">Cancel</a>
-                    <button type="button" class="btn btn--danger" style="margin-left: auto;" onclick="openDeleteModal()">Delete Club</button>
+                    <button type="submit" class="btn btn--primary" data-i18n="common.saveChanges">Save Changes</button>
+                    <a href="<?php echo (!empty($_GET['from']) && $_GET['from'] === 'account') ? 'account.php' : 'view_club.php?id=' . $club_id; ?>" class="btn btn--subtle" data-i18n="common.cancel">Cancel</a>
+                    <button type="button" class="btn btn--danger" style="margin-left: auto;" onclick="openDeleteModal()" data-i18n="admin.deleteClub">Delete Club</button>
                 </div>
             </form>
         </div>

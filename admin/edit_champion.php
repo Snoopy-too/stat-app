@@ -81,6 +81,7 @@ $csrf_token = $security->generateCSRFToken();
     <title>View/Edit Champion</title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
+    <script src="../js/i18n.js"></script>
 </head>
 <body class="has-sidebar">
     <?php NavigationHelper::renderAdminSidebar('champions', $club_id); ?>
@@ -95,13 +96,13 @@ $csrf_token = $security->generateCSRFToken();
 
         <div class="card">
             <div class="card-header">
-                <h2>Champion Details</h2>
+                <h2 data-i18n="admin.championDetails">Champion Details</h2>
             </div>
             <form method="POST" class="stack" style="padding: var(--spacing-6, 1.5rem);">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
 
                 <div class="form-group">
-                    <label for="member_id" class="form-label">Member <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                    <label for="member_id" class="form-label"><span data-i18n="members.name">Member</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
                     <select id="member_id" name="member_id" required class="form-control">
                         <?php foreach ($members as $m): ?>
                             <option value="<?php echo $m['member_id']; ?>" <?php echo ($champion['member_id'] == $m['member_id']) ? 'selected' : ''; ?>>
@@ -112,20 +113,20 @@ $csrf_token = $security->generateCSRFToken();
                 </div>
 
                 <div class="form-group">
-                    <label for="date" class="form-label">Championship Date <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                    <label for="date" class="form-label"><span data-i18n="champions.awarded">Championship Date</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
                     <input type="date" id="date" name="date" value="<?php echo htmlspecialchars($saved_date); ?>" required class="form-control">
                 </div>
 
                 <div class="form-group">
-                    <label for="champ_comments" class="form-label">Comments / Title Details</label>
+                    <label for="champ_comments" class="form-label" data-i18n="champions.seasonTitle">Comments / Title Details</label>
                     <textarea id="champ_comments" name="champ_comments" class="form-control" rows="3"><?php echo htmlspecialchars($champion['champ_comments']); ?></textarea>
                 </div>
 
                 <div class="form-actions" style="margin-top: 1.5rem; display: flex; gap: 0.5rem; justify-content: flex-start; flex-wrap: wrap;">
-                    <button type="submit" class="btn btn--primary">Update Champion</button>
-                    <a href="manage_champions.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle">Cancel</a>
+                    <button type="submit" class="btn btn--primary" data-i18n="admin.updateChampion">Update Champion</button>
+                    <a href="manage_champions.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle" data-i18n="common.cancel">Cancel</a>
                     
-                    <button type="button" class="btn btn--danger" style="margin-left: auto;"
+                    <button type="button" class="btn btn--danger" style="margin-left: auto;" data-i18n="admin.deleteChampion"
                             onclick="showConfirmDialog(event, {
                                 title: '⚠️ Delete Champion',
                                 message: 'Are you sure you want to delete this championship record for <strong><?php echo addslashes(htmlspecialchars($champion['member_name'])); ?></strong>?',

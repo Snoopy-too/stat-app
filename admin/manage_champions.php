@@ -120,6 +120,7 @@ $baseUrl = 'manage_champions.php?club_id=' . $club_id;
     <title>Manage Champions - <?php echo htmlspecialchars($club_name); ?></title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
+    <script src="../js/i18n.js"></script>
 </head>
 <body class="has-sidebar">
     <?php NavigationHelper::renderAdminSidebar('champions', $club_id, $club_name); ?>
@@ -134,32 +135,32 @@ $baseUrl = 'manage_champions.php?club_id=' . $club_id;
         <?php display_session_message('error'); ?>
 
         <div id="add-champion-form-wrapper" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? '' : 'display:none;'; ?> margin: 1rem 0 1.25rem 0; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 0.75rem); background: var(--color-surface-muted);">
-            <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);">Add a Champion</h3>
+            <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);" data-i18n="admin.crownChampion">Add a Champion</h3>
             <form method="POST" class="form">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <input type="hidden" name="action" value="create">
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
                     <div class="form-group" style="margin-bottom:0;">
-                        <label for="member_id">Member <span style="color:var(--color-error,#ef4444);">*</span></label>
+                        <label for="member_id"><span data-i18n="members.name">Member</span> <span style="color:var(--color-error,#ef4444);">*</span></label>
                         <select id="member_id" name="member_id" required class="form-control">
-                            <option value="">Select Member</option>
+                            <option value="" data-i18n="admin.selectMember">Select Member</option>
                             <?php foreach ($club_members as $m): ?>
                                 <option value="<?php echo $m['member_id']; ?>"><?php echo htmlspecialchars($m['nickname'] ?: $m['member_name']); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
-                        <label for="champ_date">Date Awarded <span style="color:var(--color-error,#ef4444);">*</span></label>
+                        <label for="champ_date"><span data-i18n="champions.awarded">Date Awarded</span> <span style="color:var(--color-error,#ef4444);">*</span></label>
                         <input type="date" id="champ_date" name="champ_date" value="<?php echo date('Y-m-d'); ?>" required class="form-control">
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
-                        <label for="champ_comments">Title / Award Comments</label>
+                        <label for="champ_comments" data-i18n="champions.seasonTitle">Title / Award Comments</label>
                         <input type="text" id="champ_comments" name="champ_comments" placeholder="e.g. 2026 Club Champion" class="form-control">
                     </div>
                 </div>
                 <div class="form-group" style="display:flex; gap:0.5rem; margin-bottom:0;">
-                    <button type="submit" class="btn btn--primary">Save Champion</button>
-                    <button type="button" class="btn btn--subtle" onclick="toggleAddChampionForm()">Cancel</button>
+                    <button type="submit" class="btn btn--primary" data-i18n="admin.saveChampion">Save Champion</button>
+                    <button type="button" class="btn btn--subtle" onclick="toggleAddChampionForm()" data-i18n="common.cancel">Cancel</button>
                 </div>
             </form>
         </div>

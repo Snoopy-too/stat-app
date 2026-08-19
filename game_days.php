@@ -32,6 +32,7 @@ try {
     <title>Game Days - Board Game StatApp</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/dark-mode.js"></script>
+    <script src="js/i18n.js"></script>
 </head>
 <body class="has-sidebar">
     <?php

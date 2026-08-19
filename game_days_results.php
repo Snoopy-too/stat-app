@@ -56,6 +56,7 @@ try {
     <title>Game Results for <?php echo htmlspecialchars($display_date); ?> - Board Game StatApp</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/dark-mode.js"></script>
+    <script src="js/i18n.js"></script>
     <style>
         .game-thumbnail {
             width: 48px !important;

@@ -35,6 +35,7 @@ if (isset($_SESSION['club_id'])) {
     <link rel="alternate icon" type="image/x-icon" href="favicon.ico?v=4">
     <link rel="stylesheet" href="https://theflyingdutchmen.games/stylesheets/tfd-nav.css">
     <link rel="stylesheet" href="css/styles.css">
+    <script src="js/i18n.js"></script>
 </head>
 <body>
     <!-- Shared Top Navigation Bar (Managed by tfd-navbar.js) -->
@@ -46,34 +47,30 @@ if (isset($_SESSION['club_id'])) {
         <div class="hero-contour-waves"></div>
 
         <div class="landing-hero-content">
-            <h1>Track Every Victory.<br><span class="highlight">Celebrate Every Champion.</span></h1>
-            <p class="landing-hero-subtitle">
+            <h1><span data-i18n="landing.heroTitle1">Track Every Victory.</span><br><span class="highlight" data-i18n="landing.heroTitle2">Celebrate Every Champion.</span></h1>
+            <p class="landing-hero-subtitle" data-i18n="landing.heroSubtitle">
                 The all-in-one platform for board game clubs to manage members, track game results, and crown champions.
+            </p>
 
+            <div class="landing-hero-stats" style="display:inline-flex;align-items:center;gap:0.75rem;margin:1rem 0 1.5rem;flex-wrap:wrap;justify-content:center;">
               <div class="stat-item">
                   <span class="stat-item-value">100%</span>
-                  <span class="stat-item-label">Free to Use</span>
+                  <span class="stat-item-label" data-i18n="landing.freeToUse">Free to Use</span>
               </div>
               <span class="stat-divider">•</span>
               <div class="stat-item">
                   <span class="stat-item-value">Unlimited</span>
-                  <span class="stat-item-label">Games &amp; Members</span>
+                  <span class="stat-item-label" data-i18n="landing.unlimited">Games &amp; Members</span>
               </div>
-              <span class="stat-divider">•</span>
-              <div class="stat-item">
-                  <span class="stat-item-value">5 min</span>
-                  <span class="stat-item-label">Quick Setup</span>
-              </div>
-
-            </p>
+            </div>
 
             <div class="landing-hero-cta">
                 <?php if (isset($_SESSION['is_super_admin'])): ?>
-                    <a href="admin/account.php" class="btn btn--secondary">Go to Account</a>
+                    <a href="admin/account.php" class="btn btn--secondary" data-i18n="nav.account">Go to Account</a>
                 <?php else: ?>
-                    <a href="admin/login.php" class="btn btn--secondary">Login</a>
+                    <a href="admin/login.php" class="btn btn--secondary" data-i18n="nav.login">Login</a>
                 <?php endif; ?>
-                <a href="admin/login.php?tab=register" class="btn btn--primary">Register</a>
+                <a href="admin/login.php?tab=register" class="btn btn--primary" data-i18n="landing.registerClub">Register Your Club</a>
             </div>
         </div>
     </section>
@@ -81,29 +78,29 @@ if (isset($_SESSION['club_id'])) {
     <!-- Features Section -->
     <section class="landing-features">
         <div class="landing-section-header">
-            <h2>Everything Your Club Needs</h2>
+            <h2 data-i18n="landing.featuresHeading">Built for Board Game Enthusiasts</h2>
         </div>
         <div class="features-grid">
             <div class="feature-card">
                 <div class="feature-icon-wrapper">
                     <div class="feature-icon feature-icon--blue">&#127922;</div>
-                    <h3>Game Library</h3>
+                    <h3 data-i18n="club.games">Game Library</h3>
                 </div>
-                <p>Build your club's game collection. Track player counts, play counts, and see top table favorites.</p>
+                <p data-i18n="landing.featResultsDesc">Build your club's game collection. Track player counts, play counts, and see top table favorites.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon-wrapper">
                     <div class="feature-icon feature-icon--purple">&#127942;</div>
-                    <h3>Game Results &amp; Champions</h3>
+                    <h3 data-i18n="landing.featChampionsTitle">Game Results &amp; Champions</h3>
                 </div>
-                <p>Log every play session with winners, placements, and duration while crowning champions in your hall of fame.</p>
+                <p data-i18n="landing.featChampionsDesc">Log every play session with winners, placements, and duration while crowning champions in your hall of fame.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon-wrapper">
                     <div class="feature-icon feature-icon--green">&#128101;</div>
-                    <h3>Member Management</h3>
+                    <h3 data-i18n="landing.featMembersTitle">Member Management</h3>
                 </div>
-                <p>Keep your roster organized with player nicknames, join dates, and individual head-to-head performance stats.</p>
+                <p data-i18n="landing.featMembersDesc">Keep your roster organized with player nicknames, join dates, and individual head-to-head performance stats.</p>
             </div>
         </div>
     </section>
@@ -131,13 +128,13 @@ if (isset($_SESSION['club_id'])) {
 
 
     <!-- Search Section -->
-    <section class="landing-search">
+    <section class="landing-search" id="clubs">
         <div class="search-container">
             <div class="landing-section-header">
-                <h2>Find a Club</h2>
-                <p>Explore public clubs and view their stats</p>
+                <h2 data-i18n="landing.findYourClub">Find Your Club</h2>
+                <p data-i18n="landing.explorePublicClubs">Explore public clubs and view their stats</p>
             </div>
-            <input type="text" id="clubSearch" placeholder="Search for a club..." class="form-control">
+            <input type="text" id="clubSearch" placeholder="Search by club name or city..." data-i18n-placeholder="landing.searchPlaceholder" class="form-control">
             <div id="searchResults" class="club-list"></div>
         </div>
     </section>

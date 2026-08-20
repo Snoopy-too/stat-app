@@ -5,7 +5,7 @@ require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
-    header("Location: login.php");
+    header("Location: ../index.php");
     exit();
 }
 

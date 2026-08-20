@@ -81,12 +81,12 @@
 /* Dark Themes */
 [data-theme="dark"] .banner-overlay,
 [data-theme="midnight"] .banner-overlay,
-[data-theme="tabletop"] .banner-overlay,
+[data-theme="casino"] .banner-overlay,
 [data-theme="cyber-arcade"] .banner-overlay,
 .dark-theme .banner-overlay,
 [data-theme="dark"] .toast,
 [data-theme="midnight"] .toast,
-[data-theme="tabletop"] .toast,
+[data-theme="casino"] .toast,
 [data-theme="cyber-arcade"] .toast,
 .dark-theme .toast {
     background: var(--color-surface, #1e293b);
@@ -175,12 +175,12 @@
 
 [data-theme="dark"] .banner-overlay__close:hover,
 [data-theme="midnight"] .banner-overlay__close:hover,
-[data-theme="tabletop"] .banner-overlay__close:hover,
+[data-theme="casino"] .banner-overlay__close:hover,
 [data-theme="cyber-arcade"] .banner-overlay__close:hover,
 .dark-theme .banner-overlay__close:hover,
 [data-theme="dark"] .toast__close:hover,
 [data-theme="midnight"] .toast__close:hover,
-[data-theme="tabletop"] .toast__close:hover,
+[data-theme="casino"] .toast__close:hover,
 [data-theme="cyber-arcade"] .toast__close:hover,
 .dark-theme .toast__close:hover {
     color: #ffffff;

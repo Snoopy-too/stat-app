@@ -115,7 +115,7 @@ require_once '../includes/templates/header.php';
 
                 <div style="display: flex; gap: 0.75rem; width: 100%; margin-top: 1rem;">
                     <button type="submit" class="btn btn--primary" style="flex: 1; text-align: center; justify-content: center;">Send Reset Link</button>
-                    <a href="login.php" class="btn btn--secondary" style="flex: 1; text-align: center; display: inline-flex; align-items: center; justify-content: center;">Back to Login</a>
+                    <a href="../index.php" class="btn btn--secondary" style="flex: 1; text-align: center; display: inline-flex; align-items: center; justify-content: center;">Back to Home</a>
                 </div>
             </form>
         </div>

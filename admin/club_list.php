@@ -11,7 +11,7 @@ require_once '../includes/NavigationHelper.php';
 
 // Ensure user is logged in
 if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
-    header("Location: login.php");
+    header("Location: ../index.php");
     exit();
 }
 

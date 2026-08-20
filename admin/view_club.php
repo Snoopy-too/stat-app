@@ -4,7 +4,7 @@ require_once '../config/database.php';
 require_once '../includes/NavigationHelper.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
-    header("Location: login.php");
+    header("Location: ../index.php");
     exit();
 }
 

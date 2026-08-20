@@ -6,7 +6,7 @@ require_once '../includes/SecurityUtils.php';
 require_once '../includes/NavigationHelper.php';
 
 if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
-    header("Location: login.php");
+    header("Location: ../index.php");
     exit();
 }
 
@@ -55,17 +55,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'update_club_theme' && !empty($_POST['club_id']) && !empty($_POST['theme'])) {
         $target_club_id = (int)$_POST['club_id'];
         $new_theme = trim($_POST['theme']);
-        $allowed_themes = ['midnight', 'tabletop', 'arcade', 'light'];
+        $allowed_themes = ['midnight', 'casino', 'arcade', 'light'];
         
         if (in_array($new_theme, $allowed_themes)) {
             try {
                 $pdo->exec("ALTER TABLE clubs ADD COLUMN theme VARCHAR(50) DEFAULT 'midnight'");
+                $pdo->exec("UPDATE clubs SET theme = 'casino' WHERE theme = 'tabletop'");
             } catch (Throwable $e) {}
 
-            $stmt = $pdo->prepare("UPDATE clubs SET theme = ? WHERE club_id = ? AND EXISTS (SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?)");
-            $stmt->execute([$new_theme, $target_club_id, $target_club_id, $_SESSION['admin_id']]);
+            $isSuperAdmin = !empty($_SESSION['is_super_admin']);
+            if ($isSuperAdmin) {
+                $stmt = $pdo->prepare("UPDATE clubs SET theme = ? WHERE club_id = ?");
+                $stmt->execute([$new_theme, $target_club_id]);
+            } else {
+                $stmt = $pdo->prepare("UPDATE clubs SET theme = ? WHERE club_id = ? AND EXISTS (SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?)");
+                $stmt->execute([$new_theme, $target_club_id, $target_club_id, $_SESSION['admin_id']]);
+            }
             
             $_SESSION['current_club_id'] = $target_club_id;
+            $_SESSION['club_id'] = $target_club_id;
         }
         header("Location: account.php?club_id=" . $target_club_id);
         exit();
@@ -285,7 +293,7 @@ $csrf_token = $security->generateCSRFToken();
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-club-theme="<?php echo htmlspecialchars($active_club_theme ?: 'midnight'); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -472,7 +480,7 @@ $csrf_token = $security->generateCSRFToken();
                 <?php
                 $available_themes = [
                     'light'    => ['name' => 'Cards & Dice',      'icon' => '🃏', 'bg' => '#ffffff', 'primary' => '#4f46e5', 'accent' => '#7c3aed'],
-                    'tabletop' => ['name' => 'Tabletop',          'icon' => '🎲', 'bg' => '#062c1b', 'primary' => '#10b981', 'accent' => '#f59e0b'],
+                    'casino'   => ['name' => 'Casino',            'icon' => '🎲', 'bg' => '#062c1b', 'primary' => '#10b981', 'accent' => '#f59e0b'],
                     'midnight' => ['name' => 'Midnight Marauder', 'icon' => '🗡️', 'bg' => '#140d07', 'primary' => '#d97706', 'accent' => '#c86414'],
                     'arcade'   => ['name' => 'Cyber Arcade',      'icon' => '🕹️', 'bg' => '#090d16', 'primary' => '#06b6d4', 'accent' => '#f43f5e'],
                 ];

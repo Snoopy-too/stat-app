@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $update->execute([$hash, $user['admin_id']]);
 
             $_SESSION['success'] = "Password reset successfully. You can now login.";
-            header("Location: login.php");
+            header("Location: ../index.php");
             exit();
         }
     }

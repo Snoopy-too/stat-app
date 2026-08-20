@@ -1,6 +1,13 @@
 /* 3. Cyber Arcade (Space Navy & Neon Cyan) */
 :root[data-club-theme="arcade"],
-html[data-club-theme="arcade"] {
+:root[data-theme="arcade"],
+html[data-club-theme="arcade"],
+html[data-theme="arcade"],
+html:root[data-club-theme="arcade"],
+html:root[data-theme="arcade"],
+html[data-theme][data-club-theme="arcade"],
+body[data-club-theme="arcade"],
+body[data-theme="arcade"] {
     --color-background: #090d16;
     --color-surface: #131b2e;
     --color-surface-muted: #1e2942;

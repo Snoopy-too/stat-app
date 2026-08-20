@@ -1,6 +1,13 @@
 /* 4. Cards & Dice (Light Theme) */
 :root[data-club-theme="light"],
-html[data-club-theme="light"] {
+:root[data-theme="light"],
+html[data-club-theme="light"],
+html[data-theme="light"],
+html:root[data-club-theme="light"],
+html:root[data-theme="light"],
+html[data-theme][data-club-theme="light"],
+body[data-club-theme="light"],
+body[data-theme="light"] {
     --color-background: #f8fafc;
     --color-surface: #ffffff;
     --color-surface-muted: #f1f5f9;

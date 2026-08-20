@@ -170,3 +170,177 @@
     background: var(--color-border);
     margin: 0 var(--spacing-2);
 }
+
+/* ==========================================================================
+   UNIVERSAL NAVBAR THEME ISOLATION
+   Guarantees the top navbar and all its popovers/drawers/modals strictly follow
+   the universal theme (data-theme) and are completely immune to data-club-theme.
+   ========================================================================== */
+
+/* Default / Arcade / Dark fallback */
+.tfd-navbar,
+#tfd-navbar,
+.tfd-mobile-drawer,
+.tfd-theme-dropdown,
+#tfdLangModal,
+html[data-theme="arcade"] .tfd-navbar,
+html[data-theme="arcade"] #tfd-navbar,
+html[data-theme="arcade"] .tfd-mobile-drawer,
+html[data-theme="arcade"] .tfd-theme-dropdown,
+html[data-theme="arcade"] #tfdLangModal,
+html[data-theme="dark"] .tfd-navbar,
+html[data-theme="dark"] #tfd-navbar,
+html[data-theme="dark"] .tfd-mobile-drawer,
+html[data-theme="dark"] .tfd-theme-dropdown,
+html[data-theme="dark"] #tfdLangModal {
+    --color-background: #090d16 !important;
+    --color-surface: #131b2e !important;
+    --color-surface-muted: #1e2942 !important;
+    --color-surface-alt: #131b2e !important;
+    --color-text: #e2e8f0 !important;
+    --color-text-muted: #94a3b8 !important;
+    --color-text-soft: #64748b !important;
+    --color-heading: #22d3ee !important;
+    --color-border: #243452 !important;
+    --color-border-strong: #33476e !important;
+    --color-primary: #06b6d4 !important;
+    --color-primary-strong: #0891b2 !important;
+    --color-primary-soft: rgba(6, 182, 212, 0.18) !important;
+    --color-primary-muted: rgba(6, 182, 212, 0.35) !important;
+    --color-primary-contrast: #ffffff !important;
+    --color-accent: #f43f5e !important;
+    --color-accent-strong: #e11d48 !important;
+    --color-accent-soft: rgba(244, 63, 94, 0.18) !important;
+    --tfd-bg-dark: #090d16 !important;
+    --tfd-bg-surface: rgba(19, 27, 46, 0.88) !important;
+    --tfd-bg-surface-elevated: rgba(30, 41, 66, 0.95) !important;
+    --tfd-border-gold: rgba(6, 182, 212, 0.28) !important;
+    --tfd-border-gold-bright: rgba(6, 182, 212, 0.55) !important;
+    --tfd-gold-primary: #06b6d4 !important;
+    --tfd-gold-light: #67e8f9 !important;
+    --tfd-gold-dark: #0891b2 !important;
+    --tfd-gold-gradient: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%) !important;
+    --tfd-text-main: #e2e8f0 !important;
+    --tfd-text-secondary: #94a3b8 !important;
+    --tfd-text-muted: #64748b !important;
+}
+
+/* Light Mode */
+html[data-theme="light"] .tfd-navbar,
+html[data-theme="light"] #tfd-navbar,
+html[data-theme="light"] .tfd-mobile-drawer,
+html[data-theme="light"] .tfd-theme-dropdown,
+html[data-theme="light"] #tfdLangModal {
+    --color-background: #f8fafc !important;
+    --color-surface: #ffffff !important;
+    --color-surface-muted: #f1f5f9 !important;
+    --color-surface-alt: #e2e8f0 !important;
+    --color-text: #0f172a !important;
+    --color-text-muted: #475569 !important;
+    --color-text-soft: #94a3b8 !important;
+    --color-heading: #1e293b !important;
+    --color-border: #e2e8f0 !important;
+    --color-border-strong: #cbd5e1 !important;
+    --color-primary: #4f46e5 !important;
+    --color-primary-strong: #4338ca !important;
+    --color-primary-soft: #e0e7ff !important;
+    --color-primary-muted: #c7d2fe !important;
+    --color-primary-contrast: #ffffff !important;
+    --color-accent: #7c3aed !important;
+    --color-accent-strong: #6d28d9 !important;
+    --color-accent-soft: #ede9fe !important;
+    --tfd-bg-dark: #f8fafc !important;
+    --tfd-bg-surface: rgba(255, 255, 255, 0.9) !important;
+    --tfd-bg-surface-elevated: #ffffff !important;
+    --tfd-border-gold: rgba(79, 70, 229, 0.25) !important;
+    --tfd-border-gold-bright: rgba(79, 70, 229, 0.5) !important;
+    --tfd-gold-primary: #4f46e5 !important;
+    --tfd-gold-light: #6366f1 !important;
+    --tfd-gold-dark: #4338ca !important;
+    --tfd-gold-gradient: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+    --tfd-text-main: #0f172a !important;
+    --tfd-text-secondary: #475569 !important;
+    --tfd-text-muted: #64748b !important;
+}
+
+/* Midnight Marauder */
+html[data-theme="midnight"] .tfd-navbar,
+html[data-theme="midnight"] #tfd-navbar,
+html[data-theme="midnight"] .tfd-mobile-drawer,
+html[data-theme="midnight"] .tfd-theme-dropdown,
+html[data-theme="midnight"] #tfdLangModal {
+    --color-background: #140d07 !important;
+    --color-surface: #1e140c !important;
+    --color-surface-muted: #2a1d12 !important;
+    --color-surface-alt: #1e140c !important;
+    --color-text: #f4ebe1 !important;
+    --color-text-muted: #b5a090 !important;
+    --color-text-soft: #847061 !important;
+    --color-heading: #ffedd5 !important;
+    --color-border: #382618 !important;
+    --color-border-strong: #503723 !important;
+    --color-primary: #d97706 !important;
+    --color-primary-strong: #b45309 !important;
+    --color-primary-soft: rgba(217, 119, 6, 0.18) !important;
+    --color-primary-muted: rgba(217, 119, 6, 0.35) !important;
+    --color-primary-contrast: #ffffff !important;
+    --color-accent: #c86414 !important;
+    --color-accent-strong: #a04d0c !important;
+    --color-accent-soft: rgba(200, 100, 20, 0.18) !important;
+    --tfd-bg-dark: #140d07 !important;
+    --tfd-bg-surface: rgba(30, 20, 12, 0.88) !important;
+    --tfd-bg-surface-elevated: rgba(42, 29, 18, 0.95) !important;
+    --tfd-border-gold: rgba(217, 119, 6, 0.28) !important;
+    --tfd-border-gold-bright: rgba(217, 119, 6, 0.55) !important;
+    --tfd-gold-primary: #d97706 !important;
+    --tfd-gold-light: #fde68a !important;
+    --tfd-gold-dark: #b45309 !important;
+    --tfd-gold-gradient: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+    --tfd-text-main: #f4ebe1 !important;
+    --tfd-text-secondary: #b5a090 !important;
+    --tfd-text-muted: #847061 !important;
+}
+
+/* Casino */
+html[data-theme="casino"] .tfd-navbar,
+html[data-theme="casino"] #tfd-navbar,
+html[data-theme="casino"] .tfd-mobile-drawer,
+html[data-theme="casino"] .tfd-theme-dropdown,
+html[data-theme="casino"] #tfdLangModal,
+html[data-theme="tabletop"] .tfd-navbar,
+html[data-theme="tabletop"] #tfd-navbar,
+html[data-theme="tabletop"] .tfd-mobile-drawer,
+html[data-theme="tabletop"] .tfd-theme-dropdown,
+html[data-theme="tabletop"] #tfdLangModal {
+    --color-background: #062c1b !important;
+    --color-surface: #0d3a25 !important;
+    --color-surface-muted: #144a30 !important;
+    --color-surface-alt: #0d3a25 !important;
+    --color-text: #ecfdf5 !important;
+    --color-text-muted: #a7f3d0 !important;
+    --color-text-soft: #6ee7b7 !important;
+    --color-heading: #fbbf24 !important;
+    --color-border: #165a38 !important;
+    --color-border-strong: #1d7348 !important;
+    --color-primary: #10b981 !important;
+    --color-primary-strong: #059669 !important;
+    --color-primary-soft: rgba(16, 185, 129, 0.18) !important;
+    --color-primary-muted: rgba(16, 185, 129, 0.35) !important;
+    --color-primary-contrast: #ffffff !important;
+    --color-accent: #f59e0b !important;
+    --color-accent-strong: #d97706 !important;
+    --color-accent-soft: rgba(245, 158, 11, 0.18) !important;
+    --tfd-bg-dark: #062c1b !important;
+    --tfd-bg-surface: rgba(13, 58, 37, 0.88) !important;
+    --tfd-bg-surface-elevated: rgba(20, 74, 48, 0.95) !important;
+    --tfd-border-gold: rgba(251, 191, 36, 0.28) !important;
+    --tfd-border-gold-bright: rgba(251, 191, 36, 0.55) !important;
+    --tfd-gold-primary: #fbbf24 !important;
+    --tfd-gold-light: #fef08a !important;
+    --tfd-gold-dark: #d97706 !important;
+    --tfd-gold-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    --tfd-text-main: #ecfdf5 !important;
+    --tfd-text-secondary: #a7f3d0 !important;
+    --tfd-text-muted: #6ee7b7 !important;
+}
+

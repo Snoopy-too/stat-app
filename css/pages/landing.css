@@ -14,6 +14,74 @@
     --contour-line-color: rgba(99, 102, 241, 0.12);
 }
 
+/* Light / Cards & Dice */
+:root[data-theme="light"],
+:root[data-club-theme="light"] {
+    --landing-hero-bg: radial-gradient(circle at 50% 0%, rgba(79, 70, 229, 0.15), transparent 70%),
+                        linear-gradient(135deg, #f8fafc 0%, #eef2ff 45%, #f1f5f9 100%);
+    --landing-hero-text: var(--color-text);
+    --landing-hero-subtitle: var(--color-text-muted);
+    --landing-card-bg: rgba(255, 255, 255, 0.92);
+    --landing-card-border: rgba(226, 232, 240, 0.9);
+    --landing-card-shadow: 0 24px 48px -12px rgba(79, 70, 229, 0.15), 0 0 0 1px rgba(79, 70, 229, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    --landing-stat-bg: var(--color-surface-muted);
+    --landing-header-bg: rgba(255, 255, 255, 0.85);
+    --landing-header-border: var(--color-border);
+    --landing-text-glow: 0 4px 20px rgba(79, 70, 229, 0.2);
+    --contour-line-color: rgba(79, 70, 229, 0.1);
+}
+
+/* Cyber Arcade */
+:root[data-theme="arcade"],
+:root[data-club-theme="arcade"] {
+    --landing-hero-bg: radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.25), transparent 70%),
+                        linear-gradient(135deg, #090d16 0%, #131b2e 50%, #060910 100%);
+    --landing-hero-text: #e2e8f0;
+    --landing-hero-subtitle: #94a3b8;
+    --landing-card-bg: rgba(19, 27, 46, 0.88);
+    --landing-card-border: rgba(36, 52, 82, 0.9);
+    --landing-card-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(6, 182, 212, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --landing-stat-bg: #131b2e;
+    --landing-header-bg: rgba(19, 27, 46, 0.85);
+    --landing-header-border: #243452;
+    --landing-text-glow: 0 4px 30px rgba(6, 182, 212, 0.45);
+    --contour-line-color: rgba(6, 182, 212, 0.15);
+}
+
+/* Midnight Marauder */
+:root[data-theme="midnight"],
+:root[data-club-theme="midnight"] {
+    --landing-hero-bg: radial-gradient(circle at 50% 0%, rgba(217, 119, 6, 0.25), transparent 70%),
+                        linear-gradient(135deg, #140d07 0%, #1e140c 50%, #0f0a05 100%);
+    --landing-hero-text: #f4ebe1;
+    --landing-hero-subtitle: #b5a090;
+    --landing-card-bg: rgba(30, 20, 12, 0.88);
+    --landing-card-border: rgba(56, 38, 24, 0.9);
+    --landing-card-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(217, 119, 6, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --landing-stat-bg: #1e140c;
+    --landing-header-bg: rgba(30, 20, 12, 0.85);
+    --landing-header-border: #382618;
+    --landing-text-glow: 0 4px 30px rgba(217, 119, 6, 0.45);
+    --contour-line-color: rgba(217, 119, 6, 0.15);
+}
+
+/* Casino */
+:root[data-theme="casino"],
+:root[data-club-theme="casino"] {
+    --landing-hero-bg: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.25), transparent 70%),
+                        linear-gradient(135deg, #062c1b 0%, #0d3a25 50%, #041f13 100%);
+    --landing-hero-text: #ecfdf5;
+    --landing-hero-subtitle: #a7f3d0;
+    --landing-card-bg: rgba(13, 58, 37, 0.88);
+    --landing-card-border: rgba(22, 90, 56, 0.9);
+    --landing-card-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --landing-stat-bg: #0d3a25;
+    --landing-header-bg: rgba(13, 58, 37, 0.85);
+    --landing-header-border: #165a38;
+    --landing-text-glow: 0 4px 30px rgba(16, 185, 129, 0.45);
+    --contour-line-color: rgba(16, 185, 129, 0.15);
+}
+
 :root[data-theme="dark"] {
     --landing-hero-bg: radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.35), transparent 70%),
                         linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #090d16 100%);
@@ -548,16 +616,11 @@
     border-radius: var(--radius-lg);
     padding: 1.5rem 1.35rem;
     box-shadow: var(--landing-card-shadow);
-    transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.3s ease;
+    transition: background 0.3s ease;
     border: 1px solid var(--landing-card-border);
     display: flex;
     flex-direction: column;
     backdrop-filter: blur(12px);
-}
-
-.feature-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 16px 32px -8px rgba(99, 102, 241, 0.18);
 }
 
 .feature-icon-wrapper {
@@ -743,7 +806,7 @@ body.modal-open {
     bottom: 0;
     background: rgba(15, 23, 42, 0.85);
     backdrop-filter: blur(8px);
-    z-index: 1000;
+    z-index: 1000000;
     display: flex;
     align-items: center;
     justify-content: center;

@@ -1,0 +1,31 @@
+/* 2. Casino (Felt Green Backgrounds & Amber Gold) */
+:root[data-club-theme="casino"],
+:root[data-theme="casino"],
+html[data-club-theme="casino"],
+html[data-theme="casino"],
+html:root[data-club-theme="casino"],
+html:root[data-theme="casino"],
+html[data-theme][data-club-theme="casino"],
+body[data-club-theme="casino"],
+body[data-theme="casino"] {
+    --color-background: #062c1b;
+    --color-surface: #0d3a25;
+    --color-surface-muted: #144a30;
+    --color-surface-alt: #0d3a25;
+    --color-text: #ecfdf5;
+    --color-text-muted: #a7f3d0;
+    --color-text-soft: #6ee7b7;
+    --color-heading: #fbbf24;
+    --color-border: #165a38;
+    --color-border-strong: #1d7348;
+    --color-primary: #10b981;
+    --color-primary-strong: #059669;
+    --color-primary-soft: rgba(16, 185, 129, 0.18);
+    --color-accent: #f59e0b;
+    --color-accent-strong: #d97706;
+    --color-header-bg: #0d3a25;
+    --color-header-text: #fbbf24;
+    --sidebar-bg: #0d3a25;
+    --sidebar-border: #165a38;
+    --select-caret-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ecfdf5' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+}

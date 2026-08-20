@@ -9,7 +9,7 @@ if (
     empty($_SESSION['is_impersonating']) ||
     empty($_SESSION['original_super_admin_id'])
 ) {
-    header("Location: ../admin/login.php");
+    header("Location: ../index.php");
     exit();
 }
 

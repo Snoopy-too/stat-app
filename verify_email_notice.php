@@ -43,7 +43,7 @@ unset($_SESSION['registration_email']);
             Please check your email for the verification link.
         </p>
         <?php endif; ?>
-        <a href="admin/login.php" class="btn">Go to Login</a>
+        <a href="index.php" class="btn">Go to Home</a>
     </div>
     <script src="https://theflyingdutchmen.games/javascripts/tfd-navbar.js"></script>
 </body>

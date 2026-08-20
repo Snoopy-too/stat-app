@@ -1,9 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
+@import url('https://theflyingdutchmen.games/stylesheets/tfd-nav.css');
 @import url('tokens.css');
 @import url('base.css');
 @import url('themes.css');
 @import url('themes/midnight.css');
-@import url('themes/tabletop.css');
+@import url('themes/casino.css');
 @import url('themes/cyber-arcade.css');
 @import url('themes/light.css');
 @import url('layout.css');

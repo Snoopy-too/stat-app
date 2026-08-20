@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Check if rate limit exceeded
     if (!$security->checkLoginAttempts($email, $ipAddress)) {
         $_SESSION['error'] = "Too many failed login attempts. Please try again in 15 minutes.";
-        header("Location: login.php");
+        header("Location: index.php");
         exit();
     }
 
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $security->logLoginAttempt($email, $ipAddress, false);
 
             $_SESSION['error'] = "Invalid email or password";
-            header("Location: login.php");
+            header("Location: index.php");
             exit();
         }
 
@@ -53,14 +53,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $security->logLoginAttempt($email, $ipAddress, false);
 
         $_SESSION['error'] = "Login failed. Please try again.";
-        header("Location: login.php");
+        header("Location: index.php");
         exit();
     }
 }
 
 // Handle unauthorized access attempts
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header("Location: login.php");
+    header("Location: index.php");
     exit();
 }
 ?>

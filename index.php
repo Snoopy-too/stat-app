@@ -16,23 +16,65 @@ require_once 'config/database.php';
 
 // Get club info if user is logged in
 $club_name = "Board Game Club";
+$activeTheme = 'midnight';
+if (!empty($_COOKIE['tfd_theme'])) {
+    $activeTheme = $_COOKIE['tfd_theme'];
+}
+
 if (isset($_SESSION['club_id'])) {
-    $stmt = $pdo->prepare("SELECT club_name FROM clubs WHERE club_id = ?");
+    $stmt = $pdo->prepare("SELECT club_name, theme FROM clubs WHERE club_id = ?");
     $stmt->execute([$_SESSION['club_id']]);
     $club = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($club) {
         $club_name = $club['club_name'];
+        if (empty($_COOKIE['tfd_theme']) && !empty($club['theme'])) {
+            $activeTheme = $club['theme'];
+        }
     }
+}
+
+if (!empty($_GET['theme'])) {
+    $activeTheme = $_GET['theme'];
+}
+if ($activeTheme === 'tabletop') {
+    $activeTheme = 'casino';
+}
+if ($activeTheme === 'dark') {
+    $activeTheme = 'arcade';
+}
+if (!in_array($activeTheme, ['light', 'arcade', 'midnight', 'casino'])) {
+    $activeTheme = 'midnight';
 }
 ?>
 <!DOCTYPE html>
-<html lang="en" data-theme="light" data-club-theme="light" data-theme-locked>
+<html lang="en" data-theme="<?php echo htmlspecialchars($activeTheme); ?>" data-club-theme="<?php echo htmlspecialchars($activeTheme); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StatApp - Track Your Board Game Club Stats</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg?v=4">
     <link rel="alternate icon" type="image/x-icon" href="favicon.ico?v=4">
+    <script>
+    (function() {
+        try {
+            var stored = localStorage.getItem('tfd-theme-preference') || localStorage.getItem('tfd-theme') || localStorage.getItem('stat-app-theme') || localStorage.getItem('app-theme-preference');
+            var theme = stored;
+            if (!theme || theme === 'auto' || theme === 'system') {
+                var m = document.cookie.match(/(?:^|;\s*)tfd_theme=([^;]*)/);
+                if (m) theme = decodeURIComponent(m[1]);
+            }
+            if (theme === 'tabletop') theme = 'casino';
+            if (theme === 'dark') theme = 'arcade';
+            if (!theme || theme === 'auto' || theme === 'system') {
+                theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'arcade';
+            }
+            if (['light', 'arcade', 'midnight', 'casino'].includes(theme)) {
+                document.documentElement.setAttribute('data-theme', theme);
+                document.documentElement.setAttribute('data-club-theme', theme);
+            }
+        } catch(e) {}
+    })();
+    </script>
     <link rel="stylesheet" href="https://theflyingdutchmen.games/stylesheets/tfd-nav.css">
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/i18n.js"></script>
@@ -64,14 +106,6 @@ if (isset($_SESSION['club_id'])) {
               </div>
             </div>
 
-            <div class="landing-hero-cta">
-                <?php if (isset($_SESSION['is_super_admin'])): ?>
-                    <a href="admin/account.php" class="btn btn--secondary" data-i18n="nav.account">Go to Account</a>
-                <?php else: ?>
-                    <a href="admin/login.php" class="btn btn--secondary" data-i18n="nav.login">Login</a>
-                <?php endif; ?>
-                <a href="admin/login.php?tab=register" class="btn btn--primary" data-i18n="landing.registerClub">Register Your Club</a>
-            </div>
         </div>
     </section>
 
@@ -115,9 +149,9 @@ if (isset($_SESSION['club_id'])) {
             <div class="gallery-single-wrapper">
                 <div class="gallery-item gallery-item--single" id="singlePreviewTrigger" role="button" tabindex="0" aria-label="Open Interactive App Preview Modal">
                     <div class="gallery-item-preview">
-                        <iframe src="admin/club_new_results.php?demo=1&theme=arcade" title="Interactive App Preview" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+                        <iframe id="singlePreviewIframe" src="admin/club_new_results.php?demo=1&amp;theme=<?php echo htmlspecialchars($activeTheme); ?>" title="Interactive App Preview" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
                         <div class="preview-overlay-badge">
-                            <span>🔍 Click to Launch Interactive Preview Carousel</span>
+                            <span>🔍 Click to launch preview</span>
                         </div>
                     </div>
                     <div class="gallery-item-caption">Interactive App Preview &mdash; Click to explore all features</div>
@@ -160,14 +194,60 @@ if (isset($_SESSION['club_id'])) {
     </div>
 
     <script>
+    function getCurrentLandingTheme() {
+        var theme = document.documentElement.getAttribute('data-club-theme') || 
+                    document.documentElement.getAttribute('data-theme') || 
+                    localStorage.getItem('tfd-theme-preference') || 
+                    localStorage.getItem('stat-app-theme') || 
+                    'midnight';
+        if (theme === 'tabletop') theme = 'casino';
+        if (theme === 'dark') theme = 'arcade';
+        return theme;
+    }
+
+    function syncIframeTheme(theme) {
+        if (!theme) theme = getCurrentLandingTheme();
+        document.querySelectorAll('.landing-gallery iframe, .preview-modal-body iframe').forEach(iframe => {
+            try {
+                if (iframe.contentDocument && iframe.contentDocument.documentElement) {
+                    iframe.contentDocument.documentElement.setAttribute('data-theme', theme);
+                    iframe.contentDocument.documentElement.setAttribute('data-club-theme', theme);
+                }
+            } catch (e) {}
+        });
+    }
+
+    // Keep landing page data-club-theme in sync with data-theme when user changes theme
+    function syncLandingTheme(theme) {
+        if (!theme) return;
+        if (theme === 'tabletop') theme = 'casino';
+        if (theme === 'dark') theme = 'arcade';
+        if (['light', 'arcade', 'midnight', 'casino'].includes(theme)) {
+            document.documentElement.setAttribute('data-theme', theme);
+            document.documentElement.setAttribute('data-club-theme', theme);
+            syncIframeTheme(theme);
+        }
+    }
+    window.addEventListener('tfd-theme-change', (e) => {
+        if (e.detail && e.detail.theme) syncLandingTheme(e.detail.theme);
+    });
+    window.addEventListener('themechange', (e) => {
+        if (e.detail && e.detail.theme) syncLandingTheme(e.detail.theme);
+    });
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'tfd-theme-preference' || e.key === 'stat-app-theme' || e.key === 'tfd-theme') {
+            syncLandingTheme(e.newValue);
+        }
+    });
+
     // Modal preview behavior (modal carousel)
     const previewSlides = [
-        { title: 'Add New Result', url: 'admin/club_new_results.php?demo=1&theme=arcade' },
-        { title: 'Results', url: 'admin/manage_results.php?demo=1&theme=arcade' },
-        { title: 'Members', url: 'admin/manage_members.php?demo=1&theme=arcade' },
-        { title: 'Teams', url: 'admin/manage_teams.php?demo=1&theme=arcade' },
-        { title: 'Champions', url: 'admin/manage_champions.php?demo=1&theme=arcade' },
-        { title: 'Games', url: 'admin/manage_games.php?demo=1&theme=arcade' }
+        { title: 'Add New Result', url: 'admin/club_new_results.php?demo=1' },
+        { title: 'Results', url: 'admin/manage_results.php?demo=1' },
+        { title: 'Members', url: 'admin/manage_members.php?demo=1' },
+        { title: 'Teams', url: 'admin/manage_teams.php?demo=1' },
+        { title: 'Champions', url: 'admin/manage_champions.php?demo=1' },
+        { title: 'Games', url: 'admin/manage_games.php?demo=1' }
     ];
     let currentSlideIndex = 0;
 
@@ -183,7 +263,9 @@ if (isset($_SESSION['club_id'])) {
         if (!previewModalIframe) return;
         currentSlideIndex = (index + previewSlides.length) % previewSlides.length;
         const slide = previewSlides[currentSlideIndex];
-        previewModalIframe.src = slide.url;
+        const theme = getCurrentLandingTheme();
+        const separator = slide.url.includes('?') ? '&' : '?';
+        previewModalIframe.src = `${slide.url}${separator}theme=${encodeURIComponent(theme)}`;
         if (previewModalTitle) {
             previewModalTitle.textContent = `${slide.title} (${currentSlideIndex + 1} of ${previewSlides.length})`;
         }
@@ -259,6 +341,10 @@ if (isset($_SESSION['club_id'])) {
                 updateModalSlide(currentSlideIndex + 1);
             }
         }
+    });
+
+    document.querySelectorAll('.landing-gallery iframe, .preview-modal-body iframe').forEach(iframe => {
+        iframe.addEventListener('load', () => syncIframeTheme(getCurrentLandingTheme()));
     });
 
     // Club search

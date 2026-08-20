@@ -7,7 +7,7 @@ require_once '../includes/SecurityUtils.php';
 
 $demo = isset($_GET['demo']) || isset($_GET['preview']);
 if (!$demo && (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
-    header("Location: login.php");
+    header("Location: ../index.php");
     exit();
 }
 

@@ -7,12 +7,12 @@ $error = $_GET['error'] ?? null;
 
 if ($error) {
     $_SESSION['error'] = "Authentication failed: " . htmlspecialchars($error);
-    header("Location: admin/login.php");
+    header("Location: index.php");
     exit();
 }
 
 if (!$code) {
-    header("Location: admin/login.php");
+    header("Location: index.php");
     exit();
 }
 
@@ -48,7 +48,7 @@ $accessToken = $tokenData['access_token'] ?? null;
 
 if (!$accessToken) {
     $_SESSION['error'] = "Failed to retrieve access token from authorization server.";
-    header("Location: admin/login.php");
+    header("Location: index.php");
     exit();
 }
 
@@ -68,7 +68,7 @@ $username = $userData['username'] ?? $userData['preferred_username'] ?? null;
 
 if (!$email && !$username) {
     $_SESSION['error'] = "Failed to retrieve user identity from authorization server.";
-    header("Location: admin/login.php");
+    header("Location: index.php");
     exit();
 }
 
@@ -82,6 +82,6 @@ if (SSOHelper::loginAdminByEmailOrUsername($email, $username)) {
     exit();
 } else {
     $_SESSION['error'] = "No StatApp administrator account found for " . htmlspecialchars($email ?: $username);
-    header("Location: admin/login.php");
+    header("Location: index.php");
     exit();
 }

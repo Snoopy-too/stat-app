@@ -119,17 +119,34 @@ class SidebarHelper {
                     if ($clubLogo === null) {
                         $clubLogo = $cData['logo_image'];
                     }
-                    $clubTheme = $cData['theme'] ?? 'midnight';
+                    $clubTheme = !empty($cData['theme']) ? $cData['theme'] : 'midnight';
                 }
             } catch (Throwable $e) {}
+        }
+
+        if ($isDemoMode && empty($_GET['theme'])) {
+            if (!empty($_COOKIE['tfd_theme'])) {
+                $clubTheme = $_COOKIE['tfd_theme'];
+            } elseif (!empty($_COOKIE['stat-app-theme'])) {
+                $clubTheme = $_COOKIE['stat-app-theme'];
+            } elseif (!empty($_COOKIE['tfd-theme-preference'])) {
+                $clubTheme = $_COOKIE['tfd-theme-preference'];
+            }
         }
 
         if (!empty($_GET['theme'])) {
             $clubTheme = $_GET['theme'];
         }
 
+        if ($clubTheme === 'tabletop') {
+            $clubTheme = 'casino';
+        }
+        if ($clubTheme === 'dark') {
+            $clubTheme = 'arcade';
+        }
+
         if ($clubTheme) {
-            echo '<script>if(!document.documentElement.hasAttribute("data-theme-locked")){document.documentElement.setAttribute("data-club-theme", ' . json_encode($clubTheme) . ');}</script>';
+            echo '<script>if(!document.documentElement.hasAttribute("data-theme-locked")){document.documentElement.setAttribute("data-club-theme", ' . json_encode($clubTheme) . ');document.documentElement.setAttribute("data-theme", ' . json_encode($clubTheme) . ');}</script>';
         }
 
         $memberCount = null;
@@ -187,11 +204,11 @@ class SidebarHelper {
             $themeParam = !empty($_GET['theme']) ? '&theme=' . urlencode($_GET['theme']) : '';
             $clubQuery = $clubQuery ? $clubQuery . '&demo=1' . $themeParam : '?demo=1' . $themeParam;
         }
-        $displayName = !empty($clubName) ? $clubName : 'StatApp';
+        $navOffset = $isDemoMode ? '0px' : 'var(--tfd-navbar-height, 48px)';
+        $navH = $isDemoMode ? '0px' : '48px';
 
-        echo '<link rel="stylesheet" href="https://theflyingdutchmen.games/stylesheets/tfd-nav.css">';
         echo '<style>
-            :root{--sidebar-top-offset:var(--tfd-navbar-height, 48px);--tfd-nav-h:var(--tfd-navbar-height, 48px);--tfd-navbar-height:48px}
+            :root{--sidebar-top-offset:' . $navOffset . ';--tfd-nav-h:' . $navOffset . ';--tfd-navbar-height:' . $navH . '}
             .tfd-navbar{position:static!important}
             .sidebar{position:fixed!important;top:var(--sidebar-top-offset, 48px)!important;left:0!important;width:260px!important;height:calc(100vh - var(--sidebar-top-offset, 48px))!important;height:calc(100dvh - var(--sidebar-top-offset, 48px))!important;background:var(--sidebar-bg, var(--color-surface, #1e293b))!important;border-right:1px solid var(--sidebar-border, var(--color-border, #334155))!important;color:var(--color-text, #f8fafc)!important;display:flex!important;flex-direction:column!important;z-index:1100!important;overflow:hidden!important;transition:transform .3s ease, background .3s ease, border-color .3s ease!important;box-shadow:2px 0 8px rgba(0,0,0,.1)!important}
             .has-sidebar .header{margin-left:260px!important;width:calc(100% - 260px)!important;top:0!important}
@@ -237,7 +254,9 @@ class SidebarHelper {
             }
         </style>';
 
-        echo '<header id="tfd-navbar" class="tfd-navbar" data-active="stats"></header>';
+        if (!$isDemoMode) {
+            echo '<header id="tfd-navbar" class="tfd-navbar" data-active="stats"></header>';
+        }
         echo '<aside class="sidebar" style="position:fixed;top:var(--sidebar-top-offset, 48px);left:0;bottom:0;width:260px;height:calc(100vh - var(--sidebar-top-offset, 48px));height:calc(100dvh - var(--sidebar-top-offset, 48px));background:var(--sidebar-bg, var(--color-surface, #1e293b));border-right:1px solid var(--sidebar-border, var(--color-border, #334155));color:var(--color-text, #f8fafc);z-index:1050;display:flex;flex-direction:column;box-shadow:4px 0 12px rgba(0,0,0,0.15);transition:transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;">';
         echo '<button class="sidebar__close" aria-label="Close menu" style="display:none;position:absolute;top:1rem;right:1rem;width:40px;height:40px;background:var(--color-surface-muted, rgba(255,255,255,0.1));border:1px solid var(--color-border, rgba(255,255,255,0.2));border-radius:0.75rem;cursor:pointer;font-size:1.25rem;color:var(--color-heading, var(--color-text, #f1f5f9));align-items:center;justify-content:center;">&times;</button>';
 
@@ -317,7 +336,9 @@ class SidebarHelper {
         echo '</aside>';
 
         echo '<div class="sidebar-overlay" aria-hidden="true"></div>';
-        echo '<script src="https://theflyingdutchmen.games/javascripts/tfd-navbar.js"></script>';
+        if (!$isDemoMode) {
+            echo '<script src="https://theflyingdutchmen.games/javascripts/tfd-navbar.js"></script>';
+        }
         echo '<script src="js/i18n.js"></script>';
     }
 
@@ -347,9 +368,11 @@ class SidebarHelper {
             }
         }
 
-        echo '<link rel="stylesheet" href="https://theflyingdutchmen.games/stylesheets/tfd-nav.css">';
+        $navOffset = $isDemoMode ? '0px' : 'var(--tfd-navbar-height, 48px)';
+        $navH = $isDemoMode ? '0px' : '48px';
+
         echo '<style>
-            :root{--sidebar-top-offset:var(--tfd-navbar-height, 48px);--tfd-nav-h:var(--tfd-navbar-height, 48px);--tfd-navbar-height:48px}
+            :root{--sidebar-top-offset:' . $navOffset . ';--tfd-nav-h:' . $navOffset . ';--tfd-navbar-height:' . $navH . '}
             .tfd-navbar{position:static!important}
             .sidebar{position:fixed!important;top:var(--sidebar-top-offset, 48px)!important;left:0!important;width:260px!important;height:calc(100vh - var(--sidebar-top-offset, 48px))!important;height:calc(100dvh - var(--sidebar-top-offset, 48px))!important;background:var(--sidebar-bg, var(--color-surface, #1e293b))!important;border-right:1px solid var(--sidebar-border, var(--color-border, #334155))!important;color:var(--color-text, #f8fafc)!important;display:flex!important;flex-direction:column!important;z-index:1100!important;overflow:hidden!important;transition:transform .3s ease, background .3s ease, border-color .3s ease!important;box-shadow:2px 0 8px rgba(0,0,0,.1)!important}
             .has-sidebar .header{margin-left:260px!important;width:calc(100% - 260px)!important;top:0!important}
@@ -407,17 +430,24 @@ class SidebarHelper {
             $clubId = (int)$_SESSION['club_id'];
         }
 
-        if (isset($pdo) && isset($_SESSION['admin_id']) && !$isDemoMode) {
+        $isSuperAdmin = !empty($_SESSION['is_super_admin']);
+
+        if (isset($pdo) && (isset($_SESSION['admin_id']) || $isSuperAdmin) && !$isDemoMode) {
             try {
                 if ($clubId) {
-                    $stmt = $pdo->prepare("SELECT c.club_id, c.club_name, c.logo_image, c.theme FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE c.club_id = ? AND ca.admin_id = ?");
-                    $stmt->execute([$clubId, $_SESSION['admin_id']]);
+                    if ($isSuperAdmin) {
+                        $stmt = $pdo->prepare("SELECT club_id, club_name, logo_image, theme FROM clubs WHERE club_id = ?");
+                        $stmt->execute([$clubId]);
+                    } else {
+                        $stmt = $pdo->prepare("SELECT c.club_id, c.club_name, c.logo_image, c.theme FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE c.club_id = ? AND ca.admin_id = ?");
+                        $stmt->execute([$clubId, $_SESSION['admin_id']]);
+                    }
                     $activeClub = $stmt->fetch(PDO::FETCH_ASSOC);
                     if ($activeClub) {
                         $clubId = (int)$activeClub['club_id'];
                         if (empty($clubName)) $clubName = $activeClub['club_name'];
                         if ($clubLogo === null) $clubLogo = $activeClub['logo_image'];
-                        $clubTheme = $activeClub['theme'] ?? 'midnight';
+                        $clubTheme = !empty($activeClub['theme']) ? $activeClub['theme'] : 'midnight';
                     } else {
                         $clubId = null;
                         $clubName = null;
@@ -426,14 +456,19 @@ class SidebarHelper {
                 }
                 
                 if (!$clubId) {
-                    $stmt = $pdo->prepare("SELECT c.club_id, c.club_name, c.logo_image, c.theme FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ? ORDER BY ca.is_default DESC, c.club_name ASC LIMIT 1");
-                    $stmt->execute([$_SESSION['admin_id']]);
-                    $defaultClub = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($isSuperAdmin) {
+                        $stmt = $pdo->query("SELECT club_id, club_name, logo_image, theme FROM clubs ORDER BY club_name ASC LIMIT 1");
+                        $defaultClub = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
+                    } else {
+                        $stmt = $pdo->prepare("SELECT c.club_id, c.club_name, c.logo_image, c.theme FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ? ORDER BY ca.is_default DESC, c.club_name ASC LIMIT 1");
+                        $stmt->execute([$_SESSION['admin_id']]);
+                        $defaultClub = $stmt->fetch(PDO::FETCH_ASSOC);
+                    }
                     if ($defaultClub) {
                         $clubId = (int)$defaultClub['club_id'];
                         if (empty($clubName)) $clubName = $defaultClub['club_name'];
                         if ($clubLogo === null) $clubLogo = $defaultClub['logo_image'];
-                        $clubTheme = $defaultClub['theme'] ?? 'midnight';
+                        $clubTheme = !empty($defaultClub['theme']) ? $defaultClub['theme'] : 'midnight';
                     } else {
                         $clubId = null;
                         $clubName = null;
@@ -453,17 +488,34 @@ class SidebarHelper {
                     if ($clubLogo === null) {
                         $clubLogo = $cData['logo_image'];
                     }
-                    $clubTheme = $cData['theme'] ?? 'midnight';
+                    $clubTheme = !empty($cData['theme']) ? $cData['theme'] : 'midnight';
                 }
             } catch (Throwable $e) {}
+        }
+
+        if ($isDemoMode && empty($_GET['theme'])) {
+            if (!empty($_COOKIE['tfd_theme'])) {
+                $clubTheme = $_COOKIE['tfd_theme'];
+            } elseif (!empty($_COOKIE['stat-app-theme'])) {
+                $clubTheme = $_COOKIE['stat-app-theme'];
+            } elseif (!empty($_COOKIE['tfd-theme-preference'])) {
+                $clubTheme = $_COOKIE['tfd-theme-preference'];
+            }
         }
 
         if (!empty($_GET['theme'])) {
             $clubTheme = $_GET['theme'];
         }
 
+        if ($clubTheme === 'tabletop') {
+            $clubTheme = 'casino';
+        }
+        if ($clubTheme === 'dark') {
+            $clubTheme = 'arcade';
+        }
+
         if ($clubTheme) {
-            echo '<script>if(!document.documentElement.hasAttribute("data-theme-locked")){document.documentElement.setAttribute("data-club-theme", ' . json_encode($clubTheme) . ');}</script>';
+            echo '<script>if(!document.documentElement.hasAttribute("data-theme-locked")){document.documentElement.setAttribute("data-club-theme", ' . json_encode($clubTheme) . ');document.documentElement.setAttribute("data-theme", ' . json_encode($clubTheme) . ');}</script>';
         }
 
         $memberCount = null;
@@ -519,7 +571,9 @@ class SidebarHelper {
         }
         $displayName = !empty($clubName) ? $clubName : 'StatApp Admin';
 
-        echo '<header id="tfd-navbar" class="tfd-navbar" data-active="stats"></header>';
+        if (!$isDemoMode) {
+            echo '<header id="tfd-navbar" class="tfd-navbar" data-active="stats"></header>';
+        }
         echo '<aside class="sidebar" style="position:fixed;top:var(--sidebar-top-offset, 48px);left:0;bottom:0;width:260px;height:calc(100vh - var(--sidebar-top-offset, 48px));height:calc(100dvh - var(--sidebar-top-offset, 48px));background:var(--sidebar-bg, var(--color-surface, #1e293b));border-right:1px solid var(--sidebar-border, var(--color-border, #334155));color:var(--color-text, #f8fafc);z-index:1050;display:flex;flex-direction:column;box-shadow:4px 0 12px rgba(0,0,0,0.15);transition:transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;">';
         echo '<button class="sidebar__close" aria-label="Close menu" style="display:none;position:absolute;top:1rem;right:1rem;width:40px;height:40px;background:var(--color-surface-muted, rgba(255,255,255,0.1));border:1px solid var(--color-border, rgba(255,255,255,0.2));border-radius:0.75rem;cursor:pointer;font-size:1.25rem;color:var(--color-heading, var(--color-text, #f1f5f9));align-items:center;justify-content:center;">&times;</button>';
 
@@ -605,7 +659,9 @@ class SidebarHelper {
         echo '</aside>';
 
         echo '<div class="sidebar-overlay" aria-hidden="true"></div>';
-        echo '<script src="https://theflyingdutchmen.games/javascripts/tfd-navbar.js"></script>';
+        if (!$isDemoMode) {
+            echo '<script src="https://theflyingdutchmen.games/javascripts/tfd-navbar.js"></script>';
+        }
         echo '<script src="../js/i18n.js"></script>';
 
         if (!empty($_SESSION['is_impersonating'])) {

@@ -53,8 +53,8 @@ try {
             <?php echo htmlspecialchars($result['message']); ?>
         </div>
 
-        <a href="admin/login.php" class="btn">
-            <?php echo $result['success'] ? 'Proceed to Login' : 'Back to Login'; ?>
+        <a href="index.php" class="btn">
+            <?php echo $result['success'] ? 'Proceed to Home' : 'Back to Home'; ?>
         </a>
     </div>
     <script src="https://theflyingdutchmen.games/javascripts/tfd-navbar.js"></script>

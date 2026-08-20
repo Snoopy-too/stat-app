@@ -17,12 +17,12 @@ $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
 $game_id = isset($_GET['game_id']) ? (int)$_GET['game_id'] : 0;
 
 // Get game info
-$stmt = $pdo->prepare("SELECT g.*, c.club_name FROM games g JOIN clubs c ON g.club_id = c.club_id WHERE g.game_id = ? AND g.club_id = ?");
-$stmt->execute([$game_id, $club_id]);
+$stmt = $pdo->prepare("SELECT g.*, c.club_name FROM games g JOIN clubs c ON g.club_id = c.club_id JOIN club_admins ca ON c.club_id = ca.club_id WHERE g.game_id = ? AND g.club_id = ? AND ca.admin_id = ?");
+$stmt->execute([$game_id, $club_id, $_SESSION['admin_id']]);
 $game = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$game) {
-    header("Location: manage_games.php?club_id=" . $club_id);
+    header("Location: manage_games.php" . ($club_id ? "?club_id=" . $club_id : ""));
     exit();
 }
 

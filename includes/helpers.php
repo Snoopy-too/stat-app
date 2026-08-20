@@ -417,14 +417,59 @@ function verify_admin_password($password, $pdo) {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
-    if (empty($_SESSION['admin_id'])) {
+    $adminId = $_SESSION['admin_id'] ?? $_SESSION['user_id'] ?? null;
+    if (empty($adminId)) {
         return false;
     }
     try {
-        $stmt = $pdo->prepare("SELECT password_hash FROM admin_users WHERE admin_id = ?");
-        $stmt->execute([$_SESSION['admin_id']]);
-        $hash = $stmt->fetchColumn();
-        return $hash && password_verify($password, $hash);
+        $stmt = $pdo->prepare("SELECT admin_id, username, email, password_hash FROM admin_users WHERE admin_id = ?");
+        $stmt->execute([$adminId]);
+        $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$admin) {
+            return false;
+        }
+
+        // 1. Check local password hash
+        if (!empty($admin['password_hash']) && password_verify($password, $admin['password_hash'])) {
+            return true;
+        }
+
+        // 2. Fallback: Check central KRED.users table for SSO accounts
+        try {
+            $kredStmt = $pdo->prepare("SELECT password_hash FROM KRED.users WHERE (email = ? OR username = ?) AND password_hash != '' LIMIT 1");
+            $kredStmt->execute([$admin['email'] ?? '', $admin['username'] ?? '']);
+            $kredHash = $kredStmt->fetchColumn();
+            if ($kredHash && password_verify($password, $kredHash)) {
+                // Sync the hash to local admin_users table for future checks
+                try {
+                    $upd = $pdo->prepare("UPDATE admin_users SET password_hash = ? WHERE admin_id = ?");
+                    $upd->execute([$kredHash, $adminId]);
+                } catch (Throwable $e) {}
+                return true;
+            }
+        } catch (Throwable $e) {}
+
+        // 3. Fallback: If impersonating, also allow verifying with the original super admin password
+        if (!empty($_SESSION['is_impersonating']) && !empty($_SESSION['original_super_admin_id'])) {
+            $saStmt = $pdo->prepare("SELECT admin_id, username, email, password_hash FROM admin_users WHERE admin_id = ?");
+            $saStmt->execute([$_SESSION['original_super_admin_id']]);
+            $sa = $saStmt->fetch(PDO::FETCH_ASSOC);
+            if ($sa) {
+                if (!empty($sa['password_hash']) && password_verify($password, $sa['password_hash'])) {
+                    return true;
+                }
+                try {
+                    $kredStmt = $pdo->prepare("SELECT password_hash FROM KRED.users WHERE (email = ? OR username = ?) AND password_hash != '' LIMIT 1");
+                    $kredStmt->execute([$sa['email'] ?? '', $sa['username'] ?? '']);
+                    $kredHash = $kredStmt->fetchColumn();
+                    if ($kredHash && password_verify($password, $kredHash)) {
+                        return true;
+                    }
+                } catch (Throwable $e) {}
+            }
+        }
+
+        return false;
     } catch (Throwable $e) {
         return false;
     }

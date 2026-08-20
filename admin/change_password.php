@@ -28,11 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($new_password !== $confirm_password) {
         $_SESSION['error'] = "New passwords do not match";
     } else {
-        $stmt = $pdo->prepare("SELECT password_hash FROM admin_users WHERE admin_id = ?");
-        $stmt->execute([$_SESSION['admin_id']]);
-        $admin = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (password_verify($current_password, $admin['password_hash'])) {
+        if (verify_admin_password($current_password, $pdo)) {
             $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
 
             $stmt = $pdo->prepare("UPDATE admin_users SET password_hash = ? WHERE admin_id = ?");

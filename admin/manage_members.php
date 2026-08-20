@@ -23,21 +23,28 @@ if (isset($_SESSION['admin_id'])) {
             FROM clubs c
             JOIN club_admins ca ON c.club_id = ca.club_id
             WHERE ca.admin_id = ?
-            ORDER BY c.club_name ASC
+            ORDER BY ca.is_default DESC, c.club_name ASC
         ");
         $stmt->execute([$_SESSION['admin_id']]);
         $admin_clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (Exception $e) {}
 }
 
-if (!$club_id && !empty($_SESSION['current_club_id'])) {
-    $club_id = (int)$_SESSION['current_club_id'];
+if (!$demo && empty($admin_clubs)) {
+    unset($_SESSION['current_club_id'], $_SESSION['club_id']);
+    header("Location: account.php");
+    exit();
 }
-if (!$club_id && !empty($_SESSION['club_id'])) {
-    $club_id = (int)$_SESSION['club_id'];
-}
-if (!$club_id && !empty($admin_clubs)) {
-    $club_id = (int)$admin_clubs[0]['club_id'];
+
+$user_club_ids = array_column($admin_clubs, 'club_id');
+if (!$club_id || !in_array($club_id, $user_club_ids)) {
+    if (!empty($_SESSION['current_club_id']) && in_array((int)$_SESSION['current_club_id'], $user_club_ids)) {
+        $club_id = (int)$_SESSION['current_club_id'];
+    } elseif (!empty($_SESSION['club_id']) && in_array((int)$_SESSION['club_id'], $user_club_ids)) {
+        $club_id = (int)$_SESSION['club_id'];
+    } elseif (!empty($admin_clubs)) {
+        $club_id = (int)$admin_clubs[0]['club_id'];
+    }
 }
 if ($club_id > 0) {
     $_SESSION['current_club_id'] = $club_id;
@@ -45,7 +52,7 @@ if ($club_id > 0) {
 }
 
 $club = null;
-if ($club_id) {
+if ($club_id && !$demo) {
     try {
         $stmt = $pdo->prepare("SELECT * FROM clubs WHERE club_id = ?");
         $stmt->execute([$club_id]);
@@ -53,7 +60,7 @@ if ($club_id) {
     } catch (Exception $e) {}
 }
 
-if ($demo || !$club) {
+if ($demo) {
     $club_id = 1;
     $demoClub = function_exists('get_demo_data') ? get_demo_data('club') : [];
     $club = ['club_id' => 1, 'club_name' => $demoClub['club_name'] ?? 'Meeple Mosh'];

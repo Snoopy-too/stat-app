@@ -96,12 +96,12 @@ class SSOHelper {
         try {
             $admin = null;
             if (!empty($email)) {
-                $stmt = $pdo->prepare("SELECT admin_id, username, admin_type, is_deactivated FROM statapp.admin_users WHERE email = ?");
+                $stmt = $pdo->prepare("SELECT admin_id, username, admin_type, is_deactivated, default_club_id FROM statapp.admin_users WHERE email = ?");
                 $stmt->execute([$email]);
                 $admin = $stmt->fetch();
             }
             if (!$admin && !empty($username)) {
-                $stmt = $pdo->prepare("SELECT admin_id, username, admin_type, is_deactivated FROM statapp.admin_users WHERE username = ?");
+                $stmt = $pdo->prepare("SELECT admin_id, username, admin_type, is_deactivated, default_club_id FROM statapp.admin_users WHERE username = ?");
                 $stmt->execute([$username]);
                 $admin = $stmt->fetch();
             }
@@ -109,10 +109,10 @@ class SSOHelper {
             if (!$admin && (!empty($email) || !empty($username))) {
                 $insUser = !empty($username) ? $username : explode('@', $email)[0];
                 $insEmail = !empty($email) ? $email : $insUser . '@theflyingdutchmen.games';
-                $insStmt = $pdo->prepare("INSERT INTO statapp.admin_users (username, email, password_hash, admin_type) VALUES (?, ?, '', 'multi_club')");
+                $insStmt = $pdo->prepare("INSERT INTO statapp.admin_users (username, email, password_hash, admin_type, is_super_admin, is_email_verified, account_status) VALUES (?, ?, '', 'multi_club', 1, 1, 'active')");
                 $insStmt->execute([$insUser, $insEmail]);
                 $newId = $pdo->lastInsertId();
-                $stmt = $pdo->prepare("SELECT admin_id, username, admin_type, is_deactivated FROM statapp.admin_users WHERE admin_id = ?");
+                $stmt = $pdo->prepare("SELECT admin_id, username, admin_type, is_deactivated, default_club_id FROM statapp.admin_users WHERE admin_id = ?");
                 $stmt->execute([$newId]);
                 $admin = $stmt->fetch();
             }

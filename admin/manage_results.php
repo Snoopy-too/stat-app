@@ -15,24 +15,31 @@ $security = new SecurityUtils($pdo);
 $csrf_token = $security->generateCSRFToken();
 
 $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
-if (!$club_id && !empty($_SESSION['current_club_id'])) {
-    $club_id = (int)$_SESSION['current_club_id'];
-}
-if (!$club_id && !empty($_SESSION['club_id'])) {
-    $club_id = (int)$_SESSION['club_id'];
+$user_clubs = [];
+
+if (isset($_SESSION['admin_id'])) {
+    try {
+        $stmt = $pdo->prepare("SELECT c.club_id, c.club_name FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ? ORDER BY ca.is_default DESC, c.club_name ASC");
+        $stmt->execute([$_SESSION['admin_id']]);
+        $user_clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {}
 }
 
-if (!$club_id && isset($_SESSION['admin_id'])) {
-    try {
-        $stmt = $pdo->prepare("SELECT c.club_id FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ? ORDER BY ca.is_default DESC, c.club_name ASC LIMIT 1");
-        $stmt->execute([$_SESSION['admin_id']]);
-        $club_id = (int)$stmt->fetchColumn();
-    } catch (Throwable $e) {}
+if (!$demo && empty($user_clubs)) {
+    unset($_SESSION['current_club_id'], $_SESSION['club_id']);
+    header("Location: account.php");
+    exit();
 }
-if (!$club_id) {
-    try {
-        $club_id = (int)$pdo->query("SELECT club_id FROM clubs ORDER BY club_id ASC LIMIT 1")->fetchColumn();
-    } catch (Throwable $e) {}
+
+$user_club_ids = array_column($user_clubs, 'club_id');
+if (!$club_id || !in_array($club_id, $user_club_ids)) {
+    if (!empty($_SESSION['current_club_id']) && in_array((int)$_SESSION['current_club_id'], $user_club_ids)) {
+        $club_id = (int)$_SESSION['current_club_id'];
+    } elseif (!empty($_SESSION['club_id']) && in_array((int)$_SESSION['club_id'], $user_club_ids)) {
+        $club_id = (int)$_SESSION['club_id'];
+    } elseif (!empty($user_clubs)) {
+        $club_id = (int)$user_clubs[0]['club_id'];
+    }
 }
 if ($club_id > 0) {
     $_SESSION['current_club_id'] = $club_id;

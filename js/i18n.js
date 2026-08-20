@@ -133,6 +133,7 @@
         deleteChampion: 'Delete Champion',
         selectMember: 'Select Member',
         clubName: 'Club Name:',
+        clubNameLabel: 'Club Name',
         clubLogo: 'Club Logo:',
         removeCurrentLogo: 'Remove current logo',
         uploadLogoText: 'Click to upload or drag & drop club logo',
@@ -217,6 +218,7 @@
       },
       account: {
         yourClubs: 'Your Clubs',
+        noClubsYet: 'You don\'t have any clubs yet. Click "Add a Club" above to create your first club.',
         createNewClub: 'Create New Club',
         themeFor: 'Theme for',
         activeTheme: 'Active Theme',
@@ -499,6 +501,7 @@
         deleteChampion: 'Eliminar Campeón',
         selectMember: 'Seleccionar Miembro',
         clubName: 'Nombre del Club:',
+        clubNameLabel: 'Nombre del Club',
         clubLogo: 'Logotipo del Club:',
         removeCurrentLogo: 'Eliminar logotipo actual',
         uploadLogoText: 'Haz clic para subir o arrastra y suelta el logotipo',
@@ -583,6 +586,7 @@
       },
       account: {
         yourClubs: 'Tus Clubes',
+        noClubsYet: 'Aún no tienes ningún club. Haz clic en "Añadir un Club" arriba para crear tu primer club.',
         createNewClub: 'Crear Nuevo Club',
         themeFor: 'Tema para',
         activeTheme: 'Tema Activo',
@@ -865,6 +869,7 @@
         deleteChampion: 'チャンピオンを削除',
         selectMember: 'メンバーを選択',
         clubName: 'クラブ名:',
+        clubNameLabel: 'クラブ名',
         clubLogo: 'クラブロゴ:',
         removeCurrentLogo: '現在のロゴを削除',
         uploadLogoText: 'クリックして選択、またはロゴをドラッグ＆ドロップ',
@@ -948,6 +953,7 @@
       },
       account: {
         yourClubs: '所属クラブ',
+        noClubsYet: '所属しているクラブはまだありません。上の「クラブを追加」をクリックして最初のクラブを作成してください。',
         createNewClub: '新規クラブ作成',
         themeFor: 'テーマ設定:',
         activeTheme: '使用中のテーマ',

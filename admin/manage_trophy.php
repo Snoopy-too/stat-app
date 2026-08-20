@@ -89,12 +89,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['trophy_image'])) {
 }
 
 // Get current club info
-$stmt = $pdo->prepare('SELECT club_name, champ_image FROM clubs WHERE club_id = ?');
-$stmt->execute([$club_id]);
+$stmt = $pdo->prepare('SELECT c.club_name, c.champ_image FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE c.club_id = ? AND ca.admin_id = ?');
+$stmt->execute([$club_id, $_SESSION['admin_id']]);
 $club = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$club) {
-    header('Location: index.php');
+    header('Location: account.php');
     exit();
 }
 

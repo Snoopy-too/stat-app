@@ -92,11 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     } elseif ($action === 'delete') {
         $password = $_POST['password'] ?? '';
-        $stmt = $pdo->prepare("SELECT password_hash FROM admin_users WHERE admin_id = ?");
-        $stmt->execute([$_SESSION['admin_id']]);
-        $admin_user = $stmt->fetch();
-
-        if (!$admin_user || !password_verify($password, $admin_user['password_hash'])) {
+        if (!verify_admin_password($password, $pdo)) {
             $_SESSION['error'] = "Incorrect password. Deletion cancelled.";
             header("Location: edit_club.php?id=" . $club_id . $from_param);
             exit();

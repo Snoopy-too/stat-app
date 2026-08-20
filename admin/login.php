@@ -16,11 +16,7 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
     exit();
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($_SESSION['admin_id'])) {
-    $redirectUrl = "https://theflyingdutchmen.games/oauth/authorize?response_type=code&client_id=stats-app-756c55ba&redirect_uri=" . urlencode("https://stats.theflyingdutchmen.games/auth_callback.php");
-    header("Location: " . $redirectUrl);
-    exit();
-}
+
 
 ensure_club_admins_is_default_column_exists($pdo);
 $security = new SecurityUtils($pdo);
@@ -37,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['error'] = "Too many failed login attempts. Please try again in 15 minutes.";
     } else {
         try {
-            $stmt = $pdo->prepare("SELECT admin_id, username, password_hash, is_deactivated, admin_type FROM admin_users WHERE username = ? OR email = ?");
+            $stmt = $pdo->prepare("SELECT admin_id, username, email, password_hash, is_deactivated, admin_type FROM admin_users WHERE username = ? OR email = ?");
             $stmt->execute([$username, $username]);
             $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -46,7 +42,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $security->logLoginAttempt($username, $ipAddress, false);
                     $_SESSION['error'] = "Your account has been deactivated. Please contact a Super Administrator.";
                 } else {
-                    if (password_verify($password, $admin['password_hash'])) {
+                    $isPasswordValid = false;
+                    if (!empty($admin['password_hash']) && password_verify($password, $admin['password_hash'])) {
+                        $isPasswordValid = true;
+                    } else {
+                        try {
+                            $kStmt = $pdo->prepare("SELECT password_hash FROM KRED.users WHERE (email = ? OR username = ?) AND password_hash != '' LIMIT 1");
+                            $kStmt->execute([$admin['email'] ?? $username, $admin['username'] ?? $username]);
+                            $kHash = $kStmt->fetchColumn();
+                            if ($kHash && password_verify($password, $kHash)) {
+                                $isPasswordValid = true;
+                                try {
+                                    $pdo->prepare("UPDATE admin_users SET password_hash = ? WHERE admin_id = ?")->execute([$kHash, $admin['admin_id']]);
+                                } catch (Throwable $e) {}
+                            }
+                        } catch (Throwable $e) {}
+                    }
+
+                    if ($isPasswordValid) {
                         // Log successful login
                         $security->logLoginAttempt($username, $ipAddress, true);
 
@@ -220,7 +233,11 @@ require_once '../includes/templates/header.php';
                         <span style="padding: 0 10px; color: var(--text-muted, #8b949e); font-size: 0.85rem;" data-i18n="common.or">or</span>
                         <hr style="flex: 1; border: 0; border-top: 1px solid var(--card-border, rgba(255,255,255,0.15));">
                     </div>
-                    <a href="https://theflyingdutchmen.games/oauth/authorize?response_type=code&client_id=stats-app-756c55ba&response_type=code&redirect_uri=https://stats.theflyingdutchmen.games/auth_callback.php&scope=openid%20profile%20email" class="btn btn--secondary btn--block" style="width: 100%; justify-content: center; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+                    <?php
+                    $statsHost = $_SERVER['HTTP_HOST'] ?? 'stats.theflyingdutchmen.games';
+                    $tfdDomain = (strpos($statsHost, 'theflyingdutchmen.com') !== false) ? 'theflyingdutchmen.com' : 'theflyingdutchmen.games';
+                    ?>
+                    <a href="https://<?php echo $tfdDomain; ?>/oauth/authorize?response_type=code&client_id=stats-app-756c55ba&redirect_uri=<?php echo urlencode('https://stats.' . $tfdDomain . '/auth_callback.php'); ?>&scope=openid%20profile%20email" class="btn btn--secondary btn--block" style="width: 100%; justify-content: center; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
                         <span>🎮</span> <span data-i18n="auth.signInWithTFD">Sign in with The Flying Dutchmen</span>
                     </a>
                 </div>

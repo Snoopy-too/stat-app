@@ -103,22 +103,7 @@ foreach ($caStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
     $clubsByAdmin[(int)$row['admin_id']][] = $row;
 }
 
-// Build a map: admin username/email → failed attempt count in the current window
 $lockoutCounts = [];
-try {
-    $lockoutStmt = $pdo->prepare(
-        "SELECT email, COUNT(*) as fail_count FROM login_attempts
-         WHERE is_successful = 0
-         AND attempt_time > DATE_SUB(NOW(), INTERVAL 15 MINUTE)
-         GROUP BY email"
-    );
-    $lockoutStmt->execute();
-    foreach ($lockoutStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-        $lockoutCounts[$row['email']] = (int)$row['fail_count'];
-    }
-} catch (PDOException $e) {
-    // Table may not exist yet
-}
 
 // Flash messages
 $sa_error   = $_SESSION['sa_error']   ?? '';

@@ -34,11 +34,12 @@ if ($demo) {
         exit();
     }
 
-    $stmt = $pdo->prepare("SELECT * FROM clubs WHERE club_id = ?");
-    $stmt->execute([$club_id]);
+    $stmt = $pdo->prepare("SELECT c.* FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE c.club_id = ? AND ca.admin_id = ?");
+    $stmt->execute([$club_id, $_SESSION['admin_id']]);
     $club = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$club) {
+        unset($_SESSION['current_club_id'], $_SESSION['club_id']);
         $_SESSION['error'] = "Club not found or access denied.";
         header("Location: account.php");
         exit();

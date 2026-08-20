@@ -128,11 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'delete' && !empty($_POST['club_id']) && !empty($_POST['password'])) {
-        $stmt = $pdo->prepare("SELECT password_hash FROM admin_users WHERE admin_id = ?");
-        $stmt->execute([$_SESSION['admin_id']]);
-        $admin_user = $stmt->fetch();
-        
-        if (!$admin_user || !password_verify($_POST['password'], $admin_user['password_hash'])) {
+        if (!verify_admin_password($_POST['password'], $pdo)) {
             $_SESSION['error'] = "Incorrect password. Deletion cancelled.";
         } else {
             $stmt = $pdo->prepare("SELECT COUNT(*) FROM club_admins WHERE club_id = ?");
@@ -238,15 +234,18 @@ $admin_type = $_SESSION['admin_type'] ?? 'multi_club';
 $club_limit = ($admin_type === 'single_club') ? 1 : 5;
 
 $active_club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : (isset($_SESSION['current_club_id']) ? (int)$_SESSION['current_club_id'] : (isset($_SESSION['club_id']) ? (int)$_SESSION['club_id'] : 0));
-if (!$active_club_id && !empty($clubs)) {
-    $active_club_id = (int)$clubs[0]['club_id'];
+$user_club_ids = array_column($clubs, 'club_id');
+if (!in_array($active_club_id, $user_club_ids)) {
+    $active_club_id = !empty($clubs) ? (int)$clubs[0]['club_id'] : 0;
 }
 if ($active_club_id > 0) {
     $_SESSION['current_club_id'] = $active_club_id;
     $_SESSION['club_id'] = $active_club_id;
+} else {
+    unset($_SESSION['current_club_id'], $_SESSION['club_id']);
 }
 
-$active_club_name = 'Your Club';
+$active_club_name = !empty($clubs) ? 'Your Club' : '';
 $active_club_theme = 'midnight';
 
 if (!empty($clubs)) {
@@ -366,6 +365,13 @@ $csrf_token = $security->generateCSRFToken();
                         </tr>
                     </thead>
                     <tbody>
+                        <?php if (empty($clubs)): ?>
+                            <tr>
+                                <td colspan="8" style="text-align:center; padding:2rem; color:var(--color-text-muted);" data-i18n="account.noClubsYet">
+                                    You don't have any clubs yet. Click "Add a Club" above to create your first club.
+                                </td>
+                            </tr>
+                        <?php else: ?>
                         <?php foreach ($clubs as $club): ?>
                             <?php 
                             $is_active = ($club['club_id'] == $active_club_id);
@@ -436,6 +442,7 @@ $csrf_token = $security->generateCSRFToken();
                                 </td>
                             </tr>
                         <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                     <?php if (!empty($clubs)): ?>
                     <tfoot>
@@ -455,6 +462,7 @@ $csrf_token = $security->generateCSRFToken();
             </div>
         </div>
 
+        <?php if (!empty($clubs)): ?>
         <!-- Theme for [Club Name] Card -->
         <div class="card">
             <div class="card-header">
@@ -501,6 +509,7 @@ $csrf_token = $security->generateCSRFToken();
                 <?php endforeach; ?>
             </div>
         </div>
+        <?php endif; ?>
 
         <!-- Account Information -->
         <div class="card card--flat">
@@ -568,6 +577,7 @@ $csrf_token = $security->generateCSRFToken();
                     </div>
                 </div>
 
+                <?php if (!empty($clubs)): ?>
                 <!-- Active Context Group -->
                 <div style="background: var(--color-surface-muted); padding: 1.1rem; border-radius: var(--radius-md, 0.5rem); border: 1px solid var(--color-border);">
                     <div style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-primary); margin-bottom: 0.75rem;" data-i18n="account.activeContext">🎯 Active Context</div>
@@ -602,6 +612,7 @@ $csrf_token = $security->generateCSRFToken();
                         </div>
                     </div>
                 </div>
+                <?php endif; ?>
 
             </div>
         </div>

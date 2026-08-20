@@ -197,8 +197,6 @@ try {
         'team_game_results',
         'cooperative_game_results',
         'cooperative_result_participants',
-        'login_attempts',
-        'registration_attempts',
         'csrf_tokens'
     ];
 

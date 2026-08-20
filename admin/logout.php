@@ -13,5 +13,7 @@ if (isset($_COOKIE[session_name()])) {
 session_destroy();
 
 // Redirect to central home site
-header('Location: https://theflyingdutchmen.games/logout');
+$host = $_SERVER['HTTP_HOST'] ?? 'stats.theflyingdutchmen.games';
+$domain = (strpos($host, 'theflyingdutchmen.com') !== false) ? 'theflyingdutchmen.com' : 'theflyingdutchmen.games';
+header("Location: https://{$domain}/logout");
 exit();

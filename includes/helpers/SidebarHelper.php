@@ -168,18 +168,18 @@ class SidebarHelper {
             } catch (Throwable $e) {}
         }
 
-        if (($isDemoMode || $memberCount === null || $memberCount === 0) && function_exists('get_demo_data')) {
+        if ($isDemoMode && function_exists('get_demo_data')) {
             $demoMembers = get_demo_data('members');
             $demoTeams = get_demo_data('teams');
             $demoChampions = get_demo_data('champions');
             $demoGames = get_demo_data('games');
             $demoResults = get_demo_data('results');
 
-            if (($memberCount === null || $memberCount === 0) && is_array($demoMembers)) $memberCount = count($demoMembers);
-            if (($teamCount === null || $teamCount === 0) && is_array($demoTeams)) $teamCount = count($demoTeams);
-            if (($championCount === null || $championCount === 0) && is_array($demoChampions)) $championCount = count($demoChampions);
-            if (($gameCount === null || $gameCount === 0) && is_array($demoGames)) $gameCount = count($demoGames);
-            if (($resultCount === null || $resultCount === 0) && is_array($demoResults)) $resultCount = count($demoResults);
+            if ($memberCount === null && is_array($demoMembers)) $memberCount = count($demoMembers);
+            if ($teamCount === null && is_array($demoTeams)) $teamCount = count($demoTeams);
+            if ($championCount === null && is_array($demoChampions)) $championCount = count($demoChampions);
+            if ($gameCount === null && is_array($demoGames)) $gameCount = count($demoGames);
+            if ($resultCount === null && is_array($demoResults)) $resultCount = count($demoResults);
         }
 
         $clubQuery = $clubId ? '?id=' . (int)$clubId : '';
@@ -407,21 +407,38 @@ class SidebarHelper {
             $clubId = (int)$_SESSION['club_id'];
         }
 
-        // Auto-fetch default club if not provided to ensure consistent active context
-        if (!$clubId && isset($pdo) && isset($_SESSION['admin_id'])) {
+        if (isset($pdo) && isset($_SESSION['admin_id']) && !$isDemoMode) {
             try {
-                $stmt = $pdo->prepare("SELECT c.club_id, c.club_name, c.logo_image, c.theme FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ? ORDER BY ca.is_default DESC, c.club_name ASC LIMIT 1");
-                $stmt->execute([$_SESSION['admin_id']]);
-                $defaultClub = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($defaultClub) {
-                    $clubId = (int)$defaultClub['club_id'];
-                    if (!$clubName) {
-                        $clubName = $defaultClub['club_name'];
+                if ($clubId) {
+                    $stmt = $pdo->prepare("SELECT c.club_id, c.club_name, c.logo_image, c.theme FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE c.club_id = ? AND ca.admin_id = ?");
+                    $stmt->execute([$clubId, $_SESSION['admin_id']]);
+                    $activeClub = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($activeClub) {
+                        $clubId = (int)$activeClub['club_id'];
+                        if (empty($clubName)) $clubName = $activeClub['club_name'];
+                        if ($clubLogo === null) $clubLogo = $activeClub['logo_image'];
+                        $clubTheme = $activeClub['theme'] ?? 'midnight';
+                    } else {
+                        $clubId = null;
+                        $clubName = null;
+                        $clubLogo = null;
                     }
-                    if ($clubLogo === null) {
-                        $clubLogo = $defaultClub['logo_image'];
+                }
+                
+                if (!$clubId) {
+                    $stmt = $pdo->prepare("SELECT c.club_id, c.club_name, c.logo_image, c.theme FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ? ORDER BY ca.is_default DESC, c.club_name ASC LIMIT 1");
+                    $stmt->execute([$_SESSION['admin_id']]);
+                    $defaultClub = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($defaultClub) {
+                        $clubId = (int)$defaultClub['club_id'];
+                        if (empty($clubName)) $clubName = $defaultClub['club_name'];
+                        if ($clubLogo === null) $clubLogo = $defaultClub['logo_image'];
+                        $clubTheme = $defaultClub['theme'] ?? 'midnight';
+                    } else {
+                        $clubId = null;
+                        $clubName = null;
+                        $clubLogo = null;
                     }
-                    $clubTheme = $defaultClub['theme'] ?? 'midnight';
                 }
             } catch (Throwable $e) {}
         } elseif ($clubId && isset($pdo)) {
@@ -481,18 +498,18 @@ class SidebarHelper {
             } catch (Throwable $e) {}
         }
 
-        if (($isDemoMode || $memberCount === null || $memberCount === 0) && function_exists('get_demo_data')) {
+        if ($isDemoMode && function_exists('get_demo_data')) {
             $demoMembers = get_demo_data('members');
             $demoTeams = get_demo_data('teams');
             $demoChampions = get_demo_data('champions');
             $demoGames = get_demo_data('games');
             $demoResults = get_demo_data('results');
 
-            if (($memberCount === null || $memberCount === 0) && is_array($demoMembers)) $memberCount = count($demoMembers);
-            if (($teamCount === null || $teamCount === 0) && is_array($demoTeams)) $teamCount = count($demoTeams);
-            if (($championCount === null || $championCount === 0) && is_array($demoChampions)) $championCount = count($demoChampions);
-            if (($gameCount === null || $gameCount === 0) && is_array($demoGames)) $gameCount = count($demoGames);
-            if (($resultCount === null || $resultCount === 0) && is_array($demoResults)) $resultCount = count($demoResults);
+            if ($memberCount === null && is_array($demoMembers)) $memberCount = count($demoMembers);
+            if ($teamCount === null && is_array($demoTeams)) $teamCount = count($demoTeams);
+            if ($championCount === null && is_array($demoChampions)) $championCount = count($demoChampions);
+            if ($gameCount === null && is_array($demoGames)) $gameCount = count($demoGames);
+            if ($resultCount === null && is_array($demoResults)) $resultCount = count($demoResults);
         }
 
         $clubQuery = $clubId ? '?club_id=' . (int)$clubId : '';

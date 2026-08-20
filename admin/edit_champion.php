@@ -15,8 +15,8 @@ $champion_id = isset($_GET['champion_id']) ? (int)$_GET['champion_id'] : (isset(
 $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
 
 // Fetch champion details
-$stmt = $pdo->prepare("SELECT c.*, m.member_name, m.nickname, m.club_id as member_club_id FROM champions c JOIN members m ON c.member_id = m.member_id WHERE c.ID = ?");
-$stmt->execute([$champion_id]);
+$stmt = $pdo->prepare("SELECT c.*, m.member_name, m.nickname, m.club_id as member_club_id FROM champions c JOIN members m ON c.member_id = m.member_id JOIN club_admins ca ON c.club_id = ca.club_id WHERE c.ID = ? AND ca.admin_id = ?");
+$stmt->execute([$champion_id, $_SESSION['admin_id']]);
 $champion = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$champion) {

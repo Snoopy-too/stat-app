@@ -14,8 +14,8 @@ $security = new SecurityUtils($pdo);
 $team_id = isset($_GET['team_id']) ? (int)$_GET['team_id'] : (isset($_POST['team_id']) ? (int)$_POST['team_id'] : 0);
 
 // Get team info
-$stmt = $pdo->prepare("SELECT * FROM teams WHERE team_id = ?");
-$stmt->execute([$team_id]);
+$stmt = $pdo->prepare("SELECT t.* FROM teams t JOIN club_admins ca ON t.club_id = ca.club_id WHERE t.team_id = ? AND ca.admin_id = ?");
+$stmt->execute([$team_id, $_SESSION['admin_id']]);
 $team = $stmt->fetch(PDO::FETCH_ASSOC);
 
 $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : (isset($_POST['club_id']) ? (int)$_POST['club_id'] : (int)($team['club_id'] ?? 0));

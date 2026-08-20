@@ -146,7 +146,7 @@ class SidebarHelper {
         }
 
         if ($clubTheme) {
-            echo '<script>if(!document.documentElement.hasAttribute("data-theme-locked")){document.documentElement.setAttribute("data-club-theme", ' . json_encode($clubTheme) . ');document.documentElement.setAttribute("data-theme", ' . json_encode($clubTheme) . ');}</script>';
+            echo '<script>if(!document.documentElement.hasAttribute("data-theme-locked")){document.documentElement.setAttribute("data-club-theme", ' . json_encode($clubTheme) . ');}</script>';
         }
 
         $memberCount = null;
@@ -515,7 +515,7 @@ class SidebarHelper {
         }
 
         if ($clubTheme) {
-            echo '<script>if(!document.documentElement.hasAttribute("data-theme-locked")){document.documentElement.setAttribute("data-club-theme", ' . json_encode($clubTheme) . ');document.documentElement.setAttribute("data-theme", ' . json_encode($clubTheme) . ');}</script>';
+            echo '<script>if(!document.documentElement.hasAttribute("data-theme-locked")){document.documentElement.setAttribute("data-club-theme", ' . json_encode($clubTheme) . ');}</script>';
         }
 
         $memberCount = null;

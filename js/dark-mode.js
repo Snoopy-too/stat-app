@@ -46,7 +46,7 @@ class DarkModeHandler {
      * Apply theme on page load based on preference and system settings
      */
     applyInitialTheme() {
-        if (this.html.hasAttribute('data-theme-locked')) return;
+        if (this.html.hasAttribute('data-theme-locked') || this.html.hasAttribute('data-club-theme')) return;
         const savedTheme = this.getSavedTheme();
 
         if (savedTheme && savedTheme !== this.THEME_SYSTEM) {

@@ -1,13 +1,17 @@
 /* 2. Casino (Felt Green Backgrounds & Amber Gold) */
 :root[data-club-theme="casino"],
-:root[data-theme="casino"],
 html[data-club-theme="casino"],
-html[data-theme="casino"],
 html:root[data-club-theme="casino"],
-html:root[data-theme="casino"],
 html[data-theme][data-club-theme="casino"],
+:root[data-theme][data-club-theme="casino"],
 body[data-club-theme="casino"],
-body[data-theme="casino"] {
+body[data-theme][data-club-theme="casino"],
+:root[data-theme="casino"]:not([data-club-theme]),
+html[data-theme="casino"]:not([data-club-theme]),
+body[data-theme="casino"]:not([data-club-theme]),
+:root[data-theme="tabletop"]:not([data-club-theme]),
+html[data-theme="tabletop"]:not([data-club-theme]),
+body[data-theme="tabletop"]:not([data-club-theme]) {
     --color-background: #062c1b;
     --color-surface: #0d3a25;
     --color-surface-muted: #144a30;

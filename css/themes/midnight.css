@@ -1,13 +1,14 @@
 /* 1. Midnight Marauder (Warm Leather & Dark Wood Brown) */
 :root[data-club-theme="midnight"],
-:root[data-theme="midnight"],
 html[data-club-theme="midnight"],
-html[data-theme="midnight"],
 html:root[data-club-theme="midnight"],
-html:root[data-theme="midnight"],
 html[data-theme][data-club-theme="midnight"],
+:root[data-theme][data-club-theme="midnight"],
 body[data-club-theme="midnight"],
-body[data-theme="midnight"] {
+body[data-theme][data-club-theme="midnight"],
+:root[data-theme="midnight"]:not([data-club-theme]),
+html[data-theme="midnight"]:not([data-club-theme]),
+body[data-theme="midnight"]:not([data-club-theme]) {
     --color-background: #140d07;
     --color-surface: #1e140c;
     --color-surface-muted: #2a1d12;

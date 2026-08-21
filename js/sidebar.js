@@ -23,41 +23,69 @@
             });
         }
 
-        var tfdNav = document.getElementById('tfd-navbar') || document.querySelector('.tfd-navbar');
-        function updateScrollOffset() {
-            var offset = 0;
-            if (tfdNav) {
-                var rect = tfdNav.getBoundingClientRect();
-                offset = Math.max(0, Math.round(rect.bottom));
-            }
-            document.documentElement.style.setProperty('--sidebar-top-offset', offset + 'px');
-        }
-        window.addEventListener('scroll', updateScrollOffset, { passive: true });
-        window.addEventListener('resize', updateScrollOffset, { passive: true });
-        updateScrollOffset();
+        var lastScrollY = window.scrollY || window.pageYOffset || 0;
 
-        var scrollY = 0;
+        function onScroll() {
+            if (sidebar.classList.contains('sidebar--open')) {
+                return;
+            }
+
+            var currentScrollY = Math.max(0, window.scrollY || window.pageYOffset || 0);
+            var maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+            if (currentScrollY > maxScroll) {
+                currentScrollY = maxScroll;
+            }
+
+            // Always show toggle button near the top of the page
+            if (currentScrollY <= 10) {
+                toggleButtons.forEach(function(btn) {
+                    btn.classList.remove('sidebar-toggle--hidden');
+                });
+                lastScrollY = currentScrollY;
+                return;
+            }
+
+            var diff = currentScrollY - lastScrollY;
+            if (Math.abs(diff) < 6) {
+                return;
+            }
+
+            if (diff > 0 && currentScrollY > 60) {
+                // Scrolling down past header -> hide toggle
+                toggleButtons.forEach(function(btn) {
+                    btn.classList.add('sidebar-toggle--hidden');
+                });
+            } else if (diff < 0) {
+                // Scrolling up -> reveal toggle
+                toggleButtons.forEach(function(btn) {
+                    btn.classList.remove('sidebar-toggle--hidden');
+                });
+            }
+
+            lastScrollY = currentScrollY;
+        }
+
+        window.addEventListener('scroll', onScroll, { passive: true });
 
         function closeSidebar() {
             if (!sidebar.classList.contains('sidebar--open')) return;
             sidebar.classList.remove('sidebar--open');
             if (overlay) overlay.classList.remove('sidebar-overlay--visible');
+            document.documentElement.classList.remove('sidebar-open');
             document.body.classList.remove('sidebar-open');
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.width = '';
-            window.scrollTo(0, scrollY);
+            lastScrollY = window.scrollY || window.pageYOffset || 0;
         }
 
         function openSidebar() {
             if (sidebar.classList.contains('sidebar--open')) return;
-            scrollY = window.scrollY || window.pageYOffset || 0;
+            lastScrollY = window.scrollY || window.pageYOffset || 0;
+            toggleButtons.forEach(function(btn) {
+                btn.classList.remove('sidebar-toggle--hidden');
+            });
             sidebar.classList.add('sidebar--open');
             if (overlay) overlay.classList.add('sidebar-overlay--visible');
+            document.documentElement.classList.add('sidebar-open');
             document.body.classList.add('sidebar-open');
-            document.body.style.position = 'fixed';
-            document.body.style.top = '-' + scrollY + 'px';
-            document.body.style.width = '100%';
         }
 
         function toggleSidebar() {

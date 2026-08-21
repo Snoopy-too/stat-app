@@ -46,7 +46,7 @@ $clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
             padding: 1rem 0;
         }
         .club-card {
-            background: var(--card-bg, #fff);
+            background: var(--color-surface, #fff);
             border-radius: 1rem;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -84,13 +84,13 @@ $clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
             font-size: 1.25rem;
             font-weight: 600;
             margin: 0 0 0.5rem;
-            color: var(--text-primary, #1e293b);
+            color: var(--color-heading, #1e293b);
         }
         .club-card__stats {
             display: flex;
             gap: 1rem;
             font-size: 0.875rem;
-            color: var(--text-secondary, #64748b);
+            color: var(--color-text-muted, #64748b);
         }
         .club-card__stat {
             display: flex;
@@ -100,7 +100,7 @@ $clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .club-card__action {
             margin-top: 1rem;
             padding-top: 1rem;
-            border-top: 1px solid var(--border-color, #e2e8f0);
+            border-top: 1px solid var(--color-border, #e2e8f0);
             font-size: 0.875rem;
             color: var(--color-primary, #6366f1);
             font-weight: 500;

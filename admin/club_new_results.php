@@ -79,7 +79,7 @@ if ($demo) {
             padding: 1rem 0;
         }
         .game-card {
-            background: var(--card-bg, #fff);
+            background: var(--color-surface, #fff);
             border-radius: 0.75rem;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -96,7 +96,7 @@ if ($demo) {
             position: relative;
             width: 100%;
             height: 140px;
-            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            background: linear-gradient(135deg, var(--color-surface-muted, #f1f5f9) 0%, var(--color-surface-alt, #e2e8f0) 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -137,20 +137,21 @@ if ($demo) {
             font-size: 1rem;
             font-weight: 600;
             margin: 0 0 0.25rem;
-            color: var(--text-primary, #1e293b);
+            color: var(--color-heading, #1e293b);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         .game-card__meta {
             font-size: 0.75rem;
-            color: var(--text-secondary, #64748b);
+            color: var(--color-text-muted, #64748b);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .game-card__plays {
-            background: var(--bg-tertiary, #f1f5f9);
+            background: var(--color-surface-muted, #f1f5f9);
+            color: var(--color-text-muted, #64748b);
             padding: 0.125rem 0.5rem;
             border-radius: 9999px;
             font-weight: 500;
@@ -159,19 +160,19 @@ if ($demo) {
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            color: var(--text-secondary, #64748b);
+            color: var(--color-text-muted, #64748b);
             text-decoration: none;
             font-size: 0.875rem;
             margin-bottom: 1rem;
         }
         .back-link:hover {
-            color: var(--text-primary, #1e293b);
+            color: var(--color-heading, #1e293b);
         }
         .page-intro {
             margin-bottom: 1.5rem;
         }
         .page-intro p {
-            color: var(--text-secondary, #64748b);
+            color: var(--color-text-muted, #64748b);
             margin: 0;
         }
     </style>
@@ -204,7 +205,7 @@ if ($demo) {
                 <div class="empty-state" style="text-align: center; padding: 3rem;">
                     <div style="font-size: 3rem; margin-bottom: 1rem;">🎲</div>
                     <h3 style="margin: 0 0 0.5rem;" data-i18n="empty.noGames">No Games Yet</h3>
-                    <p style="color: var(--text-secondary); margin: 0 0 1.5rem;" data-i18n="empty.noGamesDesc">Add some games to your club before recording results.</p>
+                    <p style="color: var(--color-text-muted); margin: 0 0 1.5rem;" data-i18n="empty.noGamesDesc">Add some games to your club before recording results.</p>
                     <a href="manage_games.php?club_id=<?php echo $club_id; ?>&action=add" class="btn" data-i18n="admin.addNewGame">Add Games</a>
                 </div>
             </div>
@@ -236,7 +237,7 @@ if ($demo) {
                 <?php endforeach; ?>
             </div>
             <div id="noSearchMatch" class="card" style="display: none; text-align: center; padding: 2rem; margin-top: 1rem;">
-                <p style="color: var(--text-secondary, #64748b); margin: 0;">No games match your search.</p>
+                <p style="color: var(--color-text-muted, #64748b); margin: 0;">No games match your search.</p>
             </div>
         <?php endif; ?>
     </div>

@@ -220,14 +220,16 @@ class SidebarHelper {
             .sidebar__close{display:none!important}
             .sidebar-overlay{display:none!important;position:fixed!important;top:var(--sidebar-top-offset, 48px)!important;left:0!important;right:0!important;bottom:0!important;background:rgba(15,23,42,.5)!important;z-index:1050!important}
             @media(max-width:768px), (max-height:500px){
-                .sidebar{transform:translateX(-100%)!important;width:280px!important;box-shadow:4px 0 20px rgba(0,0,0,.25)!important;z-index:1100!important}
+                .sidebar{top:0!important;height:100vh!important;height:100dvh!important;transform:translateX(-100%)!important;width:280px!important;box-shadow:4px 0 20px rgba(0,0,0,.25)!important;z-index:1200!important}
                 .sidebar.sidebar--open{transform:translateX(0)!important}
                 .sidebar__close{display:flex!important}
-                .sidebar-toggle{display:flex!important;position:fixed!important;top:calc(var(--sidebar-top-offset, 48px) + 8px)!important;left:12px!important;z-index:1080!important;width:40px!important;height:40px!important;box-shadow:0 4px 14px rgba(0,0,0,0.25)!important;backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important}
+                .sidebar-toggle{display:flex!important;position:fixed!important;top:calc(var(--sidebar-top-offset, 48px) + 8px)!important;left:12px!important;z-index:1080!important;width:40px!important;height:40px!important;box-shadow:0 4px 14px rgba(0,0,0,0.25)!important;backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important;transition:transform .3s ease, opacity .3s ease, background .2s ease, border-color .2s ease!important}
+                .sidebar-toggle.sidebar-toggle--hidden{transform:translateY(-80px)!important;opacity:0!important;pointer-events:none!important}
+                .sidebar-overlay{top:0!important;left:0!important;right:0!important;bottom:0!important;height:100vh!important;height:100dvh!important;z-index:1150!important}
+                .sidebar-overlay.sidebar-overlay--visible{display:block!important;opacity:1!important;z-index:1150!important}
                 .has-sidebar .header{margin-left:0!important;margin-right:0!important;width:100%!important;max-width:100%!important;position:static!important;padding-left:3.75rem!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transform:none!important}
                 .has-sidebar .container,.has-sidebar .container--narrow,.has-sidebar .container--medium,.has-sidebar .container--wide{margin-left:0!important;margin-right:0!important;width:100%!important;max-width:100%!important}
-                body.sidebar-open{overflow:hidden!important;touch-action:none!important;overscroll-behavior:none!important}
-                .sidebar-overlay.sidebar-overlay--visible{display:block!important;opacity:1!important;z-index:1090!important}
+                html.sidebar-open,body.sidebar-open{overflow:hidden!important;touch-action:none!important;overscroll-behavior:none!important}
             }
             @media(max-height:600px){
                 .sidebar__header{padding:0.5rem 0.5rem!important}
@@ -384,14 +386,16 @@ class SidebarHelper {
             .sidebar__close{display:none!important}
             .sidebar-overlay{display:none!important;position:fixed!important;top:var(--sidebar-top-offset, 48px)!important;left:0!important;right:0!important;bottom:0!important;background:rgba(15,23,42,.5)!important;z-index:1050!important}
             @media(max-width:768px), (max-height:500px){
-                .sidebar{transform:translateX(-100%)!important;width:280px!important;box-shadow:4px 0 20px rgba(0,0,0,.25)!important;z-index:1100!important}
+                .sidebar{top:0!important;height:100vh!important;height:100dvh!important;transform:translateX(-100%)!important;width:280px!important;box-shadow:4px 0 20px rgba(0,0,0,.25)!important;z-index:1200!important}
                 .sidebar.sidebar--open{transform:translateX(0)!important}
                 .sidebar__close{display:flex!important}
-                .sidebar-toggle{display:flex!important;position:fixed!important;top:calc(var(--sidebar-top-offset, 48px) + 8px)!important;left:12px!important;z-index:1080!important;width:40px!important;height:40px!important;box-shadow:0 4px 14px rgba(0,0,0,0.25)!important;backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important}
+                .sidebar-toggle{display:flex!important;position:fixed!important;top:calc(var(--sidebar-top-offset, 48px) + 8px)!important;left:12px!important;z-index:1080!important;width:40px!important;height:40px!important;box-shadow:0 4px 14px rgba(0,0,0,0.25)!important;backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important;transition:transform .3s ease, opacity .3s ease, background .2s ease, border-color .2s ease!important}
+                .sidebar-toggle.sidebar-toggle--hidden{transform:translateY(-80px)!important;opacity:0!important;pointer-events:none!important}
+                .sidebar-overlay{top:0!important;left:0!important;right:0!important;bottom:0!important;height:100vh!important;height:100dvh!important;z-index:1150!important}
+                .sidebar-overlay.sidebar-overlay--visible{display:block!important;opacity:1!important;z-index:1150!important}
                 .has-sidebar .header{margin-left:0!important;margin-right:0!important;width:100%!important;max-width:100%!important;position:static!important;padding-left:3.75rem!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transform:none!important}
                 .has-sidebar .container,.has-sidebar .container--narrow,.has-sidebar .container--medium,.has-sidebar .container--wide{margin-left:0!important;margin-right:0!important;width:100%!important;max-width:100%!important}
-                body.sidebar-open{overflow:hidden!important;touch-action:none!important;overscroll-behavior:none!important}
-                .sidebar-overlay.sidebar-overlay--visible{display:block!important;opacity:1!important;z-index:1090!important}
+                html.sidebar-open,body.sidebar-open{overflow:hidden!important;touch-action:none!important;overscroll-behavior:none!important}
             }
             @media(max-height:600px){
                 .sidebar__header{padding:0.5rem 0.5rem!important}

@@ -6,14 +6,44 @@
     --sidebar-collapsed-width: 0px;
     --sidebar-bg: #ffffff;
     --sidebar-border: #e2e8f0;
-    --sidebar-z-index: 1100;
-    --sidebar-overlay-z-index: 1050;
+    --sidebar-z-index: 9990;
+    --sidebar-overlay-z-index: 9980;
+    --sidebar-toggle-z-index: 9900;
     --sidebar-top-offset: var(--tfd-navbar-height, 48px);
 }
 
-/* Allow TFD top navbar to scroll away naturally with the page */
+/* Ensure topnav scrolls away naturally on all screens */
+header#tfd-navbar,
+header#tfd-navbar.tfd-navbar,
+html body header#tfd-navbar,
+html body #tfd-navbar,
+html body .tfd-navbar,
+:root header#tfd-navbar,
+#tfd-navbar,
 .tfd-navbar {
     position: static !important;
+    top: auto !important;
+    z-index: 99999 !important;
+}
+
+.tfd-mobile-drawer {
+    z-index: 100010 !important;
+}
+
+.tfd-dropdown-wrapper,
+.tfd-theme-dropdown,
+.tfd-lang-dropdown {
+    z-index: 100020 !important;
+}
+
+/* Hide sidebar toggle button whenever top navbar mobile menu is open */
+body:has(#tfdMobileDrawer.open) .sidebar-toggle,
+body:has(.tfd-mobile-drawer.open) .sidebar-toggle,
+.tfd-mobile-drawer.open ~ .sidebar-toggle,
+.tfd-mobile-drawer.open ~ * .sidebar-toggle {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translateY(-80px) !important;
 }
 
 /* Sidebar Container */
@@ -31,8 +61,8 @@
     border-right: 1px solid var(--sidebar-border, #e2e8f0) !important;
     display: flex !important;
     flex-direction: column !important;
-    z-index: 1100 !important;
-    z-index: var(--sidebar-z-index, 1100) !important;
+    z-index: 9990 !important;
+    z-index: var(--sidebar-z-index, 9990) !important;
     overflow: hidden !important;
     overflow-x: hidden !important;
     overscroll-behavior: contain !important;
@@ -336,12 +366,13 @@
         transform: translateX(-100%) !important;
         width: 280px !important;
         box-shadow: 4px 0 20px rgba(0, 0, 0, 0.25) !important;
-        z-index: 1200 !important;
+        z-index: 9990 !important;
     }
 
-    /* Show sidebar when open */
+    /* Show sidebar when open - covers topnav */
     .sidebar.sidebar--open {
         transform: translateX(0) !important;
+        z-index: 100005 !important;
     }
 
     /* Show toggle button as fixed button below navbar */
@@ -350,7 +381,7 @@
         position: fixed !important;
         top: calc(var(--sidebar-top-offset, 48px) + 8px) !important;
         left: 12px !important;
-        z-index: 1080 !important;
+        z-index: 9900 !important;
         width: 40px !important;
         height: 40px !important;
         box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
@@ -378,12 +409,13 @@
         bottom: 0 !important;
         height: 100vh !important;
         height: 100dvh !important;
-        z-index: 1150 !important;
+        z-index: 9980 !important;
     }
 
     .sidebar-overlay.sidebar-overlay--visible {
         display: block !important;
         opacity: 1 !important;
+        z-index: 100004 !important;
     }
 
     /* Reset content margin and let header scroll naturally on mobile */

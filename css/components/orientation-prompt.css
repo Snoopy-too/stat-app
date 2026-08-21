@@ -1,0 +1,138 @@
+/* ==========================================================================
+   Orientation Prompt Modal (Landscape Recommendation)
+   ========================================================================== */
+
+.orientation-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 10000000;
+    background: rgba(10, 15, 29, 0.88);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-4, 1rem);
+}
+
+@media screen and (orientation: portrait) and (max-width: 900px) {
+    html:not(.orientation-prompt-dismissed) .orientation-modal {
+        display: flex;
+    }
+}
+
+.orientation-modal__dialog {
+    position: relative;
+    background: var(--color-surface, #1e293b);
+    color: var(--color-text, #f8fafc);
+    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.12));
+    border-radius: var(--radius-lg, 16px);
+    padding: 2rem 1.5rem 1.5rem;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: orientationFadeIn 0.3s ease-out;
+}
+
+.orientation-modal__close {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted, #94a3b8);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm, 6px);
+    transition: color 0.2s, background-color 0.2s;
+}
+
+.orientation-modal__close:hover,
+.orientation-modal__close:focus {
+    color: var(--color-heading, #ffffff);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.orientation-modal__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 1.25rem;
+    border-radius: 50%;
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--color-primary, #6366f1);
+    animation: phoneRotate 2.5s ease-in-out infinite;
+}
+
+.orientation-modal__title {
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--color-heading, #ffffff);
+}
+
+.orientation-modal__message {
+    margin: 0 0 1.25rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--color-text-muted, #94a3b8);
+}
+
+.orientation-modal__checkbox-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 0 0 1.25rem 0;
+    font-size: 0.85rem;
+    color: var(--color-text-muted, #94a3b8);
+    cursor: pointer;
+    user-select: none;
+}
+
+.orientation-modal__checkbox {
+    accent-color: var(--color-primary, #6366f1);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.orientation-modal__btn {
+    display: inline-block;
+    width: 100%;
+    padding: 0.65rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: var(--radius-md, 8px);
+    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.2));
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--color-text, #f8fafc);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.orientation-modal__btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+@keyframes orientationFadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes phoneRotate {
+    0%, 15% {
+        transform: rotate(0deg);
+    }
+    45%, 70% {
+        transform: rotate(-90deg);
+    }
+    100% {
+        transform: rotate(0deg);
+    }
+}

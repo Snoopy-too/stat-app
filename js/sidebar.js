@@ -23,6 +23,40 @@
             });
         }
 
+        // Ensure topnav is static and scrolls away on all screens
+        var tfdNav = document.getElementById('tfd-navbar') || document.querySelector('.tfd-navbar');
+        function enforceStaticNavbar() {
+            if (tfdNav && tfdNav.style.position !== 'static') {
+                tfdNav.style.setProperty('position', 'static', 'important');
+                tfdNav.style.setProperty('top', 'auto', 'important');
+            }
+        }
+        enforceStaticNavbar();
+
+        // Dynamically track topnav bottom position so sidebar becomes sticky-top (top: 0) as topnav scrolls away
+        function updateScrollOffset() {
+            enforceStaticNavbar();
+            var offset = 0;
+            if (tfdNav) {
+                var rect = tfdNav.getBoundingClientRect();
+                offset = Math.max(0, Math.round(rect.bottom));
+            }
+            document.documentElement.style.setProperty('--sidebar-top-offset', offset + 'px');
+        }
+        window.addEventListener('scroll', updateScrollOffset, { passive: true });
+        window.addEventListener('resize', updateScrollOffset, { passive: true });
+        updateScrollOffset();
+
+        // When topnav mobile menu is opened, ensure page is scrolled to top so navbar & [X] close button are fully visible
+        document.addEventListener('click', function(e) {
+            var toggle = e.target && e.target.closest('#tfdMobileToggle, .tfd-mobile-toggle');
+            if (toggle) {
+                if (window.scrollY > 0) {
+                    window.scrollTo(0, 0);
+                }
+            }
+        });
+
         var lastScrollY = window.scrollY || window.pageYOffset || 0;
 
         function onScroll() {

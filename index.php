@@ -77,6 +77,7 @@ if (!in_array($activeTheme, ['light', 'arcade', 'midnight', 'casino'])) {
     </script>
     <link rel="stylesheet" href="https://theflyingdutchmen.games/stylesheets/tfd-nav.css">
     <link rel="stylesheet" href="css/styles.css">
+    <script src="js/dark-mode.js"></script>
     <script src="js/i18n.js"></script>
 </head>
 <body>

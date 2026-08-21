@@ -23,5 +23,6 @@
 @import url('components/badges.css');
 @import url('components/messages.css');
 @import url('components/modals.css');
+@import url('components/orientation-prompt.css');
 @import url('components/empty-states.css');
 @import url('pages/pages.css');

@@ -163,6 +163,9 @@ class SSOHelper {
 
     private static function clearSession() {
         $_SESSION = [];
+        if (isset($_COOKIE['tfd_stat_session'])) {
+            setcookie('tfd_stat_session', '', time() - 42000, '/');
+        }
         if (ini_get("session.use_cookies")) {
             $params = session_get_cookie_params();
             setcookie(session_name(), '', time() - 42000,

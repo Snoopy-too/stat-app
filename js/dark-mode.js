@@ -448,9 +448,104 @@ class DarkModeHandler {
         });
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', processExistingBanners);
-    } else {
-        processExistingBanners();
+    /* ==========================================================================
+       Orientation Prompt Modal (Landscape Recommendation)
+       ========================================================================== */
+    function getStatSessionToken() {
+        const match = document.cookie.match(/(?:^|;\s*)tfd_stat_session=([^;]+)/);
+        return match ? decodeURIComponent(match[1]) : 'default';
     }
+
+    function initOrientationPrompt() {
+        if (localStorage.getItem('orientation_prompt_remembered') === 'true') {
+            document.documentElement.classList.add('orientation-prompt-dismissed');
+            return;
+        }
+
+        const sessionToken = getStatSessionToken();
+        if (sessionStorage.getItem('orientation_prompt_dismissed_' + sessionToken) === 'true') {
+            document.documentElement.classList.add('orientation-prompt-dismissed');
+            return;
+        }
+
+        if (document.getElementById('orientation-prompt-modal')) {
+            return;
+        }
+
+        const modal = document.createElement('aside');
+        modal.id = 'orientation-prompt-modal';
+        modal.className = 'orientation-modal';
+        modal.setAttribute('aria-label', 'Screen orientation recommendation');
+        modal.innerHTML = `
+            <div class="orientation-modal__dialog">
+                <button type="button" class="orientation-modal__close" aria-label="Close orientation suggestion">&times;</button>
+                <div class="orientation-modal__icon">
+                    <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                        <path d="M12 18h.01"></path>
+                    </svg>
+                </div>
+                <h3 class="orientation-modal__title">Please Rotate Device</h3>
+                <p class="orientation-modal__message">This site is optimized for landscape viewing. Rotate your device sideways for the best experience.</p>
+                <label class="orientation-modal__checkbox-label">
+                    <input type="checkbox" id="orientation-remember-preference" class="orientation-modal__checkbox">
+                    <span>Remember my preference</span>
+                </label>
+                <button type="button" class="orientation-modal__btn orientation-modal__dismiss-btn">Continue in Portrait</button>
+            </div>
+        `;
+
+        const dismiss = () => {
+            const rememberCheckbox = modal.querySelector('#orientation-remember-preference');
+            if (rememberCheckbox && rememberCheckbox.checked) {
+                localStorage.setItem('orientation_prompt_remembered', 'true');
+            }
+            const currentToken = getStatSessionToken();
+            sessionStorage.setItem('orientation_prompt_dismissed_' + currentToken, 'true');
+            document.documentElement.classList.add('orientation-prompt-dismissed');
+            modal.remove();
+        };
+
+        const closeBtn = modal.querySelector('.orientation-modal__close');
+        const dismissBtn = modal.querySelector('.orientation-modal__dismiss-btn');
+
+        if (closeBtn) closeBtn.addEventListener('click', dismiss);
+        if (dismissBtn) dismissBtn.addEventListener('click', dismiss);
+
+        document.body.appendChild(modal);
+    }
+
+    /* ==========================================================================
+       Ensure Top Navbar is Static (Scrolls with page on all screens)
+       Overrides tfd-navbar.js inline sticky position styles
+       ========================================================================== */
+    function enforceStaticNavbar() {
+        const nav = document.getElementById('tfd-navbar') || document.querySelector('.tfd-navbar');
+        if (nav && nav.style.position !== 'static') {
+            nav.style.setProperty('position', 'static', 'important');
+            nav.style.setProperty('top', 'auto', 'important');
+        }
+    }
+
+    function initGlobalUI() {
+        enforceStaticNavbar();
+        processExistingBanners();
+        initOrientationPrompt();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initGlobalUI);
+    } else {
+        initGlobalUI();
+    }
+
+    try {
+        const navObserver = new MutationObserver(enforceStaticNavbar);
+        navObserver.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['style']
+        });
+    } catch (e) {}
 })();

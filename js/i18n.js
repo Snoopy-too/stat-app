@@ -247,6 +247,7 @@
       },
       gametype: {
         winner_losers: 'Winner / Losers',
+        win_lose: 'Win/Lose',
         ranked: 'Ranked (1st, 2nd, etc.)',
         teams: 'Teams',
         team: 'Teams',
@@ -325,7 +326,8 @@
         notes: 'Notes:',
         backToResults: 'Back to Results',
         deleteResult: 'Delete Result',
-        searchPlaceholder: 'Search results...',
+        searchPlaceholder: 'Search',
+        allTypes: 'All Types',
         hours: 'hrs',
         minutes: 'mins',
         datePlayed: 'Date Played'
@@ -615,6 +617,7 @@
       },
       gametype: {
         winner_losers: 'Ganador / Perdedores',
+        win_lose: 'Ganar/Perder',
         ranked: 'Clasificación (1º, 2º, etc.)',
         teams: 'Equipos',
         team: 'Equipos',
@@ -693,7 +696,8 @@
         notes: 'Notas:',
         backToResults: 'Volver a Resultados',
         deleteResult: 'Eliminar Resultado',
-        searchPlaceholder: 'Buscar resultados...',
+        searchPlaceholder: 'Buscar',
+        allTypes: 'Todos los Tipos',
         hours: 'hrs',
         minutes: 'min',
         datePlayed: 'Fecha de Partida'
@@ -982,6 +986,7 @@
       },
       gametype: {
         winner_losers: '勝者・敗者',
+        win_lose: '勝敗',
         ranked: '順位制 (1位, 2位...)',
         teams: 'チーム戦',
         team: 'チーム戦',
@@ -1060,7 +1065,8 @@
         notes: 'メモ:',
         backToResults: '結果一覧に戻る',
         deleteResult: '結果を削除',
-        searchPlaceholder: '対戦結果を検索...',
+        searchPlaceholder: '検索',
+        allTypes: '全タイプ',
         hours: '時間',
         minutes: '分',
         datePlayed: '対戦日時'

@@ -148,85 +148,99 @@ $allowed_sorts = ['played_at', 'winner_name', 'game_name', 'game_type'];
 $sort = in_array($sort, $allowed_sorts) ? $sort : 'played_at';
 $order = ($order === 'asc') ? 'asc' : 'desc';
 
+$type_filter = isset($_GET['type']) ? $_GET['type'] : (isset($_GET['game_type']) ? $_GET['game_type'] : '');
+
+$fetch_indiv = empty($type_filter) || in_array($type_filter, ['winner_losers', 'ranked', 'win_lose', 'individual'], true);
+$fetch_teams = empty($type_filter) || in_array($type_filter, ['teams', 'team'], true);
+$fetch_coop  = empty($type_filter) || in_array($type_filter, ['cooperative', 'coop'], true);
+
 // Build SQL query for results
 $results = [];
 try {
     if ($game_id) {
-        // Individual results
-        $stmt = $pdo->prepare("
-            SELECT gr.result_id, gr.played_at, COALESCE(NULLIF(m.nickname, ''), m.member_name, 'Unknown Member') as winner_name, 
-                   CASE WHEN gr.place_2 IS NOT NULL THEN 'ranked' ELSE 'winner_losers' END as game_type, 
-                   gr.duration, gr.notes, g.game_id, g.game_name, COALESCE(m.status, 'active') as member_status
-            FROM game_results gr
-            JOIN games g ON gr.game_id = g.game_id
-            LEFT JOIN members m ON COALESCE(gr.winner, gr.member_id) = m.member_id
-            WHERE g.club_id = ? AND g.game_id = ?
-        ");
-        $stmt->execute([$club_id, $game_id]);
-        $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        if ($fetch_indiv) {
+            $indiv_extra = ($type_filter === 'winner_losers' || $type_filter === 'win_lose') ? " AND gr.place_2 IS NULL" : ($type_filter === 'ranked' ? " AND gr.place_2 IS NOT NULL" : "");
+            $stmt = $pdo->prepare("
+                SELECT gr.result_id, gr.played_at, COALESCE(NULLIF(m.nickname, ''), m.member_name, 'Unknown Member') as winner_name, 
+                       CASE WHEN gr.place_2 IS NOT NULL THEN 'ranked' ELSE 'winner_losers' END as game_type, 
+                       gr.duration, gr.notes, g.game_id, g.game_name, COALESCE(m.status, 'active') as member_status
+                FROM game_results gr
+                JOIN games g ON gr.game_id = g.game_id
+                LEFT JOIN members m ON COALESCE(gr.winner, gr.member_id) = m.member_id
+                WHERE g.club_id = ? AND g.game_id = ?" . $indiv_extra . "
+            ");
+            $stmt->execute([$club_id, $game_id]);
+            $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
 
-        // Team results
-        $stmt = $pdo->prepare("
-            SELECT tgr.result_id, tgr.played_at, CONCAT(COALESCE(t.team_name, 'Unknown Team'), ' (Team)') as winner_name, 
-                   'teams' as game_type, 
-                   tgr.duration, tgr.notes, g.game_id, g.game_name, 'active' as member_status
-            FROM team_game_results tgr
-            JOIN games g ON tgr.game_id = g.game_id
-            LEFT JOIN teams t ON tgr.winner = t.team_id
-            WHERE g.club_id = ? AND g.game_id = ?
-        ");
-        $stmt->execute([$club_id, $game_id]);
-        $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        if ($fetch_teams) {
+            $stmt = $pdo->prepare("
+                SELECT tgr.result_id, tgr.played_at, CONCAT(COALESCE(t.team_name, 'Unknown Team'), ' (Team)') as winner_name, 
+                       'teams' as game_type, 
+                       tgr.duration, tgr.notes, g.game_id, g.game_name, 'active' as member_status
+                FROM team_game_results tgr
+                JOIN games g ON tgr.game_id = g.game_id
+                LEFT JOIN teams t ON tgr.winner = t.team_id
+                WHERE g.club_id = ? AND g.game_id = ?
+            ");
+            $stmt->execute([$club_id, $game_id]);
+            $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
 
-        // Cooperative results
-        $stmt = $pdo->prepare("
-            SELECT cgr.result_id, cgr.played_at, CONCAT(UPPER(cgr.outcome), ' - Co-op') as winner_name, 
-                   'cooperative' as game_type, 
-                   cgr.duration, cgr.notes, g.game_id, g.game_name, 'active' as member_status
-            FROM cooperative_game_results cgr
-            JOIN games g ON cgr.game_id = g.game_id
-            WHERE g.club_id = ? AND g.game_id = ?
-        ");
-        $stmt->execute([$club_id, $game_id]);
-        $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        if ($fetch_coop) {
+            $stmt = $pdo->prepare("
+                SELECT cgr.result_id, cgr.played_at, CONCAT(UPPER(cgr.outcome), ' - Co-op') as winner_name, 
+                       'cooperative' as game_type, 
+                       cgr.duration, cgr.notes, g.game_id, g.game_name, 'active' as member_status
+                FROM cooperative_game_results cgr
+                JOIN games g ON cgr.game_id = g.game_id
+                WHERE g.club_id = ? AND g.game_id = ?
+            ");
+            $stmt->execute([$club_id, $game_id]);
+            $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
     } else {
-        // Individual results
-        $stmt = $pdo->prepare("
-            SELECT gr.result_id, gr.played_at, COALESCE(NULLIF(m.nickname, ''), m.member_name, 'Unknown Member') as winner_name, 
-                   CASE WHEN gr.place_2 IS NOT NULL THEN 'ranked' ELSE 'winner_losers' END as game_type, 
-                   gr.duration, gr.notes, g.game_id, g.game_name, COALESCE(m.status, 'active') as member_status
-            FROM game_results gr
-            JOIN games g ON gr.game_id = g.game_id
-            LEFT JOIN members m ON COALESCE(gr.winner, gr.member_id) = m.member_id
-            WHERE g.club_id = ?
-        ");
-        $stmt->execute([$club_id]);
-        $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        if ($fetch_indiv) {
+            $indiv_extra = ($type_filter === 'winner_losers' || $type_filter === 'win_lose') ? " AND gr.place_2 IS NULL" : ($type_filter === 'ranked' ? " AND gr.place_2 IS NOT NULL" : "");
+            $stmt = $pdo->prepare("
+                SELECT gr.result_id, gr.played_at, COALESCE(NULLIF(m.nickname, ''), m.member_name, 'Unknown Member') as winner_name, 
+                       CASE WHEN gr.place_2 IS NOT NULL THEN 'ranked' ELSE 'winner_losers' END as game_type, 
+                       gr.duration, gr.notes, g.game_id, g.game_name, COALESCE(m.status, 'active') as member_status
+                FROM game_results gr
+                JOIN games g ON gr.game_id = g.game_id
+                LEFT JOIN members m ON COALESCE(gr.winner, gr.member_id) = m.member_id
+                WHERE g.club_id = ?" . $indiv_extra . "
+            ");
+            $stmt->execute([$club_id]);
+            $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
 
-        // Team results
-        $stmt = $pdo->prepare("
-            SELECT tgr.result_id, tgr.played_at, CONCAT(COALESCE(t.team_name, 'Unknown Team'), ' (Team)') as winner_name, 
-                   'teams' as game_type, 
-                   tgr.duration, tgr.notes, g.game_id, g.game_name, 'active' as member_status
-            FROM team_game_results tgr
-            JOIN games g ON tgr.game_id = g.game_id
-            LEFT JOIN teams t ON tgr.winner = t.team_id
-            WHERE g.club_id = ?
-        ");
-        $stmt->execute([$club_id]);
-        $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        if ($fetch_teams) {
+            $stmt = $pdo->prepare("
+                SELECT tgr.result_id, tgr.played_at, CONCAT(COALESCE(t.team_name, 'Unknown Team'), ' (Team)') as winner_name, 
+                       'teams' as game_type, 
+                       tgr.duration, tgr.notes, g.game_id, g.game_name, 'active' as member_status
+                FROM team_game_results tgr
+                JOIN games g ON tgr.game_id = g.game_id
+                LEFT JOIN teams t ON tgr.winner = t.team_id
+                WHERE g.club_id = ?
+            ");
+            $stmt->execute([$club_id]);
+            $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
 
-        // Cooperative results
-        $stmt = $pdo->prepare("
-            SELECT cgr.result_id, cgr.played_at, CONCAT(UPPER(cgr.outcome), ' - Co-op') as winner_name, 
-                   'cooperative' as game_type, 
-                   cgr.duration, cgr.notes, g.game_id, g.game_name, 'active' as member_status
-            FROM cooperative_game_results cgr
-            JOIN games g ON cgr.game_id = g.game_id
-            WHERE g.club_id = ?
-        ");
-        $stmt->execute([$club_id]);
-        $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        if ($fetch_coop) {
+            $stmt = $pdo->prepare("
+                SELECT cgr.result_id, cgr.played_at, CONCAT(UPPER(cgr.outcome), ' - Co-op') as winner_name, 
+                       'cooperative' as game_type, 
+                       cgr.duration, cgr.notes, g.game_id, g.game_name, 'active' as member_status
+                FROM cooperative_game_results cgr
+                JOIN games g ON cgr.game_id = g.game_id
+                WHERE g.club_id = ?
+            ");
+            $stmt->execute([$club_id]);
+            $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
     }
 } catch (Throwable $e) {
     error_log("Results fetch failed: " . $e->getMessage());
@@ -236,6 +250,16 @@ try {
 if ($demo) {
     $all_games = get_demo_data('games');
     $results = get_demo_data('results');
+    if (!empty($type_filter)) {
+        $results = array_values(array_filter($results, function($r) use ($type_filter) {
+            $t = $r['game_type'] ?? '';
+            if ($type_filter === 'winner_losers' || $type_filter === 'win_lose') return $t === 'winner_losers' || $t === 'individual';
+            if ($type_filter === 'ranked') return $t === 'ranked';
+            if ($type_filter === 'teams' || $type_filter === 'team') return in_array($t, ['teams', 'team'], true);
+            if ($type_filter === 'cooperative' || $type_filter === 'coop') return in_array($t, ['cooperative', 'coop'], true);
+            return true;
+        }));
+    }
 }
 
 // Sort results array
@@ -275,7 +299,7 @@ $baseUrl = 'manage_results.php?club_id=' . $club_id;
         <?php display_session_message('success'); ?>
         <?php display_session_message('error'); ?>
 
-        <?php TableHelper::renderResultsAnalytics($results, $all_games, $game_id, ['is_admin' => true, 'open' => true]); ?>
+        <?php TableHelper::renderResultsAnalytics($results, $all_games, $game_id, ['is_admin' => true, 'open' => true, 'type_filter' => $type_filter]); ?>
 
         <?php
         TableHelper::renderResultsTable($results, $all_games, [
@@ -284,6 +308,7 @@ $baseUrl = 'manage_results.php?club_id=' . $club_id;
             'sort' => $sort,
             'order' => $order,
             'game_id' => $game_id,
+            'type_filter' => $type_filter,
             'club_id' => $club_id,
             'csrf_token' => $csrf_token
         ]);

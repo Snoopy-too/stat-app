@@ -154,7 +154,7 @@ class TableHelper {
                         scales: {
                             x: {
                                 stacked: true,
-                                ticks: { color: colors.text, font: { family: 'inherit', size: 12 } },
+                                ticks: { autoSkip: false, color: colors.text, font: { family: 'inherit', size: 12 } },
                                 grid: { color: colors.border }
                             },
                             y: {
@@ -332,6 +332,11 @@ class TableHelper {
         $selected_game_data = [];
         $selected_game_title = "";
 
+        $type_filter = $options['type_filter'] ?? ($_GET['type'] ?? ($_GET['game_type'] ?? ''));
+        if ($type_filter === 'team') $type_filter = 'teams';
+        if ($type_filter === 'coop') $type_filter = 'cooperative';
+        if ($type_filter === 'win_lose' || $type_filter === 'win_losers') $type_filter = 'winner_losers';
+
         $selected_game = null;
         if ($game_id) {
             foreach ($all_games as $g) {
@@ -449,6 +454,62 @@ class TableHelper {
                                 <canvas id="selectedGameWinChart"></canvas>
                             </div>
                         </div>
+                    </div>
+                <?php elseif (!empty($type_filter) && in_array($type_filter, ['winner_losers', 'ranked', 'teams', 'cooperative'], true)): ?>
+                    <?php
+                    $type_label_map = [
+                        'winner_losers' => 'Win/Lose',
+                        'ranked' => 'Ranked',
+                        'teams' => 'Team',
+                        'cooperative' => 'Cooperative'
+                    ];
+                    $selected_type_label = $type_label_map[$type_filter] ?? 'All Games';
+                    ?>
+                    <div class="results-pie-grid">
+                        <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+                                <h4 style="font-size: 0.95rem; margin: 0; text-align: center; width: 100%;">Most Played Games (<?php echo htmlspecialchars($selected_type_label); ?>)</h4>
+                                <div id="ignored-games-container" style="display: none; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.75rem; width: 100%; justify-content: center;">
+                                    <span style="color: var(--color-text-muted, #64748b);" data-i18n="analytics.ignored">Ignored:</span>
+                                    <div id="ignored-games-tags" style="display: flex; gap: 0.25rem; flex-wrap: wrap;"></div>
+                                    <button type="button" id="reset-ignored-games-btn" class="wot-btn" style="text-decoration: underline;" data-i18n="analytics.resetAll">Reset All</button>
+                                </div>
+                            </div>
+                            <p style="font-size: 0.75rem; color: var(--color-text-muted, #64748b); margin: 0 0 0.5rem 0; text-align: center;" data-i18n="analytics.clickBarHint">Click any bar to ignore a game</p>
+                            <div style="position: relative; height: 220px;">
+                                <canvas id="mostPlayedGamesChart"></canvas>
+                            </div>
+                        </div>
+
+                        <?php if ($type_filter === 'winner_losers'): ?>
+                        <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem;">
+                            <h4 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; text-align: center;" data-i18n="analytics.winnerLosersGames">Winner/Losers Games</h4>
+                            <div style="position: relative; height: 220px;">
+                                <canvas id="indivWinChart"></canvas>
+                            </div>
+                        </div>
+                        <?php elseif ($type_filter === 'ranked'): ?>
+                        <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem;">
+                            <h4 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; text-align: center;" data-i18n="analytics.rankedGames">Ranked Games (1st Place)</h4>
+                            <div style="position: relative; height: 220px;">
+                                <canvas id="rankedWinChart"></canvas>
+                            </div>
+                        </div>
+                        <?php elseif ($type_filter === 'teams'): ?>
+                        <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem;">
+                            <h4 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; text-align: center;" data-i18n="analytics.teamGames">Team Games</h4>
+                            <div style="position: relative; height: 220px;">
+                                <canvas id="teamWinChart"></canvas>
+                            </div>
+                        </div>
+                        <?php elseif ($type_filter === 'cooperative'): ?>
+                        <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem;">
+                            <h4 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; text-align: center;" data-i18n="analytics.coopGames">Cooperative Games</h4>
+                            <div style="position: relative; height: 220px;">
+                                <canvas id="coopWinChart"></canvas>
+                            </div>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 <?php else: ?>
                     <div style="margin-bottom: 2rem;">
@@ -646,7 +707,7 @@ class TableHelper {
                             }
                         },
                         scales: {
-                            x: { ticks: { color: colors.text }, grid: { color: colors.grid } },
+                            x: { ticks: { autoSkip: false, color: colors.text }, grid: { color: colors.grid } },
                             y: { ticks: { color: colors.text, stepSize: 1 }, grid: { color: colors.grid }, beginAtZero: true }
                         }
                     }
@@ -1329,6 +1390,11 @@ class TableHelper {
         $gameId = $options['game_id'] ?? null;
         $clubId = (int)($options['club_id'] ?? 0);
 
+        $typeFilter = $options['type_filter'] ?? ($_GET['type'] ?? ($_GET['game_type'] ?? ''));
+        if ($typeFilter === 'team') $typeFilter = 'teams';
+        if ($typeFilter === 'coop') $typeFilter = 'cooperative';
+        if ($typeFilter === 'win_lose' || $typeFilter === 'win_losers') $typeFilter = 'winner_losers';
+
         $oppositeOrder = ($order === 'asc') ? 'desc' : 'asc';
         ?>
         <div class="card-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
@@ -1347,7 +1413,7 @@ class TableHelper {
                     if (!empty($urlParts['query'])) {
                         parse_str($urlParts['query'], $queryParams);
                         foreach ($queryParams as $k => $v) {
-                            if (!in_array($k, ['game_id', 'sort', 'order', 'search'])) {
+                            if (!in_array($k, ['game_id', 'type', 'game_type', 'sort', 'order', 'search'])) {
                                 echo '<input type="hidden" name="' . htmlspecialchars((string)$k) . '" value="' . htmlspecialchars((string)$v) . '">';
                             }
                         }
@@ -1356,8 +1422,15 @@ class TableHelper {
                     <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
                     <input type="hidden" name="order" value="<?php echo htmlspecialchars($order); ?>">
                     <div class="input-group" style="display: flex; gap: 0;">
-                        <input type="text" name="search" placeholder="Search results..." data-i18n-placeholder="results.searchPlaceholder" class="form-control" style="width: 220px;" oninput="filterTableRows(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();filterTableRows(this);}">
-                        <select name="game_id" class="form-control form-control--sm" onchange="this.form.submit()" style="width: 140px;">
+                        <input type="text" name="search" placeholder="Search" data-i18n-placeholder="common.search" class="form-control" style="width: 140px;" oninput="filterTableRows(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();filterTableRows(this);}">
+                        <select name="type" class="form-control form-control--sm" onchange="this.form.submit()" style="width: 125px;">
+                            <option value="" data-i18n="results.allTypes">All Types</option>
+                            <option value="winner_losers" <?php echo ($typeFilter === 'winner_losers') ? 'selected' : ''; ?>>Win/Lose</option>
+                            <option value="ranked" <?php echo ($typeFilter === 'ranked') ? 'selected' : ''; ?>>Ranked</option>
+                            <option value="teams" <?php echo ($typeFilter === 'teams') ? 'selected' : ''; ?>>Team</option>
+                            <option value="cooperative" <?php echo ($typeFilter === 'cooperative') ? 'selected' : ''; ?>>Cooperative</option>
+                        </select>
+                        <select name="game_id" class="form-control form-control--sm" onchange="this.form.submit()" style="width: 135px;">
                             <option value="" data-i18n="club.allGames">All Games</option>
                             <?php foreach ($all_games as $g_opt): ?>
                                 <option value="<?php echo $g_opt['game_id']; ?>" <?php echo ($gameId == $g_opt['game_id']) ? 'selected' : ''; ?>>
@@ -1390,7 +1463,7 @@ class TableHelper {
                         <?php endif; ?>
                         <?php if (!$gameId): ?>
                             <th>
-                                <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'game_name', 'order' => ($sort === 'game_name' ? $oppositeOrder : 'asc'), 'game_id' => $gameId]); ?>" class="table-sort-link sort-link">
+                                <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'game_name', 'order' => ($sort === 'game_name' ? $oppositeOrder : 'asc'), 'game_id' => $gameId, 'type' => $typeFilter]); ?>" class="table-sort-link sort-link">
                                     <span data-i18n="results.game">Game</span>
                                     <?php if ($sort === 'game_name'): ?>
                                         <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
@@ -1399,7 +1472,7 @@ class TableHelper {
                             </th>
                         <?php endif; ?>
                         <th>
-                            <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'played_at', 'order' => ($sort === 'played_at' ? $oppositeOrder : 'asc'), 'game_id' => $gameId]); ?>" class="table-sort-link sort-link">
+                            <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'played_at', 'order' => ($sort === 'played_at' ? $oppositeOrder : 'asc'), 'game_id' => $gameId, 'type' => $typeFilter]); ?>" class="table-sort-link sort-link">
                                 <span data-i18n="common.date">Date Played</span>
                                 <?php if ($sort === 'played_at'): ?>
                                     <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
@@ -1407,7 +1480,7 @@ class TableHelper {
                             </a>
                         </th>
                         <th>
-                            <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'winner_name', 'order' => ($sort === 'winner_name' ? $oppositeOrder : 'asc'), 'game_id' => $gameId]); ?>" class="table-sort-link sort-link">
+                            <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'winner_name', 'order' => ($sort === 'winner_name' ? $oppositeOrder : 'asc'), 'game_id' => $gameId, 'type' => $typeFilter]); ?>" class="table-sort-link sort-link">
                                 <span data-i18n="results.winner">Winner / Outcome</span>
                                 <?php if ($sort === 'winner_name'): ?>
                                     <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>
@@ -1415,7 +1488,7 @@ class TableHelper {
                             </a>
                         </th>
                         <th>
-                            <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'game_type', 'order' => ($sort === 'game_type' ? $oppositeOrder : 'asc'), 'game_id' => $gameId]); ?>" class="table-sort-link sort-link">
+                            <a href="<?php echo self::buildUrl($baseUrl, ['sort' => 'game_type', 'order' => ($sort === 'game_type' ? $oppositeOrder : 'asc'), 'game_id' => $gameId, 'type' => $typeFilter]); ?>" class="table-sort-link sort-link">
                                 <span data-i18n="common.details">Type</span>
                                 <?php if ($sort === 'game_type'): ?>
                                     <span class="table-sort-link__icon"><?php echo $order === 'asc' ? '▲' : '▼'; ?></span>

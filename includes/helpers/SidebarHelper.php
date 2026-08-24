@@ -209,7 +209,7 @@ class SidebarHelper {
 
         echo '<style>
             :root{--sidebar-top-offset:' . $navOffset . ';--tfd-nav-h:' . $navOffset . ';--tfd-navbar-height:' . $navH . '}
-            header#tfd-navbar,header#tfd-navbar.tfd-navbar,html body header#tfd-navbar,html body #tfd-navbar,html body .tfd-navbar,:root header#tfd-navbar,#tfd-navbar,.tfd-navbar{position:static!important;top:auto!important;z-index:99999!important}
+            header#tfd-navbar,header#tfd-navbar.tfd-navbar,html body header#tfd-navbar,html body #tfd-navbar,html body .tfd-navbar,:root header#tfd-navbar,#tfd-navbar,.tfd-navbar{position:relative!important;top:auto!important;z-index:99999!important}
             .tfd-mobile-drawer{z-index:100010!important}
             .tfd-dropdown-wrapper,.tfd-theme-dropdown,.tfd-lang-dropdown{z-index:100020!important}
             body:has(#tfdMobileDrawer.open) .sidebar-toggle,body:has(.tfd-mobile-drawer.open) .sidebar-toggle,.tfd-mobile-drawer.open ~ .sidebar-toggle,.tfd-mobile-drawer.open ~ * .sidebar-toggle{opacity:0!important;pointer-events:none!important;transform:translateY(-80px)!important}
@@ -378,7 +378,7 @@ class SidebarHelper {
 
         echo '<style>
             :root{--sidebar-top-offset:' . $navOffset . ';--tfd-nav-h:' . $navOffset . ';--tfd-navbar-height:' . $navH . '}
-            header#tfd-navbar,header#tfd-navbar.tfd-navbar,html body header#tfd-navbar,html body #tfd-navbar,html body .tfd-navbar,:root header#tfd-navbar,#tfd-navbar,.tfd-navbar{position:static!important;top:auto!important;z-index:99999!important}
+            header#tfd-navbar,header#tfd-navbar.tfd-navbar,html body header#tfd-navbar,html body #tfd-navbar,html body .tfd-navbar,:root header#tfd-navbar,#tfd-navbar,.tfd-navbar{position:relative!important;top:auto!important;z-index:99999!important}
             .tfd-mobile-drawer{z-index:100010!important}
             .tfd-dropdown-wrapper,.tfd-theme-dropdown,.tfd-lang-dropdown{z-index:100020!important}
             body:has(#tfdMobileDrawer.open) .sidebar-toggle,body:has(.tfd-mobile-drawer.open) .sidebar-toggle,.tfd-mobile-drawer.open ~ .sidebar-toggle,.tfd-mobile-drawer.open ~ * .sidebar-toggle{opacity:0!important;pointer-events:none!important;transform:translateY(-80px)!important}

@@ -516,14 +516,15 @@ class DarkModeHandler {
     }
 
     /* ==========================================================================
-       Ensure Top Navbar is Static (Scrolls with page on all screens)
+       Ensure Top Navbar is Relative (Scrolls with page on all screens, high z-index)
        Overrides tfd-navbar.js inline sticky position styles
        ========================================================================== */
     function enforceStaticNavbar() {
         const nav = document.getElementById('tfd-navbar') || document.querySelector('.tfd-navbar');
-        if (nav && nav.style.position !== 'static') {
-            nav.style.setProperty('position', 'static', 'important');
+        if (nav && (nav.style.position !== 'relative' || nav.style.zIndex !== '99999')) {
+            nav.style.setProperty('position', 'relative', 'important');
             nav.style.setProperty('top', 'auto', 'important');
+            nav.style.setProperty('z-index', '99999', 'important');
         }
     }
 

@@ -21,7 +21,7 @@ html body .tfd-navbar,
 :root header#tfd-navbar,
 #tfd-navbar,
 .tfd-navbar {
-    position: static !important;
+    position: relative !important;
     top: auto !important;
     z-index: 99999 !important;
 }

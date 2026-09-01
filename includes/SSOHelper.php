@@ -72,7 +72,7 @@ class SSOHelper {
         if (!$pdo) return null;
 
         try {
-            $stmt = $pdo->prepare("SELECT data, expires FROM KRED.sessions WHERE session_id = ? AND expires > UNIX_TIMESTAMP()");
+            $stmt = $pdo->prepare("SELECT data, expires FROM TFD.sessions WHERE session_id = ? AND expires > UNIX_TIMESTAMP()");
             $stmt->execute([$sessionId]);
             $row = $stmt->fetch();
             if (!$row || empty($row['data'])) return null;
@@ -81,7 +81,7 @@ class SSOHelper {
             $userId = $sessData['passport']['user'] ?? null;
             if (!$userId) return null;
 
-            $uStmt = $pdo->prepare("SELECT id, username, email, role FROM KRED.users WHERE id = ?");
+            $uStmt = $pdo->prepare("SELECT id, username, email, role FROM TFD.users WHERE id = ?");
             $uStmt->execute([$userId]);
             return $uStmt->fetch() ?: null;
         } catch (Exception $e) {

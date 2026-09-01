@@ -434,16 +434,16 @@ function verify_admin_password($password, $pdo) {
             return true;
         }
 
-        // 2. Fallback: Check central KRED.users table for SSO accounts
+        // 2. Fallback: Check central TFD.users table for SSO accounts
         try {
-            $kredStmt = $pdo->prepare("SELECT password_hash FROM KRED.users WHERE (email = ? OR username = ?) AND password_hash != '' LIMIT 1");
-            $kredStmt->execute([$admin['email'] ?? '', $admin['username'] ?? '']);
-            $kredHash = $kredStmt->fetchColumn();
-            if ($kredHash && password_verify($password, $kredHash)) {
+            $tfdStmt = $pdo->prepare("SELECT password_hash FROM TFD.users WHERE (email = ? OR username = ?) AND password_hash != '' LIMIT 1");
+            $tfdStmt->execute([$admin['email'] ?? '', $admin['username'] ?? '']);
+            $tfdHash = $tfdStmt->fetchColumn();
+            if ($tfdHash && password_verify($password, $tfdHash)) {
                 // Sync the hash to local admin_users table for future checks
                 try {
                     $upd = $pdo->prepare("UPDATE admin_users SET password_hash = ? WHERE admin_id = ?");
-                    $upd->execute([$kredHash, $adminId]);
+                    $upd->execute([$tfdHash, $adminId]);
                 } catch (Throwable $e) {}
                 return true;
             }
@@ -459,10 +459,10 @@ function verify_admin_password($password, $pdo) {
                     return true;
                 }
                 try {
-                    $kredStmt = $pdo->prepare("SELECT password_hash FROM KRED.users WHERE (email = ? OR username = ?) AND password_hash != '' LIMIT 1");
-                    $kredStmt->execute([$sa['email'] ?? '', $sa['username'] ?? '']);
-                    $kredHash = $kredStmt->fetchColumn();
-                    if ($kredHash && password_verify($password, $kredHash)) {
+                    $tfdStmt = $pdo->prepare("SELECT password_hash FROM TFD.users WHERE (email = ? OR username = ?) AND password_hash != '' LIMIT 1");
+                    $tfdStmt->execute([$sa['email'] ?? '', $sa['username'] ?? '']);
+                    $tfdHash = $tfdStmt->fetchColumn();
+                    if ($tfdHash && password_verify($password, $tfdHash)) {
                         return true;
                     }
                 } catch (Throwable $e) {}

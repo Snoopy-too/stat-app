@@ -1,16 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
- * GitHub Webhook Deployment Script
+ * GitHub Webhook Deployment Script for StatApp
  *
- * This script receives GitHub webhooks and automatically deploys your app
- * to your hosting account. Includes per-directory copy logging.
+ * This script receives GitHub webhooks and automatically deploys the app via git pull.
  *
  * SECURITY: Configuration is loaded from config/.env.deploy
  * Never commit .env.deploy to version control!
  */
 
 // ===== CONFIGURATION =====
-// Load secure deployment configuration
 $deploy_config = __DIR__ . '/config/.env.deploy';
 if (!file_exists($deploy_config)) {
     http_response_code(500);
@@ -19,63 +19,108 @@ if (!file_exists($deploy_config)) {
 require_once $deploy_config;
 
 // Use constants from config file
-$GITHUB_SECRET = GITHUB_WEBHOOK_SECRET;
-$GITHUB_OWNER = GITHUB_OWNER;
-$GITHUB_REPO = GITHUB_REPO;
-$GITHUB_BRANCH = GITHUB_BRANCH;
+$GITHUB_SECRET = defined('GITHUB_WEBHOOK_SECRET') ? GITHUB_WEBHOOK_SECRET : '';
+$GITHUB_OWNER  = defined('GITHUB_OWNER') ? GITHUB_OWNER : 'Snoopy-too';
+$GITHUB_REPO   = defined('GITHUB_REPO') ? GITHUB_REPO : 'stat-app';
 
-// Directories to preserve (won't be overwritten)
-$PRESERVE_DIRS = ['config'];
+// Detect branch from config or fallback to current git branch
+$currentBranch = trim(exec('git rev-parse --abbrev-ref HEAD 2>/dev/null') ?: 'UX+');
+$GITHUB_BRANCH = defined('GITHUB_BRANCH') && GITHUB_BRANCH !== '' ? GITHUB_BRANCH : $currentBranch;
 
 // ===== END CONFIGURATION =====
 
 // Enable error reporting for debugging
 error_reporting(E_ALL);
-ini_set('display_errors', 0);
-ini_set('log_errors', 1);
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
 
 // Set up logging
 $log_file = __DIR__ . '/deploy.log';
 
-function log_message($message) {
+function log_message(string $message): void {
     global $log_file;
     $timestamp = date('Y-m-d H:i:s');
     file_put_contents($log_file, "[$timestamp] $message\n", FILE_APPEND);
 }
 
-function verify_github_webhook($secret, $payload, $signature) {
-    $hash = 'sha256=' . hash_hmac('sha256', $payload, $secret);
-    return hash_equals($hash, $signature);
+function verify_github_webhook(string $secret, string $payload, string $signature): bool {
+    if (empty($secret) || empty($signature)) {
+        return false;
+    }
+    $expected = 'sha256=' . hash_hmac('sha256', $payload, $secret);
+    return hash_equals($expected, $signature);
 }
 
-function send_response($code, $message) {
+function send_response(int $code, string $message, array $extra = []): void {
     http_response_code($code);
-    header('Content-Type: application/json');
-    echo json_encode(['status' => ($code === 200 ? 'success' : 'error'), 'message' => $message]);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(array_merge([
+        'status' => ($code === 200 ? 'success' : 'error'),
+        'message' => $message
+    ], $extra), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
     exit;
 }
 
-try {
-    // First, create initial log entry to confirm script is running
-    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Deployment script executed\n", FILE_APPEND);
+function get_header(string $name): string {
+    $serverKey = 'HTTP_' . strtoupper(str_replace('-', '_', $name));
+    if (!empty($_SERVER[$serverKey])) {
+        return (string)$_SERVER[$serverKey];
+    }
+    if (function_exists('getallheaders')) {
+        $headers = getallheaders();
+        foreach ($headers as $key => $val) {
+            if (strcasecmp($key, $name) === 0) {
+                return (string)$val;
+            }
+        }
+    }
+    return '';
+}
 
+try {
+    // 1. Support manual deployment via GET parameter ?key=SECRET
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        $key = $_GET['key'] ?? '';
+        if (empty($key) || !hash_equals($GITHUB_SECRET, (string)$key)) {
+            send_response(403, 'Forbidden: Invalid deploy key.');
+        }
+
+        log_message("Manual deployment triggered via GET ?key for branch [$GITHUB_BRANCH]");
+        chdir(__DIR__);
+        $output = [];
+        $returnVar = 0;
+        $branchSafe = escapeshellarg($GITHUB_BRANCH);
+        exec("git pull origin $branchSafe 2>&1", $output, $returnVar);
+
+        if ($returnVar === 0) {
+            log_message("SUCCESS: Git pull executed successfully.\n" . implode("\n", $output));
+            send_response(200, 'Deployment successful', ['output' => $output]);
+        } else {
+            log_message("FAILURE: Git pull failed with exit code $returnVar.\n" . implode("\n", $output));
+            send_response(500, "Git pull failed with exit code $returnVar", ['output' => $output]);
+        }
+    }
+
+    // 2. Only allow POST requests for webhooks
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        send_response(405, 'Method Not Allowed. Expected POST webhook.');
+    }
+
+    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] Webhook script executed\n", FILE_APPEND);
     log_message('Webhook received from GitHub');
-    log_message('Headers: ' . json_encode(getallheaders()));
-    log_message('Request method: ' . $_SERVER['REQUEST_METHOD']);
 
     // Get the raw POST data
     $payload = file_get_contents('php://input');
     log_message('Payload size: ' . strlen($payload) . ' bytes');
 
-    if (empty($payload)) {
+    if ($payload === false || $payload === '') {
         log_message('Error: No payload received');
         send_response(400, 'No payload received');
     }
 
     // Verify webhook signature
-    $signature = $_SERVER['HTTP_X_HUB_SIGNATURE_256'] ?? '';
-    log_message('Signature received: ' . substr($signature, 0, 20) . '...');
-    log_message('Secret length: ' . strlen($GITHUB_SECRET));
+    $signature = get_header('X-Hub-Signature-256');
+    log_message('Signature received: ' . (strlen($signature) > 20 ? substr($signature, 0, 20) . '...' : ($signature ?: 'none')));
 
     if (!verify_github_webhook($GITHUB_SECRET, $payload, $signature)) {
         log_message('Invalid webhook signature - verification failed');
@@ -84,210 +129,65 @@ try {
 
     log_message('Webhook signature verified successfully');
 
+    // Handle GitHub Ping event
+    $githubEvent = get_header('X-GitHub-Event');
+    if (empty($githubEvent)) {
+        $githubEvent = 'push';
+    }
+
+    if ($githubEvent === 'ping') {
+        log_message('Ping event received from GitHub. Webhook connection verified successfully.');
+        send_response(200, 'GitHub webhook ping received successfully');
+    }
+
     // Parse the JSON payload
     $data = json_decode($payload, true);
-
-    if (!$data) {
+    if (!is_array($data)) {
+        log_message('Error: Invalid JSON payload');
         send_response(400, 'Invalid JSON payload');
     }
 
-    // Check if this is a push event on the main branch
-    if ($data['ref'] !== "refs/heads/$GITHUB_BRANCH") {
-        log_message("Push to different branch received: {$data['ref']}, ignoring");
-        send_response(200, 'Not main branch, ignoring');
+    // Check if this is a push event on the target branch
+    $targetRef = "refs/heads/$GITHUB_BRANCH";
+    $receivedRef = $data['ref'] ?? '';
+    if ($receivedRef !== $targetRef) {
+        log_message("Push to different branch received: '$receivedRef', ignoring (expected '$targetRef')");
+        send_response(200, "Not target branch ($GITHUB_BRANCH), ignoring");
     }
 
-    log_message('Valid webhook received for main branch');
+    log_message("Valid webhook received for $GITHUB_BRANCH branch");
 
-    // Get the commit info
-    $commit = $data['head_commit'];
-    $author = $commit['author']['name'] ?? 'Unknown';
-    $message = $commit['message'] ?? 'No message';
+    // Extract commit details for logging
+    $commit = $data['head_commit'] ?? [];
+    $author = $commit['author']['name'] ?? ($data['pusher']['name'] ?? 'Unknown');
+    $message = $commit['message'] ?? 'No commit message';
+    $commitId = substr($commit['id'] ?? ($data['after'] ?? 'unknown'), 0, 7);
 
-    log_message("Deployment triggered by: $author - $message");
+    log_message("Deployment triggered by: $author - [$commitId] $message");
 
-    // Download and extract the latest release
-    $download_url = "https://github.com/$GITHUB_OWNER/$GITHUB_REPO/archive/refs/heads/$GITHUB_BRANCH.zip";
-    $temp_file = tempnam(sys_get_temp_dir(), 'deploy_');
-    $extract_dir = sys_get_temp_dir() . '/deploy_extract_' . time();
+    // Execute git pull
+    chdir(__DIR__);
+    $output = [];
+    $returnVar = 0;
+    $branchSafe = escapeshellarg($GITHUB_BRANCH);
+    exec("git pull origin $branchSafe 2>&1", $output, $returnVar);
 
-    log_message("Downloading from: $download_url");
-
-    // Download the repository as ZIP
-    $ch = curl_init($download_url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 300);
-
-    $zip_content = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($http_code !== 200 || empty($zip_content)) {
-        log_message("Failed to download repository. HTTP Code: $http_code");
-        send_response(500, 'Failed to download repository');
+    if ($returnVar === 0) {
+        log_message("Deployment completed successfully: \n" . implode("\n", $output));
+        send_response(200, 'Deployment successful', [
+            'branch' => $GITHUB_BRANCH,
+            'commit' => $commitId,
+            'author' => $author,
+            'output' => $output
+        ]);
+    } else {
+        log_message("Deployment failed (exit code $returnVar): \n" . implode("\n", $output));
+        send_response(500, "Deployment failed: Git pull exited with code $returnVar", [
+            'output' => $output
+        ]);
     }
 
-    // Save the ZIP file
-    if (file_put_contents($temp_file, $zip_content) === false) {
-        log_message("Failed to save temporary ZIP file");
-        send_response(500, 'Failed to save temporary file');
-    }
-
-    log_message("ZIP file downloaded, size: " . filesize($temp_file) . " bytes");
-
-    // Extract the ZIP file
-    if (!mkdir($extract_dir, 0755, true)) {
-        log_message("Failed to create extraction directory: $extract_dir");
-        send_response(500, 'Failed to create extraction directory');
-    }
-
-    $zip = new ZipArchive();
-    if (!$zip->open($temp_file)) {
-        log_message("Failed to open ZIP file");
-        send_response(500, 'Failed to open ZIP file');
-    }
-
-    if (!$zip->extractTo($extract_dir)) {
-        log_message("Failed to extract ZIP file");
-        send_response(500, 'Failed to extract ZIP file');
-    }
-
-    $zip->close();
-    log_message("ZIP extracted successfully");
-
-    // Find the extracted folder (should be stat-app-main or similar)
-    $extracted_files = scandir($extract_dir);
-    $source_dir = null;
-
-    foreach ($extracted_files as $file) {
-        if ($file !== '.' && $file !== '..' && is_dir("$extract_dir/$file")) {
-            $source_dir = "$extract_dir/$file";
-            break;
-        }
-    }
-
-    if (!$source_dir) {
-        log_message("Could not find extracted directory");
-        send_response(500, 'Extraction failed - no directory found');
-    }
-
-    log_message("Source directory: $source_dir");
-
-    // Get current app directory
-    $app_dir = dirname(__FILE__);
-
-    // Backup preserve directories
-    $backups = [];
-    foreach ($PRESERVE_DIRS as $preserve_dir) {
-        $preserve_path = "$app_dir/$preserve_dir";
-        if (is_dir($preserve_path)) {
-            $backup_path = "$app_dir/.backup_$preserve_dir" . time();
-            log_message("Backing up $preserve_dir to $backup_path");
-
-            // Simple backup: copy directory
-            copy_dir($preserve_path, $backup_path);
-            $backups[$preserve_dir] = ['original' => $preserve_path, 'backup' => $backup_path];
-        }
-    }
-
-    // Copy files from source to app directory, skipping config
-    log_message("Copying files from $source_dir to $app_dir");
-    copy_dir_selective($source_dir, $app_dir, $PRESERVE_DIRS);
-
-    // Clean up temporary files
-    @unlink($temp_file);
-    remove_dir($extract_dir);
-
-    log_message('Deployment completed successfully');
-    send_response(200, 'Deployment successful');
-
-} catch (Exception $e) {
-    log_message('Error: ' . $e->getMessage());
-    send_response(500, 'Deployment failed: ' . $e->getMessage());
+} catch (Throwable $e) {
+    log_message('Exception: ' . $e->getMessage());
+    send_response(500, 'Deployment error: ' . $e->getMessage());
 }
-
-/**
- * Recursively copy directory
- */
-function copy_dir($src, $dst) {
-    $dir = opendir($src);
-    @mkdir($dst, 0755, true);
-
-    while (false !== ($file = readdir($dir))) {
-        if ($file != "." && $file != "..") {
-            if (is_dir("$src/$file")) {
-                copy_dir("$src/$file", "$dst/$file");
-            } else {
-                copy("$src/$file", "$dst/$file");
-            }
-        }
-    }
-    closedir($dir);
-}
-
-/**
- * Recursively copy directory, excluding certain directories
- */
-function copy_dir_selective($src, $dst, $exclude_dirs, $depth = 0) {
-    $dir = opendir($src);
-    if ($dir === false) {
-        log_message("ERROR: Could not open source directory: $src");
-        return;
-    }
-
-    if (!is_dir($dst)) {
-        if (!mkdir($dst, 0755, true)) {
-            log_message("ERROR: Could not create directory: $dst");
-            return;
-        }
-    }
-
-    $file_count = 0;
-    $error_count = 0;
-
-    while (false !== ($file = readdir($dir))) {
-        if ($file === "." || $file === "..") {
-            continue;
-        }
-
-        // Skip excluded directories (only at top level)
-        if ($depth === 0 && in_array($file, $exclude_dirs) && is_dir("$src/$file")) {
-            log_message("Skipping excluded directory: $file");
-            continue;
-        }
-
-        if (is_dir("$src/$file")) {
-            copy_dir_selective("$src/$file", "$dst/$file", $exclude_dirs, $depth + 1);
-        } else {
-            if (copy("$src/$file", "$dst/$file")) {
-                $file_count++;
-            } else {
-                $error_count++;
-                log_message("ERROR: Failed to copy $src/$file to $dst/$file");
-            }
-        }
-    }
-    closedir($dir);
-
-    $dir_name = basename($src);
-    if ($file_count > 0 || $error_count > 0) {
-        log_message("Copied $file_count files in $dir_name/ ($error_count errors)");
-    }
-}
-
-/**
- * Recursively remove directory
- */
-function remove_dir($dir) {
-    if (is_dir($dir)) {
-        $files = array_diff(scandir($dir), ['.', '..']);
-        foreach ($files as $file) {
-            $path = "$dir/$file";
-            is_dir($path) ? remove_dir($path) : @unlink($path);
-        }
-        @rmdir($dir);
-    }
-}
-?>

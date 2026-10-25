@@ -180,6 +180,30 @@ html.theme-transitioning body * {
 /* Input styling adjustments for dark mode */
 :root[data-theme="dark"] input,
 :root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea,
+:root[data-theme="midnight"] input,
+:root[data-theme="midnight"] select,
+:root[data-theme="midnight"] textarea,
+:root[data-theme="arcade"] input,
+:root[data-theme="arcade"] select,
+:root[data-theme="arcade"] textarea,
+:root[data-theme="casino"] input,
+:root[data-theme="casino"] select,
+:root[data-theme="casino"] textarea,
+[data-club-theme="casino"] input,
+[data-club-theme="midnight"] input,
+[data-club-theme="arcade"] input {
+    color-scheme: dark;
+}
+
+:root[data-theme="light"] input,
+:root[data-theme="light"] select,
+:root[data-theme="light"] textarea,
+[data-club-theme="light"] input {
+    color-scheme: light;
+}
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
 :root[data-theme="dark"] textarea {
     background-color: var(--color-surface);
     color: var(--color-text);

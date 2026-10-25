@@ -955,6 +955,17 @@ $page_title = $is_edit ? 'Edit Game Result' : 'Add Game Result';
     document.addEventListener('DOMContentLoaded', function() {
         toggleGameType();
 
+        const playedAtInput = document.getElementById('played_at');
+        if (playedAtInput) {
+            playedAtInput.addEventListener('click', function() {
+                if (typeof this.showPicker === 'function') {
+                    try {
+                        this.showPicker();
+                    } catch (e) {}
+                }
+            });
+        }
+
         const wSelect = document.getElementById('winner_id');
         const sSelect = document.getElementById('second_place_id');
         const twSelect = document.getElementById('team_winner_id');

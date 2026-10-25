@@ -72,6 +72,38 @@
     border-color: var(--color-border);
 }
 
+/* Date & Time Inputs (Mobile & Cross-Browser Fix) */
+input[type="date"].form-control,
+input[type="time"].form-control,
+input[type="datetime-local"].form-control {
+    -webkit-appearance: auto;
+    -moz-appearance: auto;
+    appearance: auto;
+    min-height: 2.75rem;
+    cursor: pointer;
+}
+
+input[type="date"].form-control::-webkit-date-and-time-value,
+input[type="time"].form-control::-webkit-date-and-time-value,
+input[type="datetime-local"].form-control::-webkit-date-and-time-value {
+    text-align: left;
+    min-height: 1.5em;
+}
+
+input[type="date"].form-control::-webkit-calendar-picker-indicator,
+input[type="time"].form-control::-webkit-calendar-picker-indicator,
+input[type="datetime-local"].form-control::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    padding: 0.25rem;
+    opacity: 0.8;
+}
+
+input[type="date"].form-control::-webkit-calendar-picker-indicator:hover,
+input[type="time"].form-control::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"].form-control::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
 /* Select */
 select.form-control {
     padding-right: 2.5rem;

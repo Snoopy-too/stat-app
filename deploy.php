@@ -24,7 +24,7 @@ $GITHUB_OWNER  = defined('GITHUB_OWNER') ? GITHUB_OWNER : 'Snoopy-too';
 $GITHUB_REPO   = defined('GITHUB_REPO') ? GITHUB_REPO : 'stat-app';
 
 // Detect branch from config or fallback to current git branch
-$currentBranch = trim(exec('git rev-parse --abbrev-ref HEAD 2>/dev/null') ?: 'UX+');
+$currentBranch = trim(exec('git rev-parse --abbrev-ref HEAD 2>/dev/null') ?: 'main');
 $GITHUB_BRANCH = defined('GITHUB_BRANCH') && GITHUB_BRANCH !== '' ? GITHUB_BRANCH : $currentBranch;
 
 // ===== END CONFIGURATION =====

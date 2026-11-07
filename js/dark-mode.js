@@ -46,6 +46,7 @@ class DarkModeHandler {
      * Apply theme on page load based on preference and system settings
      */
     applyInitialTheme() {
+        if (this.html.hasAttribute('data-theme-locked') || this.html.hasAttribute('data-club-theme')) return;
         const savedTheme = this.getSavedTheme();
 
         if (savedTheme && savedTheme !== this.THEME_SYSTEM) {
@@ -270,4 +271,282 @@ class DarkModeHandler {
     } else {
         initDarkMode();
     }
+})();
+
+// ==========================================================================
+// Global Overlay Banner & Toast Notification Manager
+// ==========================================================================
+(function() {
+    function getOrCreateContainer() {
+        let container = document.querySelector('.toast-container, .banner-overlay-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container banner-overlay-container';
+            container.setAttribute('aria-live', 'polite');
+            container.setAttribute('aria-atomic', 'true');
+            document.body.appendChild(container);
+        }
+        return container;
+    }
+
+    function getIconSvg(type) {
+        if (type === 'success') {
+            return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+        } else if (type === 'error') {
+            return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
+        } else if (type === 'warning') {
+            return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+        } else {
+            return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
+        }
+    }
+
+    function dismissBanner(bannerEl) {
+        if (!bannerEl || bannerEl.dataset.dismissing === 'true') return;
+        bannerEl.dataset.dismissing = 'true';
+        bannerEl.classList.add('banner-overlay--dismissing', 'toast--dismissing');
+        
+        setTimeout(() => {
+            if (bannerEl.parentNode) {
+                bannerEl.parentNode.removeChild(bannerEl);
+            }
+        }, 260);
+    }
+
+    function showBanner(content, type = 'info', options = {}) {
+        const container = getOrCreateContainer();
+        const banner = document.createElement('div');
+        
+        // Normalize type
+        let normType = 'info';
+        if (typeof type === 'string') {
+            const lower = type.toLowerCase();
+            if (lower.includes('error') || lower.includes('danger')) normType = 'error';
+            else if (lower.includes('success')) normType = 'success';
+            else if (lower.includes('warn')) normType = 'warning';
+            else if (lower.includes('info')) normType = 'info';
+        }
+
+        banner.className = `banner-overlay banner-overlay--${normType} toast toast--${normType}`;
+        banner.setAttribute('role', normType === 'error' ? 'alert' : 'status');
+
+        // Icon
+        const iconDiv = document.createElement('div');
+        iconDiv.className = 'banner-overlay__icon toast__icon';
+        iconDiv.innerHTML = getIconSvg(normType);
+        banner.appendChild(iconDiv);
+
+        // Content
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'banner-overlay__content toast__content';
+        if (typeof content === 'string') {
+            contentDiv.innerHTML = content;
+        } else if (content instanceof HTMLElement) {
+            contentDiv.appendChild(content);
+        }
+        banner.appendChild(contentDiv);
+
+        // Close button (always provided for all banners)
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'banner-overlay__close toast__close';
+        closeBtn.setAttribute('aria-label', `Close ${normType} notification`);
+        closeBtn.innerHTML = '&times;';
+        closeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dismissBanner(banner);
+        });
+        banner.appendChild(closeBtn);
+
+        container.appendChild(banner);
+
+        // Success auto-dismisses after 4 seconds (pauses on hover)
+        // Error PERSISTS indefinitely until user clicks the close button
+        // Warning persists by default; info auto-dismisses after 5s
+        const isError = (normType === 'error');
+        const isWarning = (normType === 'warning');
+        const shouldAutoDismiss = !isError && (!isWarning || options.autoDismiss === true) && (options.persist !== true);
+        const timeoutDuration = options.duration || (normType === 'success' ? 4000 : 5000);
+
+        if (shouldAutoDismiss) {
+            let dismissTimer = null;
+            let remainingTime = timeoutDuration;
+            let startTime = Date.now();
+
+            const startTimer = (duration) => {
+                startTime = Date.now();
+                dismissTimer = setTimeout(() => {
+                    dismissBanner(banner);
+                }, duration);
+            };
+
+            const pauseTimer = () => {
+                if (dismissTimer) {
+                    clearTimeout(dismissTimer);
+                    remainingTime -= (Date.now() - startTime);
+                    if (remainingTime < 1000) remainingTime = 1000;
+                }
+            };
+
+            banner.addEventListener('mouseenter', pauseTimer);
+            banner.addEventListener('mouseleave', () => startTimer(remainingTime));
+
+            startTimer(timeoutDuration);
+        }
+
+        return banner;
+    }
+
+    // Expose globally
+    window.showBanner = showBanner;
+    window.showMessage = showBanner;
+    window.dismissBanner = dismissBanner;
+
+    function processExistingBanners() {
+        const selectors = '.message, .success, .error, .warning, .info, [class*="message--"], [class*="alert"], .sa-flash';
+        const banners = document.querySelectorAll(selectors);
+        
+        banners.forEach(banner => {
+            // Skip inline messages in modals, form groups, confirmation dialogs, etc.
+            if (
+                banner.closest('.modal') || 
+                banner.closest('.form-group') || 
+                banner.closest('.confirm-modal') ||
+                banner.dataset.inline === 'true' ||
+                banner.dataset.noOverlay === 'true' ||
+                banner.dataset.processed === 'true' ||
+                banner.classList.contains('banner-overlay') ||
+                banner.closest('.toast-container') ||
+                banner.closest('.banner-overlay-container')
+            ) {
+                return;
+            }
+
+            banner.dataset.processed = 'true';
+
+            // Determine type
+            let type = 'info';
+            const classList = banner.className;
+            if (classList.includes('error') || classList.includes('danger')) {
+                type = 'error';
+            } else if (classList.includes('success')) {
+                type = 'success';
+            } else if (classList.includes('warning')) {
+                type = 'warning';
+            }
+
+            // Extract content and remove the inline placeholder immediately to prevent layout shift
+            const content = banner.innerHTML.trim();
+            const parent = banner.parentNode;
+            if (parent) {
+                parent.removeChild(banner);
+            }
+
+            if (content) {
+                showBanner(content, type);
+            }
+        });
+    }
+
+    /* ==========================================================================
+       Orientation Prompt Modal (Landscape Recommendation)
+       ========================================================================== */
+    function getStatSessionToken() {
+        const match = document.cookie.match(/(?:^|;\s*)tfd_stat_session=([^;]+)/);
+        return match ? decodeURIComponent(match[1]) : 'default';
+    }
+
+    function initOrientationPrompt() {
+        if (localStorage.getItem('orientation_prompt_remembered') === 'true') {
+            document.documentElement.classList.add('orientation-prompt-dismissed');
+            return;
+        }
+
+        const sessionToken = getStatSessionToken();
+        if (sessionStorage.getItem('orientation_prompt_dismissed_' + sessionToken) === 'true') {
+            document.documentElement.classList.add('orientation-prompt-dismissed');
+            return;
+        }
+
+        if (document.getElementById('orientation-prompt-modal')) {
+            return;
+        }
+
+        const modal = document.createElement('aside');
+        modal.id = 'orientation-prompt-modal';
+        modal.className = 'orientation-modal';
+        modal.setAttribute('aria-label', 'Screen orientation recommendation');
+        modal.innerHTML = `
+            <div class="orientation-modal__dialog">
+                <button type="button" class="orientation-modal__close" aria-label="Close orientation suggestion">&times;</button>
+                <div class="orientation-modal__icon">
+                    <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                        <path d="M12 18h.01"></path>
+                    </svg>
+                </div>
+                <h3 class="orientation-modal__title">Please Rotate Device</h3>
+                <p class="orientation-modal__message">This site is optimized for landscape viewing. Rotate your device sideways for the best experience.</p>
+                <label class="orientation-modal__checkbox-label">
+                    <input type="checkbox" id="orientation-remember-preference" class="orientation-modal__checkbox">
+                    <span>Remember my preference</span>
+                </label>
+                <button type="button" class="orientation-modal__btn orientation-modal__dismiss-btn">Continue in Portrait</button>
+            </div>
+        `;
+
+        const dismiss = () => {
+            const rememberCheckbox = modal.querySelector('#orientation-remember-preference');
+            if (rememberCheckbox && rememberCheckbox.checked) {
+                localStorage.setItem('orientation_prompt_remembered', 'true');
+            }
+            const currentToken = getStatSessionToken();
+            sessionStorage.setItem('orientation_prompt_dismissed_' + currentToken, 'true');
+            document.documentElement.classList.add('orientation-prompt-dismissed');
+            modal.remove();
+        };
+
+        const closeBtn = modal.querySelector('.orientation-modal__close');
+        const dismissBtn = modal.querySelector('.orientation-modal__dismiss-btn');
+
+        if (closeBtn) closeBtn.addEventListener('click', dismiss);
+        if (dismissBtn) dismissBtn.addEventListener('click', dismiss);
+
+        document.body.appendChild(modal);
+    }
+
+    /* ==========================================================================
+       Ensure Top Navbar is Relative (Scrolls with page on all screens, high z-index)
+       Overrides tfd-navbar.js inline sticky position styles
+       ========================================================================== */
+    function enforceStaticNavbar() {
+        const nav = document.getElementById('tfd-navbar') || document.querySelector('.tfd-navbar');
+        if (nav && (nav.style.position !== 'relative' || nav.style.zIndex !== '99999')) {
+            nav.style.setProperty('position', 'relative', 'important');
+            nav.style.setProperty('top', 'auto', 'important');
+            nav.style.setProperty('z-index', '99999', 'important');
+        }
+    }
+
+    function initGlobalUI() {
+        enforceStaticNavbar();
+        processExistingBanners();
+        initOrientationPrompt();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initGlobalUI);
+    } else {
+        initGlobalUI();
+    }
+
+    try {
+        const navObserver = new MutationObserver(enforceStaticNavbar);
+        navObserver.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['style']
+        });
+    } catch (e) {}
 })();

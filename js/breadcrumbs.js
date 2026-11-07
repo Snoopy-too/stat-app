@@ -98,18 +98,18 @@ function updateBreadcrumbFromURL(baseItems = []) {
 const breadcrumbConfigs = {
     adminDashboard: [
         {label: 'Home', url: '/', icon: '🏠'},
-        {label: 'Admin', url: '/admin/dashboard.php', icon: '⚙️'},
-        {label: 'Dashboard', url: null}
+        {label: 'Admin', url: '/admin/account.php', icon: '⚙️'},
+        {label: 'Account', url: null}
     ],
     adminClub: (clubId, clubName) => [
         {label: 'Home', url: '/', icon: '🏠'},
-        {label: 'Admin', url: '/admin/dashboard.php', icon: '⚙️'},
-        {label: 'Clubs', url: '/admin/manage_clubs.php'},
+        {label: 'Admin', url: '/admin/account.php', icon: '⚙️'},
+        {label: 'Clubs', url: '/admin/account.php'},
         {label: clubName || 'Club', url: null}
     ],
     adminMembers: (clubId, clubName) => [
         {label: 'Home', url: '/', icon: '🏠'},
-        {label: 'Admin', url: '/admin/dashboard.php', icon: '⚙️'},
+        {label: 'Admin', url: '/admin/account.php', icon: '⚙️'},
         {label: clubName || 'Club', url: `/admin/view_club.php?club_id=${clubId}`},
         {label: 'Members', url: null}
     ],

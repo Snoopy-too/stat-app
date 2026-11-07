@@ -1,9 +1,14 @@
 <?php
-session_start();
+require_once __DIR__ . '/config/session.php';
 
-// Redirect admin users directly to their dashboard
+// Redirect admin users directly to their account
 if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
-    header('Location: admin/dashboard.php');
+    $clubId = $_SESSION['current_club_id'] ?? $_SESSION['club_id'] ?? null;
+    if ($clubId) {
+        header('Location: admin/club_new_results.php?club_id=' . (int)$clubId);
+    } else {
+        header('Location: admin/select_club.php');
+    }
     exit;
 }
 
@@ -11,507 +16,126 @@ require_once 'config/database.php';
 
 // Get club info if user is logged in
 $club_name = "Board Game Club";
+$activeTheme = 'midnight';
+if (!empty($_COOKIE['tfd_theme'])) {
+    $activeTheme = $_COOKIE['tfd_theme'];
+}
+
 if (isset($_SESSION['club_id'])) {
-    $stmt = $pdo->prepare("SELECT club_name FROM clubs WHERE club_id = ?");
+    $stmt = $pdo->prepare("SELECT club_name, theme FROM clubs WHERE club_id = ?");
     $stmt->execute([$_SESSION['club_id']]);
     $club = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($club) {
         $club_name = $club['club_name'];
+        if (empty($_COOKIE['tfd_theme']) && !empty($club['theme'])) {
+            $activeTheme = $club['theme'];
+        }
     }
+}
+
+if (!empty($_GET['theme'])) {
+    $activeTheme = $_GET['theme'];
+}
+if ($activeTheme === 'tabletop') {
+    $activeTheme = 'casino';
+}
+if ($activeTheme === 'dark') {
+    $activeTheme = 'arcade';
+}
+if (!in_array($activeTheme, ['light', 'arcade', 'midnight', 'casino'])) {
+    $activeTheme = 'midnight';
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="<?php echo htmlspecialchars($activeTheme); ?>" data-club-theme="<?php echo htmlspecialchars($activeTheme); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StatApp - Track Your Board Game Club Stats</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=4">
+    <link rel="alternate icon" type="image/x-icon" href="favicon.ico?v=4">
+    <script>
+    (function() {
+        try {
+            var stored = localStorage.getItem('tfd-theme-preference') || localStorage.getItem('tfd-theme') || localStorage.getItem('stat-app-theme') || localStorage.getItem('app-theme-preference');
+            var theme = stored;
+            if (!theme || theme === 'auto' || theme === 'system') {
+                var m = document.cookie.match(/(?:^|;\s*)tfd_theme=([^;]*)/);
+                if (m) theme = decodeURIComponent(m[1]);
+            }
+            if (theme === 'tabletop') theme = 'casino';
+            if (theme === 'dark') theme = 'arcade';
+            if (!theme || theme === 'auto' || theme === 'system') {
+                theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'arcade';
+            }
+            if (['light', 'arcade', 'midnight', 'casino'].includes(theme)) {
+                document.documentElement.setAttribute('data-theme', theme);
+                document.documentElement.setAttribute('data-club-theme', theme);
+            }
+        } catch(e) {}
+    })();
+    </script>
+    <link rel="stylesheet" href="https://theflyingdutchmen.games/stylesheets/tfd-nav.css">
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/dark-mode.js"></script>
-    <style>
-        /* Landing Page Styles */
-        .landing-hero {
-            background: linear-gradient(135deg, #1e293b 0%, #1e3a5f 50%, #4f46e5 100%) !important;
-            color: white !important;
-            padding: 6rem 2rem 4rem;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .landing-hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-            opacity: 0.5;
-        }
-
-        .landing-hero-content {
-            position: relative;
-            z-index: 1;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .landing-hero h1 {
-            font-size: clamp(2.5rem, 5vw, 4rem);
-            font-weight: 700;
-            margin-bottom: 1rem;
-            line-height: 1.1;
-        }
-
-        .landing-hero .highlight {
-            background: linear-gradient(90deg, #60a5fa, #a78bfa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .landing-hero-subtitle {
-            font-size: 1.25rem;
-            margin-bottom: 2rem;
-            line-height: 1.6;
-            color: #cbd5e1 !important;
-        }
-
-        .landing-hero-cta {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .landing-hero .btn--large {
-            padding: 1rem 2.5rem;
-            font-size: 1.1rem;
-            border-radius: 50px;
-        }
-
-        .landing-hero .btn--glass {
-            background: rgba(255,255,255,0.15) !important;
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(255,255,255,0.5) !important;
-            color: #ffffff !important;
-            font-weight: 600;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        }
-
-        .landing-hero .btn--glass:hover {
-            background: rgba(255,255,255,0.3) !important;
-            border-color: rgba(255,255,255,0.8) !important;
-        }
-
-        /* Features Section */
-        .landing-features {
-            padding: 5rem 2rem;
-            background: var(--color-bg);
-        }
-
-        .landing-section-header {
-            text-align: center;
-            margin-bottom: 3rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .landing-section-header h2 {
-            font-size: 2rem;
-            color: var(--color-text);
-            margin-bottom: 0.5rem;
-        }
-
-        .landing-section-header p {
-            color: var(--color-text-muted);
-            font-size: 1.1rem;
-            text-align: center !important;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .feature-card {
-            background: var(--color-surface);
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            border: 1px solid var(--color-border);
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.12);
-        }
-
-        .feature-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.75rem;
-            margin-bottom: 1.25rem;
-        }
-
-        .feature-icon--blue { background: linear-gradient(135deg, #dbeafe, #bfdbfe); }
-        .feature-icon--purple { background: linear-gradient(135deg, #ede9fe, #ddd6fe); }
-        .feature-icon--green { background: linear-gradient(135deg, #d1fae5, #a7f3d0); }
-        .feature-icon--orange { background: linear-gradient(135deg, #fed7aa, #fdba74); }
-
-        .feature-card h3 {
-            font-size: 1.25rem;
-            margin-bottom: 0.75rem;
-            color: var(--color-text);
-        }
-
-        .feature-card p {
-            color: var(--color-text-muted);
-            line-height: 1.6;
-        }
-
-        /* Screenshot Gallery */
-        .landing-gallery {
-            padding: 5rem 2rem;
-            background: linear-gradient(180deg, var(--color-bg) 0%, var(--color-surface) 100%);
-        }
-
-        .gallery-container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .gallery-wrapper {
-            position: relative;
-        }
-
-        .gallery-scroll {
-            display: flex;
-            gap: 1.5rem;
-            overflow-x: auto;
-            padding: 1rem 3rem 2rem;
-            scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-            scroll-behavior: smooth;
-        }
-
-        .gallery-scroll::-webkit-scrollbar {
-            display: none;
-        }
-
-        .gallery-nav-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 50px;
-            height: 120px;
-            border: none;
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            font-size: 2rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            z-index: 10;
-            opacity: 0;
-        }
-
-        .gallery-wrapper:hover .gallery-nav-btn {
-            opacity: 1;
-        }
-
-        .gallery-nav-btn:hover {
-            background: rgba(0, 0, 0, 0.8);
-        }
-
-        .gallery-nav-btn:active {
-            transform: translateY(-50%) scale(0.95);
-        }
-
-        .gallery-nav-btn--prev {
-            left: 0;
-            border-radius: 0 8px 8px 0;
-        }
-
-        .gallery-nav-btn--next {
-            right: 0;
-            border-radius: 8px 0 0 8px;
-        }
-
-        .gallery-item {
-            flex: 0 0 auto;
-            width: min(90vw, 500px);
-            scroll-snap-align: center;
-        }
-
-        .gallery-item img {
-            width: 100%;
-            border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-            border: 1px solid var(--color-border);
-            transition: transform 0.3s ease;
-        }
-
-        .gallery-item:hover img {
-            transform: scale(1.02);
-        }
-
-        .gallery-item-caption {
-            text-align: center;
-            margin-top: 1rem;
-            font-weight: 500;
-            color: var(--color-text);
-        }
-
-        /* Stats Banner */
-        .landing-stats {
-            background: #1e293b;
-            color: white;
-            padding: 3rem 2rem;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 2rem;
-            max-width: 800px;
-            margin: 0 auto;
-            text-align: center;
-        }
-
-        .stat-item-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #60a5fa;
-        }
-
-        .stat-item-label {
-            font-size: 0.95rem;
-            color: #cbd5e1;
-            margin-top: 0.25rem;
-            font-weight: 500;
-        }
-
-        /* CTA Section */
-        .landing-cta {
-            padding: 5rem 2rem;
-            text-align: center;
-            background: var(--color-surface);
-        }
-
-        .landing-cta h2 {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            color: var(--color-text);
-        }
-
-        .landing-cta p {
-            color: #64748b;
-            margin-bottom: 2rem;
-            font-size: 1.1rem;
-            text-align: center !important;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* Search Section */
-        .landing-search {
-            padding: 4rem 2rem;
-            background: var(--color-bg);
-        }
-
-        .search-container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .search-container .form-control {
-            padding: 1rem 1.5rem;
-            font-size: 1.1rem;
-            border-radius: 50px;
-            border: 2px solid var(--color-border);
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .search-container .form-control:focus {
-            border-color: var(--color-primary);
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-        }
-
-        .club-list {
-            margin-top: 1.5rem;
-        }
-
-        .club-item {
-            background: var(--color-surface);
-            padding: 1.25rem 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 0.75rem;
-            border: 1px solid var(--color-border);
-            transition: box-shadow 0.2s ease;
-        }
-
-        .club-item:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .club-item h3 {
-            margin: 0 0 0.25rem;
-        }
-
-        .club-item h3 a {
-            color: var(--color-primary);
-            text-decoration: none;
-        }
-
-        .club-item h3 a:hover {
-            text-decoration: underline;
-        }
-
-        .club-item p {
-            margin: 0;
-            color: var(--color-text-muted);
-            font-size: 0.9rem;
-        }
-
-        /* Header Override for Landing */
-        .landing-header {
-            background: transparent !important;
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
-            border-bottom: none !important;
-        }
-
-        .landing-header h1 {
-            color: #ffffff !important;
-        }
-
-        .landing-header .btn--secondary {
-            background: rgba(255,255,255,0.2) !important;
-            border: 2px solid rgba(255,255,255,0.5) !important;
-            color: #ffffff !important;
-            font-weight: 600;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        }
-
-        .landing-header .btn--secondary:hover {
-            background: rgba(255,255,255,0.35) !important;
-            border-color: rgba(255,255,255,0.8) !important;
-        }
-
-        /* Footer */
-        .landing-footer {
-            background: #1e293b;
-            color: white;
-            padding: 2rem;
-            text-align: center;
-        }
-
-        .landing-footer p {
-            color: #94a3b8;
-            margin: 0;
-        }
-
-        @media (max-width: 768px) {
-            .landing-hero {
-                padding: 6rem 1.5rem 3rem;
-            }
-
-            .landing-hero h1 {
-                font-size: 2rem;
-            }
-
-            .landing-hero-subtitle {
-                font-size: 1rem;
-            }
-
-            .features-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .gallery-item {
-                width: min(85vw, 350px);
-            }
-        }
-    </style>
+    <script src="js/i18n.js"></script>
 </head>
 <body>
-    <!-- Header -->
-    <div class="header landing-header">
-        <div class="header-title-group">
-            <h1 style="font-size: 1.25rem;">StatApp</h1>
-        </div>
-        <div class="header-actions">
-            <button type="button" class="btn btn--icon theme-toggle" data-theme-toggle aria-label="Toggle dark mode">
-                <span class="theme-toggle__icon" data-theme-icon></span>
-            </button>
-            <?php if (isset($_SESSION['is_super_admin'])): ?>
-                <a href="admin/dashboard.php" class="btn btn--secondary btn--small">Dashboard</a>
-            <?php else: ?>
-                <a href="admin/login.php" class="btn btn--secondary btn--small">Login</a>
-            <?php endif; ?>
-        </div>
-    </div>
+    <!-- Shared Top Navigation Bar (Managed by tfd-navbar.js) -->
+    <header id="tfd-navbar" class="tfd-navbar" data-active="stats"></header>
 
     <!-- Hero Section -->
     <section class="landing-hero">
+        <!-- Background Wave & Grid Contour Overlays -->
+        <div class="hero-contour-waves"></div>
+
         <div class="landing-hero-content">
-            <h1>Track Every Victory.<br><span class="highlight">Celebrate Every Champion.</span></h1>
-            <p class="landing-hero-subtitle">
-                The all-in-one platform for board game clubs to manage members, track game results,
-                and crown champions. Simple, beautiful, and built for communities like yours.
+            <h1><span data-i18n="landing.heroTitle1">Track Every Victory.</span><br><span class="highlight" data-i18n="landing.heroTitle2">Celebrate Every Champion.</span></h1>
+            <p class="landing-hero-subtitle" data-i18n="landing.heroSubtitle">
+                The all-in-one platform for board game clubs to manage members, track game results, and crown champions.
             </p>
-            <div class="landing-hero-cta">
-                <a href="register.php" class="btn btn--large">Start Your Club Free</a>
-                <a href="#preview" class="btn btn--large btn--glass">See It In Action</a>
+
+            <div class="landing-hero-stats" style="display:inline-flex;align-items:center;gap:0.75rem;margin:1rem 0 1.5rem;flex-wrap:wrap;justify-content:center;">
+              <div class="stat-item">
+                  <span class="stat-item-value">100%</span>
+                  <span class="stat-item-label" data-i18n="landing.freeToUse">Free to Use</span>
+              </div>
+              <span class="stat-divider">•</span>
+              <div class="stat-item">
+                  <span class="stat-item-value">Unlimited</span>
+                  <span class="stat-item-label" data-i18n="landing.unlimited">Games &amp; Members</span>
+              </div>
             </div>
+
         </div>
     </section>
 
-    <!-- Features Grid -->
+    <!-- Features Section -->
     <section class="landing-features">
         <div class="landing-section-header">
-            <h2>Everything Your Club Needs</h2>
-            <p>Powerful tools wrapped in a simple, intuitive interface</p>
+            <h2 data-i18n="landing.featuresHeading">Built for Board Game Enthusiasts</h2>
         </div>
         <div class="features-grid">
             <div class="feature-card">
-                <div class="feature-icon feature-icon--blue">&#127922;</div>
-                <h3>Game Library</h3>
-                <p>Build your club's game collection. Track player counts, total plays, and see which games hit the table most.</p>
+                <div class="feature-icon-wrapper">
+                    <div class="feature-icon feature-icon--blue">&#127922;</div>
+                    <h3 data-i18n="club.games">Game Library</h3>
+                </div>
+                <p data-i18n="landing.featResultsDesc">Build your club's game collection. Track player counts, play counts, and see top table favorites.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon feature-icon--purple">&#127942;</div>
-                <h3>Champion Tracking</h3>
-                <p>Crown your champions and preserve their legacy. Add notes, dates, and build a hall of fame for your club.</p>
+                <div class="feature-icon-wrapper">
+                    <div class="feature-icon feature-icon--purple">&#127942;</div>
+                    <h3 data-i18n="landing.featChampionsTitle">Game Results &amp; Champions</h3>
+                </div>
+                <p data-i18n="landing.featChampionsDesc">Log every play session with winners, placements, and duration while crowning champions in your hall of fame.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon feature-icon--green">&#128101;</div>
-                <h3>Member Management</h3>
-                <p>Keep your roster organized with nicknames, join dates, and individual stats for every member.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon feature-icon--orange">&#128202;</div>
-                <h3>Game Results</h3>
-                <p>Log every play session with winners, placements, duration, and notes. Build a complete history of your game nights.</p>
+                <div class="feature-icon-wrapper">
+                    <div class="feature-icon feature-icon--green">&#128101;</div>
+                    <h3 data-i18n="landing.featMembersTitle">Member Management</h3>
+                </div>
+                <p data-i18n="landing.featMembersDesc">Keep your roster organized with player nicknames, join dates, and individual head-to-head performance stats.</p>
             </div>
         </div>
     </section>
@@ -521,76 +145,33 @@ if (isset($_SESSION['club_id'])) {
         <div class="gallery-container">
             <div class="landing-section-header">
                 <h2>See What's Inside</h2>
-                <p>A peek at your future dashboard</p>
+                <p>Click to open the interactive app preview carousel</p>
             </div>
-            <div class="gallery-wrapper">
-                <button class="gallery-nav-btn gallery-nav-btn--prev" id="galleryPrev" aria-label="Previous">&#10094;</button>
-                <div class="gallery-scroll" id="galleryScroll">
-                    <div class="gallery-item">
-                        <img src="images/sample UI images/Screenshot 2025-12-15 162837.png" alt="Admin Dashboard">
-                        <div class="gallery-item-caption">Your Command Center</div>
+            <div class="gallery-single-wrapper">
+                <div class="gallery-item gallery-item--single" id="singlePreviewTrigger" role="button" tabindex="0" aria-label="Open Interactive App Preview Modal">
+                    <div class="gallery-item-preview">
+                        <iframe id="singlePreviewIframe" src="admin/club_new_results.php?demo=1&amp;theme=<?php echo htmlspecialchars($activeTheme); ?>" title="Interactive App Preview" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+                        <div class="preview-overlay-badge">
+                            <span>🔍 Click to launch preview</span>
+                        </div>
                     </div>
-                    <div class="gallery-item">
-                        <img src="images/sample UI images/Screenshot 2025-12-15 163416.png" alt="Games List">
-                        <div class="gallery-item-caption">Game Library</div>
-                    </div>
-                    <div class="gallery-item">
-                        <img src="images/sample UI images/Screenshot 2025-12-15 163534.png" alt="Game Result Details">
-                        <div class="gallery-item-caption">Detailed Results</div>
-                    </div>
-                    <div class="gallery-item">
-                        <img src="images/sample UI images/Screenshot 2025-12-15 163324.png" alt="Champion History">
-                        <div class="gallery-item-caption">Champion History</div>
-                    </div>
-                    <div class="gallery-item">
-                        <img src="images/sample UI images/Screenshot 2025-12-15 163935.png" alt="Team Management">
-                        <div class="gallery-item-caption">Team Management</div>
-                    </div>
-                    <div class="gallery-item">
-                        <img src="images/sample UI images/Screenshot 2025-12-15 163036.png" alt="Club Management">
-                        <div class="gallery-item-caption">Multi-Club Support</div>
-                    </div>
+                    <div class="gallery-item-caption">Interactive App Preview &mdash; Click to explore all features</div>
                 </div>
-                <button class="gallery-nav-btn gallery-nav-btn--next" id="galleryNext" aria-label="Next">&#10095;</button>
             </div>
         </div>
     </section>
 
-    <!-- Stats Banner -->
-    <section class="landing-stats">
-        <div class="stats-grid">
-            <div class="stat-item">
-                <div class="stat-item-value">100%</div>
-                <div class="stat-item-label">Free to Use</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-item-value">Unlimited</div>
-                <div class="stat-item-label">Games & Members</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-item-value">5 min</div>
-                <div class="stat-item-label">Setup Time</div>
-            </div>
-        </div>
-    </section>
 
     <!-- Search Section -->
-    <section class="landing-search">
+    <section class="landing-search" id="clubs">
         <div class="search-container">
             <div class="landing-section-header">
-                <h2>Find a Club</h2>
-                <p>Explore public clubs and their stats</p>
+                <h2 data-i18n="landing.findYourClub">Find Your Club</h2>
+                <p data-i18n="landing.explorePublicClubs">Explore public clubs and view their stats</p>
             </div>
-            <input type="text" id="clubSearch" placeholder="Search for a club..." class="form-control">
+            <input type="text" id="clubSearch" placeholder="Search by club name or city..." data-i18n-placeholder="landing.searchPlaceholder" class="form-control">
             <div id="searchResults" class="club-list"></div>
         </div>
-    </section>
-
-    <!-- Final CTA -->
-    <section class="landing-cta">
-        <h2>Ready to Level Up Your Game Nights?</h2>
-        <p>Join clubs already tracking their stats with StatApp.</p>
-        <a href="register.php" class="btn btn--large">Start Your Club Free</a>
     </section>
 
     <!-- Footer -->
@@ -598,48 +179,208 @@ if (isset($_SESSION['club_id'])) {
         <p>&copy; <?php echo date('Y'); ?> StatApp. Built for board game lovers.</p>
     </footer>
 
+    <!-- Preview Modal -->
+    <div class="preview-modal-overlay" id="previewModal" aria-hidden="true">
+        <div class="preview-modal-container">
+            <div class="preview-modal-header">
+                <h3 id="previewModalTitle">Preview</h3>
+                <button type="button" class="preview-modal-close" id="previewModalClose" aria-label="Close">&times;</button>
+            </div>
+            <div class="preview-modal-body">
+                <button type="button" class="modal-nav-btn modal-nav-btn--prev" id="modalPrev" aria-label="Previous slide">&#10094;</button>
+                <iframe id="previewModalIframe" src="" title="Preview Modal" loading="lazy"></iframe>
+                <button type="button" class="modal-nav-btn modal-nav-btn--next" id="modalNext" aria-label="Next slide">&#10095;</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-    // Gallery navigation
-    const gallery = document.getElementById('galleryScroll');
-    const prevBtn = document.getElementById('galleryPrev');
-    const nextBtn = document.getElementById('galleryNext');
+    function getCurrentLandingTheme() {
+        var theme = document.documentElement.getAttribute('data-club-theme') || 
+                    document.documentElement.getAttribute('data-theme') || 
+                    localStorage.getItem('tfd-theme-preference') || 
+                    localStorage.getItem('stat-app-theme') || 
+                    'midnight';
+        if (theme === 'tabletop') theme = 'casino';
+        if (theme === 'dark') theme = 'arcade';
+        return theme;
+    }
 
-    const scrollAmount = 520; // Approximate width of one item + gap
+    function syncIframeTheme(theme) {
+        if (!theme) theme = getCurrentLandingTheme();
+        document.querySelectorAll('.landing-gallery iframe, .preview-modal-body iframe').forEach(iframe => {
+            try {
+                if (iframe.contentDocument && iframe.contentDocument.documentElement) {
+                    iframe.contentDocument.documentElement.setAttribute('data-theme', theme);
+                    iframe.contentDocument.documentElement.setAttribute('data-club-theme', theme);
+                }
+            } catch (e) {}
+        });
+    }
 
-    prevBtn.addEventListener('click', () => {
-        gallery.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    // Keep landing page data-club-theme in sync with data-theme when user changes theme
+    function syncLandingTheme(theme) {
+        if (!theme) return;
+        if (theme === 'tabletop') theme = 'casino';
+        if (theme === 'dark') theme = 'arcade';
+        if (['light', 'arcade', 'midnight', 'casino'].includes(theme)) {
+            document.documentElement.setAttribute('data-theme', theme);
+            document.documentElement.setAttribute('data-club-theme', theme);
+            syncIframeTheme(theme);
+        }
+    }
+    window.addEventListener('tfd-theme-change', (e) => {
+        if (e.detail && e.detail.theme) syncLandingTheme(e.detail.theme);
+    });
+    window.addEventListener('themechange', (e) => {
+        if (e.detail && e.detail.theme) syncLandingTheme(e.detail.theme);
+    });
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'tfd-theme-preference' || e.key === 'stat-app-theme' || e.key === 'tfd-theme') {
+            syncLandingTheme(e.newValue);
+        }
     });
 
-    nextBtn.addEventListener('click', () => {
-        gallery.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    // Modal preview behavior (modal carousel)
+    const previewSlides = [
+        { title: 'Add New Result', url: 'admin/club_new_results.php?demo=1' },
+        { title: 'Results', url: 'admin/manage_results.php?demo=1' },
+        { title: 'Members', url: 'admin/manage_members.php?demo=1' },
+        { title: 'Teams', url: 'admin/manage_teams.php?demo=1' },
+        { title: 'Champions', url: 'admin/manage_champions.php?demo=1' },
+        { title: 'Games', url: 'admin/manage_games.php?demo=1' }
+    ];
+    let currentSlideIndex = 0;
+
+    const previewModal = document.getElementById('previewModal');
+    const previewModalIframe = document.getElementById('previewModalIframe');
+    const previewModalTitle = document.getElementById('previewModalTitle');
+    const previewModalClose = document.getElementById('previewModalClose');
+    const modalPrev = document.getElementById('modalPrev');
+    const modalNext = document.getElementById('modalNext');
+    const singlePreviewTrigger = document.getElementById('singlePreviewTrigger');
+
+    function updateModalSlide(index) {
+        if (!previewModalIframe) return;
+        currentSlideIndex = (index + previewSlides.length) % previewSlides.length;
+        const slide = previewSlides[currentSlideIndex];
+        const theme = getCurrentLandingTheme();
+        const separator = slide.url.includes('?') ? '&' : '?';
+        previewModalIframe.src = `${slide.url}${separator}theme=${encodeURIComponent(theme)}`;
+        if (previewModalTitle) {
+            previewModalTitle.textContent = `${slide.title} (${currentSlideIndex + 1} of ${previewSlides.length})`;
+        }
+    }
+
+    function preventModalScroll(e) {
+        e.preventDefault();
+    }
+
+    function openPreviewModal(slideIndex = 0) {
+        if (!previewModal) return;
+        updateModalSlide(slideIndex);
+        previewModal.classList.add('is-active');
+        previewModal.setAttribute('aria-hidden', 'false');
+        document.documentElement.classList.add('modal-open');
+        document.body.classList.add('modal-open');
+        document.body.style.overflow = 'hidden';
+        previewModal.addEventListener('wheel', preventModalScroll, { passive: false });
+        previewModal.addEventListener('touchmove', preventModalScroll, { passive: false });
+    }
+
+    function closePreviewModal() {
+        if (!previewModal || !previewModalIframe) return;
+        previewModal.classList.remove('is-active');
+        previewModal.setAttribute('aria-hidden', 'true');
+        previewModalIframe.src = '';
+        document.documentElement.classList.remove('modal-open');
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        previewModal.removeEventListener('wheel', preventModalScroll);
+        previewModal.removeEventListener('touchmove', preventModalScroll);
+    }
+
+    if (singlePreviewTrigger) {
+        singlePreviewTrigger.addEventListener('click', () => openPreviewModal(0));
+        singlePreviewTrigger.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openPreviewModal(0);
+            }
+        });
+    }
+
+    if (modalPrev) {
+        modalPrev.addEventListener('click', (e) => {
+            e.stopPropagation();
+            updateModalSlide(currentSlideIndex - 1);
+        });
+    }
+
+    if (modalNext) {
+        modalNext.addEventListener('click', (e) => {
+            e.stopPropagation();
+            updateModalSlide(currentSlideIndex + 1);
+        });
+    }
+
+    if (previewModalClose) {
+        previewModalClose.addEventListener('click', closePreviewModal);
+    }
+    if (previewModal) {
+        previewModal.addEventListener('click', (e) => {
+            if (e.target === previewModal) closePreviewModal();
+        });
+    }
+    document.addEventListener('keydown', (e) => {
+        if (previewModal && previewModal.classList.contains('is-active')) {
+            if (e.key === 'Escape') {
+                closePreviewModal();
+            } else if (e.key === 'ArrowLeft') {
+                updateModalSlide(currentSlideIndex - 1);
+            } else if (e.key === 'ArrowRight') {
+                updateModalSlide(currentSlideIndex + 1);
+            }
+        }
+    });
+
+    document.querySelectorAll('.landing-gallery iframe, .preview-modal-body iframe').forEach(iframe => {
+        iframe.addEventListener('load', () => syncIframeTheme(getCurrentLandingTheme()));
     });
 
     // Club search
-    document.getElementById('clubSearch').addEventListener('input', function(e) {
-        const searchTerm = e.target.value.trim();
-        if (searchTerm.length < 2) {
-            document.getElementById('searchResults').innerHTML = '';
-            return;
-        }
+    const searchInput = document.getElementById('clubSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.trim();
+            if (searchTerm.length < 2) {
+                document.getElementById('searchResults').innerHTML = '';
+                return;
+            }
 
-        fetch(`search_clubs.php?term=${encodeURIComponent(searchTerm)}`)
-            .then(response => response.json())
-            .then(clubs => {
-                const resultsHtml = clubs.length ? clubs.map(club => `
-                    <div class="club-item">
-                        <h3><a href="club_stats.php?id=${club.club_id}">${club.club_name}</a></h3>
-                        ${club.description ? `<p>${club.description.substring(0, 100)}...</p>` : ''}
-                    </div>
-                `).join('') : '<p style="text-align:center;color:var(--color-text-muted);">No clubs found</p>';
+            fetch(`search_clubs.php?term=${encodeURIComponent(searchTerm)}`)
+                .then(response => response.json())
+                .then(clubs => {
+                    const resultsHtml = clubs.length ? clubs.map(club => {
+                        const url = club.slug ? `club_game_results.php?slug=${encodeURIComponent(club.slug)}` : `club_game_results.php?id=${club.club_id}`;
+                        return `
+                            <a href="${url}" class="club-item" style="display: block; text-decoration: none;">
+                                <h3 style="margin: 0 0 0.2rem; font-size: 1rem; color: var(--color-primary); font-weight: 600;">${club.club_name}</h3>
+                                ${club.description ? `<p style="margin: 0; color: var(--color-text-muted); font-size: 0.85rem;">${club.description.substring(0, 100)}...</p>` : ''}
+                            </a>
+                        `;
+                    }).join('') : '<p style="text-align:center;color:var(--color-text-muted);font-size:0.9rem;margin:0.5rem 0;">No clubs found</p>';
 
-                document.getElementById('searchResults').innerHTML = resultsHtml;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('searchResults').innerHTML = '<p>Error searching clubs</p>';
-            });
-    });
+                    document.getElementById('searchResults').innerHTML = resultsHtml;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('searchResults').innerHTML = '<p style="text-align:center;color:var(--color-text-muted);font-size:0.9rem;">Error searching clubs</p>';
+                });
+        });
+    }
     </script>
+    <script src="https://theflyingdutchmen.games/javascripts/tfd-navbar.js"></script>
     <script src="js/mobile-menu.js"></script>
 </body>
 </html>

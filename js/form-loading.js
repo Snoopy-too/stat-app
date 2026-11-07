@@ -97,31 +97,63 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
- * Helper function to show toast-style messages
+ * Helper function to show overlay banners / toast messages
  */
-function showMessage(message, type = 'info') {
-    // Check if message container exists, if not create one
-    let messageContainer = document.querySelector('.toast-container');
-    if (!messageContainer) {
-        messageContainer = document.createElement('div');
-        messageContainer.className = 'toast-container';
-        document.body.appendChild(messageContainer);
+function showMessage(message, type = 'info', options = {}) {
+    if (typeof window.showBanner === 'function') {
+        return window.showBanner(message, type, options);
     }
 
-    // Create message element
+    // Fallback if dark-mode.js is not loaded on this specific page
+    let container = document.querySelector('.toast-container, .banner-overlay-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container banner-overlay-container';
+        container.setAttribute('aria-live', 'polite');
+        container.setAttribute('aria-atomic', 'true');
+        document.body.appendChild(container);
+    }
+
+    const normType = ['success', 'error', 'warning', 'info'].includes(type) ? type : 'info';
     const messageEl = document.createElement('div');
-    messageEl.className = `toast toast--${type}`;
-    messageEl.textContent = message;
-    messageEl.setAttribute('role', 'status');
-    messageEl.setAttribute('aria-live', 'polite');
+    messageEl.className = `banner-overlay banner-overlay--${normType} toast toast--${normType}`;
+    messageEl.setAttribute('role', normType === 'error' ? 'alert' : 'status');
 
-    messageContainer.appendChild(messageEl);
+    const iconDiv = document.createElement('div');
+    iconDiv.className = 'banner-overlay__icon toast__icon';
+    if (normType === 'success') {
+        iconDiv.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+    } else if (normType === 'error') {
+        iconDiv.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
+    } else {
+        iconDiv.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
+    }
+    messageEl.appendChild(iconDiv);
 
-    // Auto-remove after 4 seconds
-    setTimeout(() => {
-        messageEl.classList.add('toast--dismissing');
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'banner-overlay__content toast__content';
+    contentDiv.innerHTML = message;
+    messageEl.appendChild(contentDiv);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'banner-overlay__close toast__close';
+    closeBtn.setAttribute('aria-label', `Close ${normType} notification`);
+    closeBtn.innerHTML = '&times;';
+    closeBtn.addEventListener('click', function() {
+        messageEl.classList.add('banner-overlay--dismissing', 'toast--dismissing');
+        setTimeout(() => messageEl.remove(), 260);
+    });
+    messageEl.appendChild(closeBtn);
+
+    container.appendChild(messageEl);
+
+    if (normType === 'success' || (normType === 'info' && !options.persist)) {
         setTimeout(() => {
-            messageEl.remove();
-        }, 300);
-    }, 4000);
+            messageEl.classList.add('banner-overlay--dismissing', 'toast--dismissing');
+            setTimeout(() => messageEl.remove(), 260);
+        }, options.duration || (normType === 'success' ? 4000 : 5000));
+    }
+
+    return messageEl;
 }

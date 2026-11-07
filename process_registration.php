@@ -59,11 +59,12 @@ try {
     // Commit transaction
     $pdo->commit();
 
-    // Store success message in session
+    // Store success message and email in session
     $_SESSION['registration_success'] = 'Registration successful! Please check your email to verify your account.';
+    $_SESSION['registration_email'] = $postData['email'];
     
-    // Redirect to success page
-    header('Location: success.php');
+    // Redirect to verify email notice page
+    header('Location: verify_email_notice.php');
     exit;
 
 } catch (Exception $e) {
@@ -73,9 +74,10 @@ try {
 
     // Store error message in session
     $_SESSION['registration_error'] = $e->getMessage();
+    $_SESSION['error'] = $e->getMessage();
     
-    // Redirect back to registration page
-    header('Location: register.php');
+    // Redirect back to registration tab
+    header('Location: index.php');
     exit;
 }
 ?>

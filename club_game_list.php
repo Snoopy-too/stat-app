@@ -2,176 +2,112 @@
 declare(strict_types=1);
 session_start();
 require_once 'config/database.php';
+require_once 'includes/helpers.php';
 require_once 'includes/NavigationHelper.php';
+require_once 'includes/services/ClubService.php';
 
-// Get club ID or Slug from URL parameter
-$club_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+ensure_game_type_column_exists($pdo);
+
+$club_id = isset($_GET['id']) ? (int)$_GET['id'] : (isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0);
 $slug = isset($_GET['slug']) ? $_GET['slug'] : '';
 
-// Get sorting option from URL
-$sort = isset($_GET['sort']) ? $_GET['sort'] : 'alphabetical';
-$allowed_sorts = ['alphabetical', 'most_played', 'recently_played'];
-if (!in_array($sort, $allowed_sorts)) {
-    $sort = 'alphabetical';
+$clubService = new ClubService($pdo);
+$club = $clubService->getClubDetails($club_id, $slug);
+
+if (!$club) {
+    header("Location: index.php");
+    exit();
 }
 
-// Fetch club and game details
-$club = null;
-$games = [];
-$error = '';
+$club_id = (int)$club['club_id'];
+$club_name = $club['club_name'] ?? 'Club Games';
 
-if ($club_id > 0 || !empty($slug)) {
-    // First fetch club details to ensure it exists
-    $sql = "SELECT club_id, club_name, slug FROM clubs WHERE ";
-    $params = [];
-    
-    if ($club_id > 0) {
-        $sql .= "club_id = ?";
-        $params[] = $club_id;
-    } else {
-        $sql .= "slug = ?";
-        $params[] = $slug;
-    }
-    
-    $club_stmt = $pdo->prepare($sql);
-    $club_stmt->execute($params);
-    $club = $club_stmt->fetch(PDO::FETCH_ASSOC);
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'game_name';
+$order = isset($_GET['order']) ? strtolower($_GET['order']) : 'asc';
 
-    if ($club) {
-        $club_id = (int)$club['club_id']; // Ensure club_id is set
-        
-        // Construct ORDER BY clause
-        $order_by = "g.game_name ASC";
-        if ($sort === 'most_played') {
-            $order_by = "plays DESC, g.game_name ASC";
-        } elseif ($sort === 'recently_played') {
-            $order_by = "last_played DESC, g.game_name ASC";
-        }
+$valid_sort_columns = ['game_name', 'game_type', 'total_plays', 'last_played'];
+$sort = in_array($sort, $valid_sort_columns) ? $sort : 'game_name';
+$order = ($order === 'desc') ? 'desc' : 'asc';
 
-        // Fetch all games associated with this club along with play count and last played date
-        $games_stmt = $pdo->prepare("SELECT g.*, 
-            (
-                COALESCE((SELECT COUNT(DISTINCT session_id) FROM game_results WHERE game_id = g.game_id), 0) +
-                COALESCE((SELECT COUNT(DISTINCT session_id) FROM team_game_results WHERE game_id = g.game_id), 0) +
-                COALESCE((SELECT COUNT(DISTINCT session_id) FROM cooperative_game_results WHERE game_id = g.game_id), 0)
-            ) AS plays,
-            NULLIF(
-                GREATEST(
-                    COALESCE((SELECT MAX(played_at) FROM game_results WHERE game_id = g.game_id), '1970-01-01 00:00:00'),
-                    COALESCE((SELECT MAX(played_at) FROM team_game_results WHERE game_id = g.game_id), '1970-01-01 00:00:00'),
-                    COALESCE((SELECT MAX(played_at) FROM cooperative_game_results WHERE game_id = g.game_id), '1970-01-01 00:00:00')
-                ),
-                '1970-01-01 00:00:00'
-            ) AS last_played
-            FROM games g 
-            WHERE g.club_id = ? 
-            ORDER BY $order_by");
-        $games_stmt->execute([$club_id]);
-        $games = $games_stmt->fetchAll(PDO::FETCH_ASSOC);
-    } else {
-        $error = 'Club not found';
-    }
+$query = "SELECT g.*, c.club_name, 
+          (COALESCE(gr.total, 0) + COALESCE(tgr.total, 0) + COALESCE(cgr.total, 0)) as total_plays,
+          (
+              SELECT MAX(played_at) FROM (
+                  SELECT game_id, played_at FROM game_results
+                  UNION ALL
+                  SELECT game_id, played_at FROM team_game_results
+                  UNION ALL
+                  SELECT game_id, played_at FROM cooperative_game_results
+              ) all_res WHERE all_res.game_id = g.game_id
+          ) as last_played
+          FROM games g 
+          JOIN clubs c ON g.club_id = c.club_id
+          LEFT JOIN (
+              SELECT game_id, COUNT(result_id) as total 
+              FROM game_results 
+              GROUP BY game_id
+          ) gr ON g.game_id = gr.game_id
+          LEFT JOIN (
+              SELECT game_id, COUNT(result_id) as total 
+              FROM team_game_results 
+              GROUP BY game_id
+          ) tgr ON g.game_id = tgr.game_id
+          LEFT JOIN (
+              SELECT game_id, COUNT(result_id) as total 
+              FROM cooperative_game_results 
+              GROUP BY game_id
+          ) cgr ON g.game_id = cgr.game_id
+          WHERE g.club_id = ?";
+
+$params = [$club_id];
+
+$query .= " GROUP BY g.game_id, c.club_id, c.club_name, g.game_name, g.min_players, g.max_players, g.game_type";
+
+if ($sort === 'total_plays') {
+    $query .= " ORDER BY total_plays $order, g.game_name ASC";
+} elseif ($sort === 'last_played') {
+    $query .= " ORDER BY last_played $order, g.game_name ASC";
 } else {
-    $error = 'Invalid club ID';
+    $query .= " ORDER BY g.$sort $order";
 }
+
+$stmt = $pdo->prepare($query);
+$stmt->execute($params);
+$games = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$base_url_param = !empty($club['slug']) ? 'slug=' . urlencode($club['slug']) : 'id=' . $club_id;
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Club Games - Board Game StatApp</title>
+    <title>Games - <?php echo htmlspecialchars($club_name); ?></title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/dark-mode.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/sidebar.js"></script>
 </head>
 <body class="has-sidebar">
-    <?php
-    // Render sidebar navigation
-    if ($club) {
-        NavigationHelper::renderSidebar('games', $club_id, $club['club_name']);
-    } else {
-        NavigationHelper::renderSidebar('games');
-    }
-    ?>
+    <?php NavigationHelper::renderSidebar('games', $club_id, $club_name); ?>
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
-        <?php NavigationHelper::renderCompactHeader('Games', $club ? $club['club_name'] : ''); ?>
+        <?php NavigationHelper::renderCompactHeader('Manage ' . $club_name . ' Games (' . count($games) . ')'); ?>
     </div>
-    <div class="container">
-        <?php if ($error): ?>
-            <div class="message message--error"><?php echo htmlspecialchars($error); ?></div>
-        <?php elseif ($club): ?>
-            <div class="games-header-row">
-                <h2><?php echo htmlspecialchars($club['club_name']); ?>'s Games</h2>
-                <?php if (count($games) > 0): ?>
-                    <div class="games-list-toolbar">
-                        <form method="GET" action="" class="sort-form">
-                            <?php if ($club_id > 0): ?>
-                                <input type="hidden" name="id" value="<?php echo htmlspecialchars((string)$club_id); ?>">
-                            <?php endif; ?>
-                            <?php if (!empty($slug)): ?>
-                                <input type="hidden" name="slug" value="<?php echo htmlspecialchars($slug); ?>">
-                            <?php endif; ?>
-                            
-                            <div class="sort-group">
-                                <label for="sort_by" class="sort-label">Sort by:</label>
-                                <select name="sort" id="sort_by" class="form-control sort-select" onchange="this.form.submit()">
-                                    <option value="alphabetical" <?php echo $sort === 'alphabetical' ? 'selected' : ''; ?>>Alphabetical</option>
-                                    <option value="most_played" <?php echo $sort === 'most_played' ? 'selected' : ''; ?>>Most Played</option>
-                                    <option value="recently_played" <?php echo $sort === 'recently_played' ? 'selected' : ''; ?>>Most Recently Played</option>
-                                </select>
-                            </div>
-                        </form>
-                    </div>
-                <?php endif; ?>
-            </div>
-            
-            <?php if (count($games) > 0): ?>
-                <div class="games-grid">
-                    <?php foreach ($games as $game): ?>
-                        <div class="game-card">
-                            <a href="game_details.php?id=<?php echo (int)$game['game_id']; ?>" class="game-link-wrapper">
-                                <div class="game-card__image-container">
-                                    <?php if ($game['game_image']): ?>
-                                        <img src="images/game_images/<?php echo htmlspecialchars($game['game_image']); ?>" 
-                                             alt="<?php echo htmlspecialchars($game['game_name']); ?>" 
-                                             class="game-card__image" loading="lazy">
-                                    <?php else: ?>
-                                        <div class="game-card__image-placeholder"></div>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="game-card__content">
-                                    <div class="game-name"><?php echo htmlspecialchars($game['game_name']); ?></div>
-                                    <div class="game-meta">
-                                        <span class="game-players"><?php echo htmlspecialchars((string)$game['min_players']) . '-' . htmlspecialchars((string)$game['max_players']); ?> Players</span>
-                                    </div>
-                                    <div class="game-card__stats">
-                                        <div class="game-card__stat-row">
-                                            <span class="game-card__stat-label">Plays</span>
-                                            <span class="game-card__stat-value"><?php echo (int)$game['plays']; ?></span>
-                                        </div>
-                                        <div class="game-card__stat-row">
-                                            <span class="game-card__stat-label">Last Played</span>
-                                            <span class="game-card__stat-value">
-                                                <?php echo $game['last_played'] ? htmlspecialchars(date('M j, Y', strtotime($game['last_played']))) : 'Never'; ?>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php else: ?>
-                <div class="no-games">
-                    <p>No games have been added to this club yet.</p>
-                </div>
-            <?php endif; ?>
-        <?php endif; ?>
+
+    <div class="container container--wide">
+        <?php
+        TableHelper::renderGamesTable($games, [
+            'is_admin' => false,
+            'base_url' => 'club_game_list.php?' . $base_url_param,
+            'sort' => $sort,
+            'order' => $order,
+            'search' => $search,
+            'club_id' => $club_id
+        ]);
+        ?>
     </div>
-    <script src="js/sidebar.js"></script>
-    <script src="js/form-loading.js"></script>
-    <script src="js/empty-states.js"></script>
 </body>
 </html>

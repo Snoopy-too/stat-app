@@ -1,18 +1,18 @@
 <?php
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
 
 // Redirect if not logged in
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
-    header("Location: login.php");
+    header("Location: ../index.php");
     exit();
 }
 
 // Redirect multi_club admins to dashboard (they don't need this page)
 if (isset($_SESSION['admin_type']) && $_SESSION['admin_type'] !== 'single_club') {
-    header("Location: dashboard.php");
+    header("Location: account.php");
     exit();
 }
 
@@ -22,7 +22,7 @@ $security = new SecurityUtils($pdo);
 $clubCheckStmt = $pdo->prepare("SELECT COUNT(*) FROM club_admins WHERE admin_id = ?");
 $clubCheckStmt->execute([$_SESSION['admin_id']]);
 if ($clubCheckStmt->fetchColumn() > 0) {
-    header("Location: dashboard.php");
+    header("Location: account.php");
     exit();
 }
 
@@ -51,8 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->beginTransaction();
 
                 // Create the club
-                $stmt = $pdo->prepare("INSERT INTO clubs (club_name, slug) VALUES (?, ?)");
-                $stmt->execute([$club_name, $slug]);
+                $stmt = $pdo->prepare("INSERT INTO clubs (club_name, slug, admin_id) VALUES (?, ?, ?)");
+                $stmt->execute([$club_name, $slug, $_SESSION['admin_id']]);
                 $new_club_id = $pdo->lastInsertId();
 
                 // Assign the creator as the owner
@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->commit();
 
                 $_SESSION['success'] = "Your club has been created successfully!";
-                header("Location: dashboard.php");
+                header("Location: account.php");
                 exit();
             } catch (PDOException $e) {
                 $pdo->rollBack();

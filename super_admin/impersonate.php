@@ -54,7 +54,7 @@ try {
     // Regenerate session ID to avoid session‑fixation risks
     session_regenerate_id(true);
 
-    header("Location: ../admin/dashboard.php");
+    header("Location: ../admin/account.php");
     exit();
 } catch (PDOException $e) {
     error_log("Impersonation error: " . $e->getMessage());

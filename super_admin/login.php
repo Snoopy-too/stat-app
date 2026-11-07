@@ -38,20 +38,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Admin Login</title>
+    <link rel="stylesheet" href="https://theflyingdutchmen.games/stylesheets/tfd-nav.css">
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
 </head>
 <body>
-    <div class="header">
-        <div class="header-title-group">
-            <h1>Board Game Club StatApp</h1>
-            <p class="header-subtitle">Super Admin Login</p>
-        </div>
-    </div>
+    <!-- Shared Top Navigation Bar (Managed by tfd-navbar.js) -->
+    <header id="tfd-navbar" class="tfd-navbar" data-active="stats"></header>
 
-    <div class="container container--narrow auth-shell">
+    <div class="container container--narrow auth-shell" style="margin-top: 2rem;">
         <div class="card auth-card">
-            <h2 class="text-center">Sign In</h2>
+            <h2 class="text-center">Super Admin Sign In</h2>
             <?php if ($error): ?>
                 <div class="message message--error"><?php echo htmlspecialchars($error); ?></div>
             <?php endif; ?>
@@ -68,5 +65,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </form>
         </div>
     </div>
+    <script src="https://theflyingdutchmen.games/javascripts/tfd-navbar.js"></script>
 </body>
 </html>

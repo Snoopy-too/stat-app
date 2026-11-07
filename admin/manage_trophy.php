@@ -1,12 +1,12 @@
 <?php
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
 require_once '../includes/NavigationHelper.php';
 
 if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
-    header('Location: login.php');
+    header('Location: ../index.php');
     exit();
 }
 
@@ -89,12 +89,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['trophy_image'])) {
 }
 
 // Get current club info
-$stmt = $pdo->prepare('SELECT club_name, champ_image FROM clubs WHERE club_id = ?');
-$stmt->execute([$club_id]);
+$stmt = $pdo->prepare('SELECT c.club_name, c.champ_image FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE c.club_id = ? AND ca.admin_id = ?');
+$stmt->execute([$club_id, $_SESSION['admin_id']]);
 $club = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$club) {
-    header('Location: index.php');
+    header('Location: account.php');
     exit();
 }
 
@@ -126,8 +126,8 @@ $csrf_token = $security->generateCSRFToken();
         <div class="card">
             <h2>Current Trophy Image</h2>
             <div class="text-center">
-                <?php if ($club['champ_image']): ?>
-                    <img src="../<?php echo htmlspecialchars($club['champ_image']); ?>" alt="Trophy" class="trophy-image" onerror="this.src='../images/placeholder-trophy.svg'">
+                <?php if (!empty($club['champ_image'])): ?>
+                    <img src="<?php echo htmlspecialchars(get_trophy_image_url($club['champ_image'], '../')); ?>" alt="Trophy" class="trophy-image" onerror="this.onerror=null; this.src='../images/placeholder-trophy.svg';">
                 <?php else: ?>
                     <img src="../images/placeholder-trophy.svg" alt="No Trophy" class="trophy-image">
                     <p class="text-muted">No trophy image set</p>
@@ -143,8 +143,8 @@ $csrf_token = $security->generateCSRFToken();
                 <span class="field-hint">Allowed formats: JPG, PNG, GIF. Max size 5MB.</span>
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn">Update Trophy Image</button>
-                <a href="dashboard.php" class="btn btn--subtle">Cancel</a>
+                <button type="submit" class="btn btn--primary">Update Trophy Image</button>
+                <a href="account.php" class="btn btn--subtle">Cancel</a>
             </div>
         </form>
     </div>

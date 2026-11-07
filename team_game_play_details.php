@@ -41,6 +41,7 @@ if ($result_id > 0) {
     <title>Team Game Play Details - Board Game StatApp</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/dark-mode.js"></script>
+    <script src="js/i18n.js"></script>
     <style>
         .game-hero {
             display: flex;
@@ -148,8 +149,9 @@ if ($result_id > 0) {
         <?php elseif ($result): ?>
             <div class="game-hero">
                 <div class="game-hero__image-container">
-                    <?php if ($result['game_image']): ?>
-                        <img src="images/game_images/<?php echo htmlspecialchars($result['game_image']); ?>" alt="<?php echo htmlspecialchars($result['game_name']); ?>" class="game-hero__image">
+                    <?php if (!empty($result['game_image'])): ?>
+                        <img src="<?php echo htmlspecialchars(get_game_image_url($result['game_image'])); ?>" alt="<?php echo htmlspecialchars($result['game_name']); ?>" class="game-hero__image" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                        <div class="game-hero__image-placeholder" style="display:none;">No Image</div>
                     <?php else: ?>
                         <div class="game-hero__image-placeholder">No Image</div>
                     <?php endif; ?>
@@ -208,7 +210,7 @@ if ($result_id > 0) {
 
                 <div class="detail-row">
                     <div class="detail-label">Played At:</div>
-                    <div class="detail-value"><?php echo date('F j, Y, g:i a', strtotime($result['played_at'])); ?></div>
+                    <div class="detail-value"><?php echo date('Y/m/d g:i a', strtotime($result['played_at'])); ?></div>
                 </div>
 
                 <?php if (!empty($result['duration'])): ?>

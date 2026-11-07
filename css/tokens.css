@@ -1,4 +1,6 @@
 :root {
+    --tfd-navbar-height: 48px;
+    
     /* Typography */
     --font-family-base: 'Inter', system-ui, -apple-system, sans-serif;
     --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
@@ -46,7 +48,7 @@
     --color-heading: #1e293b;          /* Slate 800 */
 
     --color-border: #e2e8f0;           /* Slate 200 */
-    --color-border-strong: #cbd5e1;    /* Slate 300 */
+    --color-border-strong: #94a3b8;    /* Slate 400 */
 
     /* Header Specific */
     --color-header-bg: rgba(255, 255, 255, 0.85);
@@ -100,20 +102,20 @@
     --spacing-2: 0.5rem;
     --spacing-3: 0.75rem;
     --spacing-4: 1rem;
-    --spacing-5: 1.5rem;
-    --spacing-6: 2rem;
-    --spacing-8: 3rem;
-    --spacing-10: 4rem;
-    --spacing-12: 6rem;
+    --spacing-5: 1.25rem;
+    --spacing-6: 1.5rem;
+    --spacing-8: 2rem;
+    --spacing-10: 2.5rem;
+    --spacing-12: 3rem;
 
     /* Layout */
-    --container-max: 80rem;    /* 1280px */
-    --container-wide: 90rem;   /* 1440px */
-    --header-height: 4.5rem;
+    --container-max: 75rem;    /* 1200px */
+    --container-wide: 85rem;   /* 1360px */
+    --header-height: 3.5rem;
 }
 
 @media (min-width: 90rem) {
     :root {
-        --container-max: 85rem;
+        --container-max: 80rem;
     }
 }

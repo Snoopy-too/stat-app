@@ -1,0 +1,15 @@
+Automatic deletion of unverified accounts after 24h.
+
+Need an option to record a DRAW or multiple winners.
+
+We need to confirm email addresses before adding new members.
+
+Ensure that only club owners and admins can access the api.
+
+Expand the cooperative game type to include play-til-you-win games like The Crew and Bomb Busters. Maybe just an integer input for how many tries a given mission too. The mission can just be indicated in the notes.
+
+The same views should be shared between Owner/Admin/Member/Public. Visibility of information and controls for editing are determined by your access level for the club you're viewing.
+
+Users should be allowed to be members/admins/owners of multiple clubs.
+
+Full codebase audit to clean out deprecated code and refactor/reorganize to make it more human friendly.

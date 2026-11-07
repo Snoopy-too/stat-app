@@ -4,7 +4,7 @@ require_once 'config/database.php';
 require_once 'includes/helpers.php';
 
 if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
-    header("Location: login.php");
+    header("Location: index.php");
     exit();
 }
 
@@ -49,6 +49,7 @@ $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Su
     <title>Club Settings - Board Game Club StatApp</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/dark-mode.js"></script>
+    <script src="js/i18n.js"></script>
 </head>
 <body>
     <div class="header">

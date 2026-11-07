@@ -1,10 +1,10 @@
 <?php
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once '../config/database.php';
 require_once '../includes/NavigationHelper.php';
 
 if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
-    header("Location: login.php");
+    header("Location: ../index.php");
     exit();
 }
 
@@ -16,7 +16,8 @@ $stmt = $pdo->prepare("
            (SELECT COUNT(*) FROM members WHERE club_id = c.club_id) as member_count,
            (SELECT COUNT(*) FROM games WHERE club_id = c.club_id) as game_count,
            (COALESCE((SELECT COUNT(DISTINCT session_id) FROM game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0) +
-            COALESCE((SELECT COUNT(DISTINCT session_id) FROM team_game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0)) as games_played
+            COALESCE((SELECT COUNT(DISTINCT session_id) FROM team_game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0) +
+            COALESCE((SELECT COUNT(DISTINCT session_id) FROM cooperative_game_results WHERE game_id IN (SELECT game_id FROM games WHERE club_id = c.club_id)), 0)) as games_played
     FROM clubs c
     JOIN club_admins ca ON c.club_id = ca.club_id
     WHERE c.club_id = ? AND ca.admin_id = ?
@@ -25,7 +26,7 @@ $stmt->execute([$club_id, $_SESSION['admin_id']]);
 $club = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$club) {
-    header("Location: dashboard.php");
+    header("Location: account.php");
     exit();
 }
 
@@ -92,39 +93,24 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
             grid-template-columns: repeat(3, 1fr);
             gap: 20px;
             margin-top: 20px;
-        }
         .stat-card {
-            background-color: var(--bg-secondary);
+            background-color: var(--color-surface-muted);
             padding: 15px;
-            border-radius: 4px;
+            border-radius: var(--radius-md);
             text-align: center;
-        }
         }
         .stat-number {
             font-size: 24px;
             font-weight: bold;
-            color: #2c3e50;
+            color: var(--color-heading);
         }
         .recent-games, .top-games {
             background-color: var(--color-surface);
-            border-radius: 8px;
+            border-radius: var(--radius-md);
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .button {
-            background-color: #3498db;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            margin: 5px;
-        }
-        .delete-button {
-            background-color: #e74c3c;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--color-border);
         }
     </style>
     <script src="../js/dark-mode.js"></script>
@@ -140,7 +126,7 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="container">
         <div class="club-info">
             <h2>Club Information</h2>
-            <p><strong>Created:</strong> <?php echo date('F j, Y', strtotime($club['created_at'])); ?></p>
+            <p><strong>Created:</strong> <?php echo date('Y/m/d', strtotime($club['created_at'])); ?></p>
 
             <div class="stats-grid">
                 <div class="stat-card">
@@ -166,7 +152,7 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <li>
                             <?php echo htmlspecialchars($game['game_name']); ?> - 
                             <?php echo $game['participant_count']; ?> <?php echo $game['type'] === 'individual' ? 'players' : 'teams'; ?> - 
-                            <?php echo date('M j, Y', strtotime($game['played_at'])); ?>
+                            <?php echo date('Y/m/d', strtotime($game['played_at'])); ?>
                         </li>
                     <?php endforeach; ?>
                 </ul>
@@ -178,11 +164,14 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="top-games">
             <h2>Most Played Games</h2>
             <?php if ($top_games): ?>
-                <ul>
+                <ul style="list-style-type: none; padding-left: 0;">
                     <?php foreach ($top_games as $game): ?>
-                        <li>
-                            <?php echo htmlspecialchars($game['game_name']); ?> - 
-                            Played <?php echo $game['play_count']; ?> times
+                        <li style="display: flex; align-items: center; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px dashed var(--color-border, #e2e8f0);">
+                            <span>
+                                <strong><?php echo htmlspecialchars($game['game_name']); ?></strong> - 
+                                Played <?php echo $game['play_count']; ?> times
+                            </span>
+                            <button type="button" title="Ignore game" style="background: none; border: none; color: var(--color-text-muted, #64748b); cursor: pointer; font-weight: bold; padding: 2px 6px; font-size: 1.1rem; line-height: 1;" onclick="this.closest('li').style.display='none';">&times;</button>
                         </li>
                     <?php endforeach; ?>
                 </ul>
@@ -191,9 +180,11 @@ $top_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <?php endif; ?>
         </div>
 
-        <div>
-            <a href="edit_club.php?id=<?php echo $club_id; ?>" class="btn">Edit Club</a>
-            <a href="dashboard.php" class="btn">Back to Dashboard</a>
+        <div class="form-actions" style="margin-top: 1.5rem; display: flex; gap: 0.5rem;">
+            <?php if ($club['admin_role'] === 'owner'): ?>
+                <a href="edit_club.php?id=<?php echo $club_id; ?>" class="btn btn--primary">Edit Club</a>
+            <?php endif; ?>
+            <a href="account.php" class="btn btn--subtle">Back to Account</a>
         </div>
     </div>
     <script src="../js/sidebar.js"></script>

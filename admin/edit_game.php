@@ -1,12 +1,14 @@
 <?php
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
+ensure_game_image_column_exists($pdo);
+ensure_game_type_column_exists($pdo);
 require_once '../includes/SecurityUtils.php';
 require_once '../includes/NavigationHelper.php';
 
 if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
-    header("Location: login.php");
+    header("Location: ../index.php");
     exit();
 }
 
@@ -15,13 +17,70 @@ $club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
 $game_id = isset($_GET['game_id']) ? (int)$_GET['game_id'] : 0;
 
 // Get game info
-$stmt = $pdo->prepare("SELECT g.*, c.club_name FROM games g JOIN clubs c ON g.club_id = c.club_id WHERE g.game_id = ? AND g.club_id = ?");
-$stmt->execute([$game_id, $club_id]);
+$stmt = $pdo->prepare("SELECT g.*, c.club_name FROM games g JOIN clubs c ON g.club_id = c.club_id JOIN club_admins ca ON c.club_id = ca.club_id WHERE g.game_id = ? AND g.club_id = ? AND ca.admin_id = ?");
+$stmt->execute([$game_id, $club_id, $_SESSION['admin_id']]);
 $game = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$game) {
-    header("Location: manage_games.php?club_id=" . $club_id);
+    header("Location: manage_games.php" . ($club_id ? "?club_id=" . $club_id : ""));
     exit();
+}
+
+// Check if game can be deleted (no play records)
+$stmt = $pdo->prepare("
+    SELECT (SELECT COUNT(*) FROM game_results WHERE game_id = ?) +
+           (SELECT COUNT(*) FROM team_game_results WHERE game_id = ?) +
+           (SELECT COUNT(*) FROM cooperative_game_results WHERE game_id = ?) AS total_plays
+");
+$stmt->execute([$game_id, $game_id, $game_id]);
+$total_plays = (int)$stmt->fetchColumn();
+
+// Fetch game analytics for infographics
+$stmt = $pdo->prepare("
+    SELECT MAX(played_at) FROM (
+        SELECT played_at FROM game_results WHERE game_id = ?
+        UNION ALL
+        SELECT played_at FROM team_game_results WHERE game_id = ?
+        UNION ALL
+        SELECT played_at FROM cooperative_game_results WHERE game_id = ?
+    ) all_plays
+");
+$stmt->execute([$game_id, $game_id, $game_id]);
+$last_played_raw = $stmt->fetchColumn();
+$last_played = $last_played_raw ? date('Y/m/d', strtotime($last_played_raw)) : 'Never';
+
+$top_winner = 'None yet';
+$top_winner_wins = 0;
+$stmt = $pdo->prepare("
+    SELECT m.nickname as winner_name, COUNT(*) as wins
+    FROM game_results gr
+    JOIN members m ON gr.winner = m.member_id
+    WHERE gr.game_id = ? AND (m.status IS NULL OR m.status != 'inactive')
+    GROUP BY gr.winner, m.nickname
+    ORDER BY wins DESC
+    LIMIT 1
+");
+$stmt->execute([$game_id]);
+$tw = $stmt->fetch(PDO::FETCH_ASSOC);
+if ($tw) {
+    $top_winner = $tw['winner_name'];
+    $top_winner_wins = (int)$tw['wins'];
+} else {
+    $stmt = $pdo->prepare("
+        SELECT t.team_name as winner_name, COUNT(*) as wins
+        FROM team_game_results tgr
+        JOIN teams t ON tgr.winner = t.team_id
+        WHERE tgr.game_id = ?
+        GROUP BY tgr.winner, t.team_name
+        ORDER BY wins DESC
+        LIMIT 1
+    ");
+    $stmt->execute([$game_id]);
+    $tw = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($tw) {
+        $top_winner = $tw['winner_name'];
+        $top_winner_wins = (int)$tw['wins'];
+    }
 }
 
 // Handle game update
@@ -50,9 +109,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         if (isset($_FILES['game_image']) && $_FILES['game_image']['error'] !== UPLOAD_ERR_NO_FILE) {
             if ($_FILES['game_image']['error'] === UPLOAD_ERR_OK) {
                 $file = $_FILES['game_image'];
-                $allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
-                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-                $maxSize = 1 * 1024 * 1024; // 1MB
+                $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                $maxSize = 10 * 1024 * 1024; // 10MB
 
                 $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -60,9 +119,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 finfo_close($finfo);
 
                 if (!in_array($extension, $allowedExtensions) || !in_array($actualMime, $allowedMimes)) {
-                    $uploadError = "Invalid file type. Only JPG, PNG, and GIF allowed.";
+                    $uploadError = "Invalid file type. Only JPG, PNG, GIF, and WebP allowed.";
                 } elseif ($file['size'] > $maxSize) {
-                    $uploadError = "File is too large. Max size is 1MB.";
+                    $uploadError = "File is too large. Max size is 10MB.";
                 } else {
                     if (!file_exists($uploadDir)) {
                         mkdir($uploadDir, 0777, true);
@@ -82,8 +141,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         $uploadError = "Failed to move uploaded file. Check folder permissions.";
                     }
                 }
+            } elseif ($_FILES['game_image']['error'] === UPLOAD_ERR_INI_SIZE || $_FILES['game_image']['error'] === UPLOAD_ERR_FORM_SIZE) {
+                $uploadError = "File is too large. Max size is 10MB.";
             } else {
                 $uploadError = "Upload error: " . $_FILES['game_image']['error'];
+            }
+        }
+
+        // Handle image URL link (if no file uploaded)
+        if (empty($uploadError) && !empty($_POST['image_url'])) {
+            $imageUrl = trim($_POST['image_url']);
+            if (filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+                if ($game_image && !preg_match('~^https?://~i', $game_image) && file_exists($uploadDir . $game_image)) {
+                    @unlink($uploadDir . $game_image);
+                }
+                $game_image = $imageUrl;
+            } else {
+                $uploadError = "Invalid image URL format. Please enter a valid HTTP or HTTPS URL.";
             }
         }
 
@@ -93,19 +167,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             exit();
         }
 
-        $stmt = $pdo->prepare("UPDATE games SET game_name = ?, min_players = ?, max_players = ?, game_image = ? WHERE game_id = ? AND club_id = ?");
+        $stmt = $pdo->prepare("UPDATE games SET game_name = ?, min_players = ?, max_players = ?, game_image = ?, game_type = ? WHERE game_id = ? AND club_id = ?");
         $stmt->execute([
             trim($_POST['game_name']),
             $_POST['min_players'],
             $_POST['max_players'],
             $game_image,
+            $_POST['game_type'] ?? 'winner_losers',
             $game_id,
             $club_id
         ]);
         $_SESSION['success'] = "Game updated successfully!";
         header("Location: manage_games.php?club_id=" . $club_id);
         exit();
-    } catch (PDOException $e) {
+    } catch (Throwable $e) {
         $_SESSION['error'] = "Failed to update game: " . $e->getMessage();
     }
 }
@@ -119,14 +194,11 @@ $csrf_token = $security->generateCSRFToken();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Game - <?php echo htmlspecialchars($game['game_name']); ?></title>
+    <title>View and Edit <?php echo htmlspecialchars($game['game_name']); ?> - Board Game StatApp</title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/dark-mode.js"></script>
+    <script src="../js/i18n.js"></script>
     <style>
-        .admin-form-shell {
-            max-width: 800px;
-            margin: 0 auto;
-        }
         .form-grid-2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -220,71 +292,142 @@ $csrf_token = $security->generateCSRFToken();
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
-        <?php NavigationHelper::renderCompactHeader('Edit Game', htmlspecialchars($game['game_name'])); ?>
+        <?php NavigationHelper::renderCompactHeader('View and Edit ' . htmlspecialchars($game['game_name']), $game['club_name']); ?>
     </div>
 
     <div class="container">
         <?php display_session_message('error'); ?>
 
-        <div class="admin-form-shell">
-            <div class="modern-card">
-                <div class="section-header">
-                    <h2>Edit Game Details</h2>
+        <!-- Analytics & Infographics Section -->
+        <div class="card" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                    <h3 style="margin: 0; font-size: 1.15rem; color: var(--color-heading); display: flex; align-items: center; gap: 0.5rem;">
+                        <span>📊</span> <span data-i18n="admin.gameOverview">Game Overview & Infographics</span>
+                    </h3>
+                    <p style="margin: 0.2rem 0 0; font-size: 0.85rem; color: var(--color-text-muted);" data-i18n="admin.gameOverviewDesc">Key statistics and activity summary for this game.</p>
                 </div>
+                <span class="badge badge--neutral" style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $game['game_type'] ?? 'winner_losers'))); ?></span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+                <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem 1rem; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.35rem;">🎲</div>
+                    <div style="font-size: 1.6rem; font-weight: 800; color: var(--color-primary); line-height: 1;"><?php echo $total_plays; ?></div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 600; margin-top: 0.4rem;" data-i18n="club.totalPlays">Total Plays</div>
+                </div>
+                <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem 1rem; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.35rem;">📅</div>
+                    <div style="font-size: 1.2rem; font-weight: 700; color: var(--color-heading); line-height: 1.2; margin-top: 0.2rem;"><?php echo $last_played; ?></div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 600; margin-top: 0.4rem;" data-i18n="club.lastMatchPlayed">Last Match Played</div>
+                </div>
+                <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem 1rem; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.35rem;">🏆</div>
+                    <div style="font-size: 1.1rem; font-weight: 700; color: var(--color-heading); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?php echo htmlspecialchars($top_winner); ?></div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 600; margin-top: 0.4rem;" data-i18n="club.topChampion"><?php echo $top_winner_wins > 0 ? $top_winner_wins . ' ' . ($top_winner_wins === 1 ? 'victory' : 'victories') : 'Top Champion'; ?></div>
+                </div>
+                <div style="background: var(--color-surface-muted, rgba(255,255,255,0.04)); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem 1rem; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.35rem;">👥</div>
+                    <div style="font-size: 1.4rem; font-weight: 800; color: var(--color-heading); line-height: 1;"><?php echo (int)$game['min_players'] . ' - ' . (int)$game['max_players']; ?></div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 600; margin-top: 0.4rem;" data-i18n="club.playerCapacity">Player Capacity</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="padding: 1.5rem;">
+            <div class="card-header" style="margin-bottom: 1.25rem;">
+                <h2 style="margin:0;" data-i18n="admin.gameDetails">Game Details</h2>
+            </div>
                 <form method="POST" class="form" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                    <input type="hidden" name="action" value="update">
                     
-                    <?php if ($game['game_image']): ?>
-                        <div class="form-group">
-                            <label class="form-label">Current Image</label>
-                            <div style="display: flex; flex-direction: column; align-items: flex-start; gap: var(--spacing-2);">
-                                <img src="../images/game_images/<?php echo htmlspecialchars($game['game_image']); ?>" alt="Game Image" class="current-image-preview" loading="lazy">
-                                <label class="form-check">
+                    <?php if (!empty($game['game_image'])): ?>
+                        <div class="form-group" style="margin-bottom: 1.25rem;">
+                            <label class="form-label" data-i18n="admin.currentImage">Current Image</label>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'], '../')); ?>" alt="Game Image" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--color-border);" loading="lazy" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                                <div style="display:none;width:64px;height:64px;border-radius:8px;border:1px solid var(--color-border);background:var(--color-surface-muted);align-items:center;justify-content:center;font-size:1.5rem;">🎲</div>
+                                <label class="form-check" style="display:flex; align-items:center; gap:0.35rem; cursor:pointer;">
                                     <input type="checkbox" name="remove_image" value="1" class="form-check-input">
-                                    <span class="form-check-label">Remove current image</span>
+                                    <span class="form-check-label" style="font-size:0.9rem;" data-i18n="admin.removeCurrentImage">Remove current image</span>
                                 </label>
                             </div>
                         </div>
                     <?php endif; ?>
 
-                    <div class="form-group">
-                        <label for="game_name" class="form-label">Game Name</label>
-                        <input type="text" name="game_name" id="game_name" placeholder="Game Name" value="<?php echo htmlspecialchars($game['game_name']); ?>" required class="form-control">
-                    </div>
-
-                    <div class="form-grid-2">
-                        <div class="form-group">
-                            <label for="min_players" class="form-label">Min Players</label>
-                            <select name="min_players" id="min_players" class="form-control" required>
-                                <option value="">Select...</option>
-                                <?php for ($i = 1; $i <= 20; $i++): ?>
-                                    <option value="<?php echo $i; ?>" <?php echo ($game['min_players'] == $i) ? 'selected' : ''; ?>><?php echo $i; ?></option>
-                                <?php endfor; ?>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="game_name" class="form-label"><span data-i18n="games.gameName">Game Name</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                            <input type="text" name="game_name" id="game_name" placeholder="e.g. Catan" value="<?php echo htmlspecialchars($game['game_name']); ?>" required class="form-control">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="min_players" class="form-label" data-i18n="games.minPlayers">Min Players</label>
+                            <input type="number" name="min_players" id="min_players" placeholder="Min Players" value="<?php echo htmlspecialchars((string)$game['min_players']); ?>" required min="1" max="99" class="form-control">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="max_players" class="form-label" data-i18n="games.maxPlayers">Max Players</label>
+                            <input type="number" name="max_players" id="max_players" placeholder="Max Players" value="<?php echo htmlspecialchars((string)$game['max_players']); ?>" required min="1" max="99" class="form-control">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="game_type" class="form-label"><span data-i18n="admin.matchType">Game Type</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                            <select name="game_type" id="game_type" class="form-control">
+                                <option value="winner_losers" <?php echo (($game['game_type'] ?? 'winner_losers') === 'winner_losers') ? 'selected' : ''; ?> data-i18n="admin.winnerLosers">Winner/Losers</option>
+                                <option value="ranked" <?php echo (($game['game_type'] ?? '') === 'ranked') ? 'selected' : ''; ?> data-i18n="admin.ranked">Ranked (1st, 2nd, 3rd...)</option>
+                                <option value="teams" <?php echo (($game['game_type'] ?? '') === 'teams') ? 'selected' : ''; ?> data-i18n="admin.teams">Teams</option>
+                                <option value="cooperative" <?php echo (($game['game_type'] ?? '') === 'cooperative') ? 'selected' : ''; ?> data-i18n="admin.cooperative">Cooperative</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label for="max_players" class="form-label">Max Players</label>
-                            <input type="number" name="max_players" id="max_players" placeholder="Max Players" value="<?php echo $game['max_players']; ?>" required min="1" class="form-control">
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" data-i18n="admin.gameImage">Game Image</label>
+                            <div class="upload-zone" id="upload-zone" style="border: 2px dashed var(--color-border); border-radius: 8px; padding: 1rem; text-align: center; background: var(--color-surface); cursor: pointer; position: relative;">
+                                <span class="upload-zone__icon" style="font-size: 1.5rem; display: block; margin-bottom: 0.25rem;">🖼️</span>
+                                <span class="upload-zone__text" style="font-size: 0.9rem; color: var(--color-text);" data-i18n="admin.uploadZoneText">Click to replace or drag & drop file</span>
+                                <span class="upload-zone__hint" style="font-size: 0.75rem; color: var(--color-text-muted); display: block; margin-top: 0.25rem;" data-i18n="admin.uploadZoneHint">JPG, PNG, GIF (Max 1MB)</span>
+                                <input type="file" name="game_image" id="game_image" accept="image/jpeg,image/png,image/gif" style="position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer;">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="image_url" class="form-label" data-i18n="admin.orImageUrl">Or Image Link / URL</label>
+                            <input type="url" name="image_url" id="image_url" placeholder="https://..." class="form-control">
+                            <small style="color: var(--color-text-muted); font-size: 0.75rem; display: block; margin-top: 0.25rem;" data-i18n="admin.imageUrlHint">Paste a direct web link to an image file</small>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Update Image (Optional)</label>
-                        <div class="upload-zone" id="upload-zone">
-                            <span class="upload-zone__icon">🔄</span>
-                            <span class="upload-zone__text">Click to replace or drag & drop</span>
-                            <span class="upload-zone__hint">JPG, PNG, GIF (Max 1MB, 600px recommended)</span>
-                            <input type="file" name="game_image" id="game_image" accept="image/jpeg,image/png,image/gif">
-                        </div>
-                    </div>
-
-                    <div style="margin-top: var(--spacing-6); display: flex; justify-content: flex-end; gap: var(--spacing-3);">
-                        <a href="manage_games.php?club_id=<?php echo $club_id; ?>" class="btn btn--secondary btn--large">Cancel</a>
-                        <input type="hidden" name="action" value="update">
-                        <button type="submit" class="btn btn--primary btn--large">Save</button>
+                    <div class="form-group" style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0; flex-wrap:wrap;">
+                        <button type="submit" class="btn btn--primary" data-i18n="common.save">Save Game</button>
+                        <a href="manage_games.php?club_id=<?php echo $club_id; ?>" class="btn btn--subtle" data-i18n="common.cancel">Cancel</a>
+                        <?php if ($total_plays === 0): ?>
+                            <button type="button" class="btn btn--danger" style="margin-left: auto;" data-i18n="admin.deleteGame"
+                                    onclick="showConfirmDialog(event, {
+                                        title: '⚠️ Delete Game',
+                                        message: 'Are you sure you want to permanently delete <strong><?php echo addslashes(htmlspecialchars($game['game_name'])); ?></strong>? This action cannot be undone.',
+                                        confirmText: 'Delete Game',
+                                        cancelText: 'Cancel',
+                                        type: 'danger',
+                                        onConfirm: () => document.getElementById('delete-game-form').submit()
+                                    })">Delete Game</button>
+                        <?php else: ?>
+                            <button type="button" class="btn btn--danger" style="margin-left: auto;" data-i18n="admin.deleteGame"
+                                    onclick="showConfirmDialog(event, {
+                                        title: 'Deletion Restricted',
+                                        message: 'This game has <?php echo $total_plays; ?> match result(s). Remove all related records before deleting.',
+                                        confirmText: 'Understood',
+                                        type: 'primary'
+                                    })" title="Game cannot be deleted while it has match results">Delete Game</button>
+                        <?php endif; ?>
                     </div>
                 </form>
-            </div>
+                <?php if ($total_plays === 0): ?>
+                <form method="POST" action="manage_games.php?club_id=<?php echo $club_id; ?>" style="display:none;" id="delete-game-form">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="game_id" value="<?php echo $game_id; ?>">
+                    <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
+                </form>
+                <?php endif; ?>
         </div>
     </div>
 

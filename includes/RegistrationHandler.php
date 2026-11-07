@@ -246,7 +246,8 @@ class RegistrationHandler {
 
         // Use error suppression cautiously, better to have proper error handling/logging
         if (!mail($to, $subject, $message, $headers)) {
-             error_log("Failed to send verification email to: " . $email);
+             $error = error_get_last();
+             error_log("Failed to send verification email to: " . $email . ". Error: " . print_r($error, true));
              // Decide if you want to throw an exception here or just log the error
              // throw new Exception("Could not send verification email.");
         }

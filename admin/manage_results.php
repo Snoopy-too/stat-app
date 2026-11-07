@@ -1,0 +1,369 @@
+<?php
+require_once __DIR__ . '/../config/session.php';
+require_once '../config/database.php';
+require_once '../includes/helpers.php';
+require_once '../includes/NavigationHelper.php';
+require_once '../includes/SecurityUtils.php';
+
+$demo = isset($_GET['demo']) || isset($_GET['preview']);
+if (!$demo && (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
+    header("Location: ../index.php");
+    exit();
+}
+
+$security = new SecurityUtils($pdo);
+$csrf_token = $security->generateCSRFToken();
+
+$club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
+$user_clubs = [];
+
+if (isset($_SESSION['admin_id'])) {
+    try {
+        $stmt = $pdo->prepare("SELECT c.club_id, c.club_name FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ? ORDER BY ca.is_default DESC, c.club_name ASC");
+        $stmt->execute([$_SESSION['admin_id']]);
+        $user_clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {}
+}
+
+if (!$demo && empty($user_clubs)) {
+    unset($_SESSION['current_club_id'], $_SESSION['club_id']);
+    header("Location: account.php");
+    exit();
+}
+
+$user_club_ids = array_column($user_clubs, 'club_id');
+if (!$club_id || !in_array($club_id, $user_club_ids)) {
+    if (!empty($_SESSION['current_club_id']) && in_array((int)$_SESSION['current_club_id'], $user_club_ids)) {
+        $club_id = (int)$_SESSION['current_club_id'];
+    } elseif (!empty($_SESSION['club_id']) && in_array((int)$_SESSION['club_id'], $user_club_ids)) {
+        $club_id = (int)$_SESSION['club_id'];
+    } elseif (!empty($user_clubs)) {
+        $club_id = (int)$user_clubs[0]['club_id'];
+    }
+}
+if ($club_id > 0) {
+    $_SESSION['current_club_id'] = $club_id;
+    $_SESSION['club_id'] = $club_id;
+}
+
+$club = null;
+if ($club_id && !$demo) {
+    $stmt = $pdo->prepare("SELECT * FROM clubs WHERE club_id = ?");
+    $stmt->execute([$club_id]);
+    $club = $stmt->fetch(PDO::FETCH_ASSOC);
+}
+if ($demo && function_exists('get_demo_data')) {
+    $club = get_demo_data('club');
+}
+$club_name = ($club && !empty($club['club_name'])) ? $club['club_name'] : 'Meeple Mosh';
+
+// Optional game_id filter
+$game_id = (isset($_GET['game_id']) && $_GET['game_id'] !== '') ? (int)$_GET['game_id'] : null;
+$game = null;
+if ($game_id) {
+    $stmt = $pdo->prepare("SELECT * FROM games WHERE game_id = ? AND club_id = ?");
+    $stmt->execute([$game_id, $club_id]);
+    $game = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$game) {
+        $game_id = null;
+    }
+}
+
+// Fetch all games for dropdown filter
+$games_stmt = $pdo->prepare("SELECT game_id, game_name, game_type FROM games WHERE club_id = ? ORDER BY game_name ASC");
+$games_stmt->execute([$club_id]);
+$all_games = $games_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+ensure_results_tables_exist($pdo);
+
+// Handle bulk delete
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_action']) && !empty($_POST['selected_results'])) {
+    if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
+        $_SESSION['error'] = "Invalid security token. Please try again.";
+        header("Location: manage_results.php?club_id=$club_id" . ($game_id ? "&game_id=$game_id" : ""));
+        exit();
+    }
+
+    $selected_results = $_POST['selected_results'];
+    $bulk_action = $_POST['bulk_action'];
+
+    if ($bulk_action === 'bulk_delete') {
+        $password = $_POST['password'] ?? '';
+        if (!verify_admin_password($password, $pdo)) {
+            $_SESSION['error'] = "Incorrect password. Bulk delete cancelled.";
+            header("Location: manage_results.php?club_id=$club_id" . ($game_id ? "&game_id=$game_id" : ""));
+            exit();
+        }
+        $deleted_count = 0;
+        foreach ($selected_results as $item) {
+            $parts = explode(':', $item, 2);
+            $type = count($parts) === 2 ? $parts[0] : '';
+            $res_id = count($parts) === 2 ? (int)$parts[1] : (int)$parts[0];
+
+            if ($res_id > 0) {
+                if (in_array($type, ['individual', 'winner_losers', 'ranked'], true)) {
+                    $stmt = $pdo->prepare("DELETE gr FROM game_results gr JOIN games g ON gr.game_id = g.game_id WHERE gr.result_id = ? AND g.club_id = ?");
+                    $stmt->execute([$res_id, $club_id]);
+                    if ($stmt->rowCount() > 0) $deleted_count++;
+                } elseif (in_array($type, ['team', 'teams'], true)) {
+                    $stmt = $pdo->prepare("DELETE tgr FROM team_game_results tgr JOIN games g ON tgr.game_id = g.game_id WHERE tgr.result_id = ? AND g.club_id = ?");
+                    $stmt->execute([$res_id, $club_id]);
+                    if ($stmt->rowCount() > 0) $deleted_count++;
+                } elseif ($type === 'cooperative') {
+                    $stmt = $pdo->prepare("DELETE cgr FROM cooperative_game_results cgr JOIN games g ON cgr.game_id = g.game_id WHERE cgr.result_id = ? AND g.club_id = ?");
+                    $stmt->execute([$res_id, $club_id]);
+                    if ($stmt->rowCount() > 0) $deleted_count++;
+                } else {
+                    $stmt = $pdo->prepare("DELETE gr FROM game_results gr JOIN games g ON gr.game_id = g.game_id WHERE gr.result_id = ? AND g.club_id = ?");
+                    $stmt->execute([$res_id, $club_id]);
+                    if ($stmt->rowCount() > 0) {
+                        $deleted_count++;
+                    } else {
+                        $stmt = $pdo->prepare("DELETE tgr FROM team_game_results tgr JOIN games g ON tgr.game_id = g.game_id WHERE tgr.result_id = ? AND g.club_id = ?");
+                        $stmt->execute([$res_id, $club_id]);
+                        if ($stmt->rowCount() > 0) {
+                            $deleted_count++;
+                        } else {
+                            $stmt = $pdo->prepare("DELETE cgr FROM cooperative_game_results cgr JOIN games g ON cgr.game_id = g.game_id WHERE cgr.result_id = ? AND g.club_id = ?");
+                            $stmt->execute([$res_id, $club_id]);
+                            if ($stmt->rowCount() > 0) {
+                                $deleted_count++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        $_SESSION['success'] = "$deleted_count result(s) deleted successfully!";
+    }
+    header("Location: manage_results.php?club_id=$club_id" . ($game_id ? "&game_id=$game_id" : ""));
+    exit();
+}
+
+// Handle sorting
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'played_at';
+$order = isset($_GET['order']) ? strtolower($_GET['order']) : 'desc';
+
+$allowed_sorts = ['played_at', 'winner_name', 'game_name', 'game_type'];
+$sort = in_array($sort, $allowed_sorts) ? $sort : 'played_at';
+$order = ($order === 'asc') ? 'asc' : 'desc';
+
+$type_filter = isset($_GET['type']) ? $_GET['type'] : (isset($_GET['game_type']) ? $_GET['game_type'] : '');
+
+$fetch_indiv = empty($type_filter) || in_array($type_filter, ['winner_losers', 'ranked', 'win_lose', 'individual'], true);
+$fetch_teams = empty($type_filter) || in_array($type_filter, ['teams', 'team'], true);
+$fetch_coop  = empty($type_filter) || in_array($type_filter, ['cooperative', 'coop'], true);
+
+// Build SQL query for results
+$results = [];
+try {
+    if ($game_id) {
+        if ($fetch_indiv) {
+            $indiv_extra = ($type_filter === 'winner_losers' || $type_filter === 'win_lose') ? " AND gr.place_2 IS NULL" : ($type_filter === 'ranked' ? " AND gr.place_2 IS NOT NULL" : "");
+            $stmt = $pdo->prepare("
+                SELECT gr.result_id, gr.played_at, COALESCE(NULLIF(m.nickname, ''), m.member_name, 'Unknown Member') as winner_name, 
+                       CASE WHEN gr.place_2 IS NOT NULL THEN 'ranked' ELSE 'winner_losers' END as game_type, 
+                       gr.duration, gr.notes, g.game_id, g.game_name, COALESCE(m.status, 'active') as member_status
+                FROM game_results gr
+                JOIN games g ON gr.game_id = g.game_id
+                LEFT JOIN members m ON COALESCE(gr.winner, gr.member_id) = m.member_id
+                WHERE g.club_id = ? AND g.game_id = ?" . $indiv_extra . "
+            ");
+            $stmt->execute([$club_id, $game_id]);
+            $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
+
+        if ($fetch_teams) {
+            $stmt = $pdo->prepare("
+                SELECT tgr.result_id, tgr.played_at, CONCAT(COALESCE(t.team_name, 'Unknown Team'), ' (Team)') as winner_name, 
+                       'teams' as game_type, 
+                       tgr.duration, tgr.notes, g.game_id, g.game_name, 'active' as member_status
+                FROM team_game_results tgr
+                JOIN games g ON tgr.game_id = g.game_id
+                LEFT JOIN teams t ON tgr.winner = t.team_id
+                WHERE g.club_id = ? AND g.game_id = ?
+            ");
+            $stmt->execute([$club_id, $game_id]);
+            $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
+
+        if ($fetch_coop) {
+            $stmt = $pdo->prepare("
+                SELECT cgr.result_id, cgr.played_at, CONCAT(UPPER(cgr.outcome), ' - Co-op') as winner_name, 
+                       'cooperative' as game_type, 
+                       cgr.duration, cgr.notes, g.game_id, g.game_name, 'active' as member_status
+                FROM cooperative_game_results cgr
+                JOIN games g ON cgr.game_id = g.game_id
+                WHERE g.club_id = ? AND g.game_id = ?
+            ");
+            $stmt->execute([$club_id, $game_id]);
+            $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
+    } else {
+        if ($fetch_indiv) {
+            $indiv_extra = ($type_filter === 'winner_losers' || $type_filter === 'win_lose') ? " AND gr.place_2 IS NULL" : ($type_filter === 'ranked' ? " AND gr.place_2 IS NOT NULL" : "");
+            $stmt = $pdo->prepare("
+                SELECT gr.result_id, gr.played_at, COALESCE(NULLIF(m.nickname, ''), m.member_name, 'Unknown Member') as winner_name, 
+                       CASE WHEN gr.place_2 IS NOT NULL THEN 'ranked' ELSE 'winner_losers' END as game_type, 
+                       gr.duration, gr.notes, g.game_id, g.game_name, COALESCE(m.status, 'active') as member_status
+                FROM game_results gr
+                JOIN games g ON gr.game_id = g.game_id
+                LEFT JOIN members m ON COALESCE(gr.winner, gr.member_id) = m.member_id
+                WHERE g.club_id = ?" . $indiv_extra . "
+            ");
+            $stmt->execute([$club_id]);
+            $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
+
+        if ($fetch_teams) {
+            $stmt = $pdo->prepare("
+                SELECT tgr.result_id, tgr.played_at, CONCAT(COALESCE(t.team_name, 'Unknown Team'), ' (Team)') as winner_name, 
+                       'teams' as game_type, 
+                       tgr.duration, tgr.notes, g.game_id, g.game_name, 'active' as member_status
+                FROM team_game_results tgr
+                JOIN games g ON tgr.game_id = g.game_id
+                LEFT JOIN teams t ON tgr.winner = t.team_id
+                WHERE g.club_id = ?
+            ");
+            $stmt->execute([$club_id]);
+            $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
+
+        if ($fetch_coop) {
+            $stmt = $pdo->prepare("
+                SELECT cgr.result_id, cgr.played_at, CONCAT(UPPER(cgr.outcome), ' - Co-op') as winner_name, 
+                       'cooperative' as game_type, 
+                       cgr.duration, cgr.notes, g.game_id, g.game_name, 'active' as member_status
+                FROM cooperative_game_results cgr
+                JOIN games g ON cgr.game_id = g.game_id
+                WHERE g.club_id = ?
+            ");
+            $stmt->execute([$club_id]);
+            $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
+    }
+} catch (Throwable $e) {
+    error_log("Results fetch failed: " . $e->getMessage());
+    $results = [];
+}
+
+if ($demo) {
+    $all_games = get_demo_data('games');
+    $results = get_demo_data('results');
+    if (!empty($type_filter)) {
+        $results = array_values(array_filter($results, function($r) use ($type_filter) {
+            $t = $r['game_type'] ?? '';
+            if ($type_filter === 'winner_losers' || $type_filter === 'win_lose') return $t === 'winner_losers' || $t === 'individual';
+            if ($type_filter === 'ranked') return $t === 'ranked';
+            if ($type_filter === 'teams' || $type_filter === 'team') return in_array($t, ['teams', 'team'], true);
+            if ($type_filter === 'cooperative' || $type_filter === 'coop') return in_array($t, ['cooperative', 'coop'], true);
+            return true;
+        }));
+    }
+}
+
+// Sort results array
+usort($results, function($a, $b) use ($sort, $order) {
+    $valA = $a[$sort] ?? '';
+    $valB = $b[$sort] ?? '';
+    if ($sort === 'played_at') {
+        $cmp = strtotime((string)$valA) <=> strtotime((string)$valB);
+    } else {
+        $cmp = strcasecmp((string)$valA, (string)$valB);
+    }
+    return ($order === 'asc') ? $cmp : -$cmp;
+});
+
+$baseUrl = 'manage_results.php?club_id=' . $club_id;
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Results - <?php echo htmlspecialchars($club_name); ?></title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../js/dark-mode.js"></script>
+    <script src="../js/i18n.js"></script>
+</head>
+<body class="has-sidebar">
+    <?php NavigationHelper::renderAdminSidebar('results', $club_id, $club_name); ?>
+
+    <div class="header header--compact">
+        <?php NavigationHelper::renderSidebarToggle(); ?>
+        <?php NavigationHelper::renderCompactHeader('Manage ' . $club_name . ' Results (' . count($results) . ')'); ?>
+    </div>
+
+    <div class="container container--wide">
+        <?php display_session_message('success'); ?>
+        <?php display_session_message('error'); ?>
+
+        <?php TableHelper::renderResultsAnalytics($results, $all_games, $game_id, ['is_admin' => true, 'open' => true, 'type_filter' => $type_filter]); ?>
+
+        <?php
+        TableHelper::renderResultsTable($results, $all_games, [
+            'is_admin' => true,
+            'base_url' => $baseUrl,
+            'sort' => $sort,
+            'order' => $order,
+            'game_id' => $game_id,
+            'type_filter' => $type_filter,
+            'club_id' => $club_id,
+            'csrf_token' => $csrf_token
+        ]);
+        ?>
+    <?php if (!empty($demo)): ?>
+    <style>
+    html, body, body * {
+        pointer-events: none !important;
+        user-select: none !important;
+        cursor: default !important;
+    }
+    img {
+        display: none !important;
+    }
+    *:hover, *:active, *:focus, *:focus-within {
+        background: inherit !important;
+        background-color: inherit !important;
+        color: inherit !important;
+        border-color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+        transition: none !important;
+        animation: none !important;
+        outline: none !important;
+        opacity: inherit !important;
+    }
+    .sidebar__nav a:hover, .sidebar__nav a:active, .sidebar__nav a:focus,
+    .data-table tr:hover, .data-table tr:active, .data-table td:hover,
+    .btn:hover, .btn:active, .btn:focus, button:hover, button:active,
+    .form-control:hover, .form-control:active, .form-control:focus,
+    a:hover, a:active, a:focus {
+        background: transparent !important;
+        background-color: transparent !important;
+        color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+    </style>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('a, button, input, select, textarea, details, summary').forEach(el => {
+            el.setAttribute('tabindex', '-1');
+            if (el.tagName === 'BUTTON' || el.tagName === 'INPUT' || el.tagName === 'SELECT') {
+                el.setAttribute('disabled', 'disabled');
+            }
+        });
+    });
+    document.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); }, true);
+    document.addEventListener('mouseover', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseenter', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseleave', function(e) { e.stopPropagation(); }, true);
+    </script>
+    <?php endif; ?>
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/confirmations.js"></script>
+    <script src="../js/form-loading.js"></script>
+</body>
+</html>

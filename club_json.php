@@ -24,11 +24,15 @@ try {
             SELECT g.game_id FROM games g
             INNER JOIN team_game_results tgr ON g.game_id = tgr.game_id
             WHERE g.club_id = ?
+            UNION ALL
+            SELECT g.game_id FROM games g
+            INNER JOIN cooperative_game_results cgr ON g.game_id = cgr.game_id
+            WHERE g.club_id = ?
         ) as all_plays) as play_count
         FROM clubs c 
         WHERE c.club_id = ?");
 
-    $stmt->execute([$club_id, $club_id, $club_id, $club_id, $club_id]);
+    $stmt->execute([$club_id, $club_id, $club_id, $club_id, $club_id, $club_id]);
     $club = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$club) {
@@ -111,11 +115,11 @@ try {
         -- Individual Games
         SELECT
             gr.played_at,
-            g.game_name,
-            m.nickname as winner_identifier,
+            CONVERT(g.game_name USING utf8mb4) as game_name,
+            CONVERT(m.nickname USING utf8mb4) as winner_identifier,
             gr.num_players as participants,
             gr.game_id,
-            'Individual' as game_type,
+            CONVERT('Individual' USING utf8mb4) as game_type,
             gr.result_id as record_id
         FROM game_results gr
         JOIN games g ON gr.game_id = g.game_id
@@ -127,11 +131,11 @@ try {
         -- Team Games
         SELECT
             tgr.played_at,
-            g.game_name,
-            t.team_name as winner_identifier,
+            CONVERT(g.game_name USING utf8mb4) as game_name,
+            CONVERT(t.team_name USING utf8mb4) as winner_identifier,
             tgr.num_teams as participants,
             tgr.game_id,
-            'Team' as game_type,
+            CONVERT('Team' USING utf8mb4) as game_type,
             tgr.result_id as record_id
         FROM team_game_results tgr
         JOIN games g ON tgr.game_id = g.game_id

@@ -1,9 +1,6 @@
 <?php
 class SecurityUtils {
     private $pdo;
-    private const MAX_LOGIN_ATTEMPTS = 5;
-    private const MAX_REGISTRATION_ATTEMPTS = 3;
-    private const ATTEMPT_WINDOW_MINUTES = 15;
     private const TOKEN_LENGTH = 64;
     private const TOKEN_EXPIRY_HOURS = 24;
 
@@ -63,101 +60,23 @@ class SecurityUtils {
     }
 
     public function checkLoginAttempts(string $email, string $ipAddress): bool {
-        try {
-            $stmt = $this->pdo->prepare(
-                'SELECT COUNT(*) FROM login_attempts
-                WHERE email = ?
-                AND attempt_time > DATE_SUB(NOW(), INTERVAL ? MINUTE)
-                AND is_successful = 0'
-            );
-            $stmt->execute([$email, self::ATTEMPT_WINDOW_MINUTES]);
-
-            return $stmt->fetchColumn() < self::MAX_LOGIN_ATTEMPTS;
-        } catch (PDOException $e) {
-            // If table doesn't exist, create it
-            if ($e->getCode() == '42S02') {
-                $this->createLoginAttemptsTable();
-                return true;
-            }
-            throw $e;
-        }
+        return true;
     }
 
     public function logLoginAttempt(string $email, string $ipAddress, bool $success): void {
-        try {
-            $stmt = $this->pdo->prepare(
-                'INSERT INTO login_attempts (email, ip_address, is_successful)
-                VALUES (?, ?, ?)'
-            );
-            $stmt->execute([$email, $ipAddress, $success ? 1 : 0]);
-        } catch (PDOException $e) {
-            // If table doesn't exist, create it and retry
-            if ($e->getCode() == '42S02') {
-                $this->createLoginAttemptsTable();
-                $stmt = $this->pdo->prepare(
-                    'INSERT INTO login_attempts (email, ip_address, is_successful)
-                    VALUES (?, ?, ?)'
-                );
-                $stmt->execute([$email, $ipAddress, $success ? 1 : 0]);
-            } else {
-                error_log("Failed to log login attempt: " . $e->getMessage());
-            }
-        }
+        // No-op: Login attempts table dropped; authentication handled centrally
     }
 
     public function checkRegistrationAttempts(string $ipAddress): bool {
-        try {
-            $stmt = $this->pdo->prepare(
-                'SELECT COUNT(*) FROM registration_attempts 
-                WHERE ip_address = ? 
-                AND attempt_time > DATE_SUB(NOW(), INTERVAL ? MINUTE)'
-            );
-            $stmt->execute([$ipAddress, self::ATTEMPT_WINDOW_MINUTES]);
-
-            return $stmt->fetchColumn() < self::MAX_REGISTRATION_ATTEMPTS;
-        } catch (PDOException $e) {
-            // If table doesn't exist, create it
-            if ($e->getCode() == '42S02') {
-                $this->createRegistrationAttemptsTable();
-                return true;
-            }
-            throw $e;
-        }
+        return true;
     }
 
     public function logRegistrationAttempt(string $ipAddress, bool $success): void {
-        try {
-            $stmt = $this->pdo->prepare(
-                'INSERT INTO registration_attempts (ip_address, is_successful)
-                VALUES (?, ?)'
-            );
-            $stmt->execute([$ipAddress, $success ? 1 : 0]);
-        } catch (PDOException $e) {
-            if ($e->getCode() == '42S02') {
-                $this->createRegistrationAttemptsTable();
-                $stmt = $this->pdo->prepare(
-                    'INSERT INTO registration_attempts (ip_address, is_successful)
-                    VALUES (?, ?)'
-                );
-                $stmt->execute([$ipAddress, $success ? 1 : 0]);
-            } else {
-                error_log("Failed to log registration attempt: " . $e->getMessage());
-            }
-        }
+        // No-op: Registration attempts table dropped; registration handled centrally
     }
 
     public function clearLoginAttempts(string $email): void {
-        try {
-            $stmt = $this->pdo->prepare(
-                'DELETE FROM login_attempts
-                WHERE email = ? AND is_successful = 0'
-            );
-            $stmt->execute([$email]);
-        } catch (PDOException $e) {
-            if ($e->getCode() != '42S02') {
-                error_log("Failed to clear login attempts: " . $e->getMessage());
-            }
-        }
+        // No-op
     }
 
     public function generateEmailVerificationToken(): array {
@@ -176,32 +95,5 @@ class SecurityUtils {
 
     public function getClientIP(): string {
         return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-    }
-
-    private function createLoginAttemptsTable(): void {
-        $this->pdo->exec(
-            'CREATE TABLE IF NOT EXISTS login_attempts (
-                attempt_id INT AUTO_INCREMENT PRIMARY KEY,
-                ip_address VARCHAR(45) NOT NULL,
-                email VARCHAR(255) NOT NULL,
-                attempt_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-                is_successful TINYINT(1) DEFAULT 0,
-                INDEX idx_ip_email (ip_address, email),
-                INDEX idx_attempt_time (attempt_time)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
-        );
-    }
-
-    private function createRegistrationAttemptsTable(): void {
-        $this->pdo->exec(
-            'CREATE TABLE IF NOT EXISTS registration_attempts (
-                attempt_id INT AUTO_INCREMENT PRIMARY KEY,
-                ip_address VARCHAR(45) NOT NULL,
-                attempt_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-                is_successful TINYINT(1) DEFAULT 0,
-                INDEX idx_ip_address (ip_address),
-                INDEX idx_attempt_time (attempt_time)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
-        );
     }
 }

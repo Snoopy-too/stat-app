@@ -6,9 +6,9 @@
  */
 function getClubUrl($club) {
     if (!empty($club['slug'])) {
-        return $club['slug'];
+        return 'club_game_results.php?slug=' . urlencode($club['slug']);
     }
-    return 'club_stats.php?id=' . $club['club_id'];
+    return 'club_game_results.php?id=' . $club['club_id'];
 }
 
 /**

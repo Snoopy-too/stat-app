@@ -32,14 +32,13 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Email Verification - Board Game Club StatApp</title>
+    <link rel="stylesheet" href="https://theflyingdutchmen.games/stylesheets/tfd-nav.css">
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/dark-mode.js"></script>
 </head>
 <body>
-    <div class="header">
-        <h1>Board Game Club StatApp</h1>
-        <h2>Email Verification</h2>
-    </div>
+    <!-- Shared Top Navigation Bar (Managed by tfd-navbar.js) -->
+    <header id="tfd-navbar" class="tfd-navbar" data-active="stats"></header>
 
     <div class="verification-container <?php echo $result['success'] ? 'success' : 'error'; ?>">
         <div class="verification-icon">
@@ -54,9 +53,10 @@ try {
             <?php echo htmlspecialchars($result['message']); ?>
         </div>
 
-        <a href="admin/login.php" class="btn">
-            <?php echo $result['success'] ? 'Proceed to Login' : 'Back to Login'; ?>
+        <a href="index.php" class="btn">
+            <?php echo $result['success'] ? 'Proceed to Home' : 'Back to Home'; ?>
         </a>
     </div>
+    <script src="https://theflyingdutchmen.games/javascripts/tfd-navbar.js"></script>
 </body>
 </html>

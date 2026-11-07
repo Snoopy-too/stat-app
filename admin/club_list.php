@@ -4,14 +4,14 @@
  * Shows club cards for admins with multiple clubs
  */
 
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/NavigationHelper.php';
 
 // Ensure user is logged in
 if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
-    header("Location: login.php");
+    header("Location: ../index.php");
     exit();
 }
 
@@ -46,7 +46,7 @@ $clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
             padding: 1rem 0;
         }
         .club-card {
-            background: var(--card-bg, #fff);
+            background: var(--color-surface, #fff);
             border-radius: 1rem;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -84,13 +84,13 @@ $clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
             font-size: 1.25rem;
             font-weight: 600;
             margin: 0 0 0.5rem;
-            color: var(--text-primary, #1e293b);
+            color: var(--color-heading, #1e293b);
         }
         .club-card__stats {
             display: flex;
             gap: 1rem;
             font-size: 0.875rem;
-            color: var(--text-secondary, #64748b);
+            color: var(--color-text-muted, #64748b);
         }
         .club-card__stat {
             display: flex;
@@ -100,7 +100,7 @@ $clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .club-card__action {
             margin-top: 1rem;
             padding-top: 1rem;
-            border-top: 1px solid var(--border-color, #e2e8f0);
+            border-top: 1px solid var(--color-border, #e2e8f0);
             font-size: 0.875rem;
             color: var(--color-primary, #6366f1);
             font-weight: 500;
@@ -126,7 +126,7 @@ $clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="card">
                 <div class="empty-state">
                     <p>You don't have any clubs yet.</p>
-                    <a href="manage_clubs.php" class="btn">Create a Club</a>
+                    <a href="account.php" class="btn">Create a Club</a>
                 </div>
             </div>
         <?php else: ?>
@@ -134,8 +134,9 @@ $clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <?php foreach ($clubs as $club): ?>
                     <a href="club_new_results.php?club_id=<?php echo $club['club_id']; ?>" class="club-card">
                         <div class="club-card__image">
-                            <?php if ($club['logo_image']): ?>
-                                <img src="../images/club_logos/<?php echo htmlspecialchars($club['logo_image']); ?>" alt="<?php echo htmlspecialchars($club['club_name']); ?>" loading="lazy">
+                            <?php if (!empty($club['logo_image'])): ?>
+                                <img src="<?php echo htmlspecialchars(get_club_logo_url($club['logo_image'], '../')); ?>" alt="<?php echo htmlspecialchars($club['club_name']); ?>" loading="lazy" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
+                                <span class="club-card__placeholder" style="display:none;">🎲</span>
                             <?php else: ?>
                                 <span class="club-card__placeholder">🎲</span>
                             <?php endif; ?>

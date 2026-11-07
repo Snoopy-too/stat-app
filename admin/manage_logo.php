@@ -1,12 +1,12 @@
 <?php
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
 require_once '../includes/SecurityUtils.php';
 require_once '../includes/NavigationHelper.php';
 
 if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
-    header("Location: login.php");
+    header("Location: ../index.php");
     exit();
 }
 
@@ -24,7 +24,7 @@ $stmt->execute([$club_id, $_SESSION['admin_id']]);
 $club = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$club) {
-    header("Location: dashboard.php");
+    header("Location: account.php");
     exit();
 }
 
@@ -54,11 +54,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $uploadError = "Invalid file extension. Only JPG, PNG and GIF are allowed.";
             } else {
                 // Use finfo to get actual MIME type from file content (primary check)
-                $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                $actualMime = finfo_file($finfo, $file['tmp_name']);
-                finfo_close($finfo);
+                $actualMime = null;
+                if (function_exists('finfo_open')) {
+                    $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+                    if ($finfo) {
+                        $actualMime = @finfo_file($finfo, $file['tmp_name']);
+                        @finfo_close($finfo);
+                    }
+                }
+                if (!$actualMime && !empty($file['type'])) {
+                    $actualMime = $file['type'];
+                }
 
-                if (!in_array($actualMime, $allowedMimes)) {
+                if ($actualMime && !in_array($actualMime, $allowedMimes)) {
                     $uploadError = "Invalid file type detected. Only JPG, PNG and GIF images are allowed.";
                 } else {
                     // Additional validation: verify it's actually a valid image
@@ -141,8 +149,9 @@ $csrf_token = $security->generateCSRFToken();
             <h2><?php echo htmlspecialchars($club['club_name']); ?> - Logo Management</h2>
             
             <div class="logo-container">
-                <?php if ($club['logo_image']): ?>
-                    <img src="../images/club_logos/<?php echo htmlspecialchars($club['logo_image']); ?>" alt="Club Logo" class="logo-preview">
+                <?php if (!empty($club['logo_image'])): ?>
+                    <img src="<?php echo htmlspecialchars(get_club_logo_url($club['logo_image'], '../')); ?>" alt="Club Logo" class="logo-preview" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                    <div class="logo-preview" style="display:none;align-items:center;justify-content:center;font-size:2rem;background:var(--color-surface-muted);">🎲</div>
                     <form method="POST" class="stack stack--sm">
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                         <input type="hidden" name="remove_logo" value="1">
@@ -156,14 +165,37 @@ $csrf_token = $security->generateCSRFToken();
             <form method="POST" enctype="multipart/form-data" class="stack">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <div class="form-group">
-                    <label for="logo">Upload New Logo:</label>
-                    <input type="file" name="logo" id="logo" class="form-control" accept="image/jpeg,image/png,image/gif" required>
-                    <span class="field-hint">Maximum file size: 1MB. Allowed formats: JPG, PNG, GIF.</span>
+                    <label class="form-label">Upload New Logo:</label>
+                    <div class="upload-zone" id="upload-zone">
+                        <span class="upload-zone__icon">🎯</span>
+                        <span class="upload-zone__text">Click to upload or drag & drop club logo</span>
+                        <span class="upload-zone__hint">JPG, PNG, GIF (Max 1MB)</span>
+                        <input type="file" name="logo" id="logo" accept="image/jpeg,image/png,image/gif" required onchange="handleLogoChange(this)">
+                    </div>
                 </div>
-                <button type="submit" class="btn">Upload Logo</button>
+                <button type="submit" class="btn btn--primary">Upload Logo</button>
             </form>
         </div>
     </div>
+    <script>
+        function handleLogoChange(input) {
+            const zone = document.getElementById('upload-zone');
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    let preview = zone.querySelector('.upload-zone__preview-img');
+                    if (!preview) {
+                        preview = document.createElement('img');
+                        preview.className = 'upload-zone__preview-img';
+                        zone.prepend(preview);
+                    }
+                    preview.src = e.target.result;
+                    zone.classList.add('has-preview');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
     <script src="../js/sidebar.js"></script>
     <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>

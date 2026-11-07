@@ -35,30 +35,30 @@ if ($game_id > 0) {
         $results_stmt = $pdo->prepare("
             (SELECT
                 gr.result_id,
-                m.nickname,
+                CONVERT(COALESCE(NULLIF(m.nickname, ''), m.member_name, 'Member') USING utf8mb4) as nickname,
                 gr.position,
                 gr.played_at,
-                'individual' as game_type
+                CASE WHEN gr.place_2 IS NOT NULL THEN CONVERT('ranked' USING utf8mb4) ELSE CONVERT('winner_losers' USING utf8mb4) END as game_type
             FROM game_results gr
-            JOIN members m ON gr.member_id = m.member_id
+            JOIN members m ON COALESCE(gr.winner, gr.member_id) = m.member_id
             WHERE gr.game_id = ?)
             UNION ALL
             (SELECT
                 tgr.result_id,
-                t.team_name as nickname,
+                CONVERT(t.team_name USING utf8mb4) as nickname,
                 tgr.position,
                 tgr.played_at,
-                'team' as game_type
+                CONVERT('teams' USING utf8mb4) as game_type
             FROM team_game_results tgr
-            JOIN teams t ON tgr.team_id = t.team_id
+            JOIN teams t ON tgr.winner = t.team_id
             WHERE tgr.game_id = ?)
             UNION ALL
             (SELECT
                 cgr.result_id,
-                CONCAT(UPPER(cgr.outcome), ' - Co-op') as nickname,
+                CONVERT(CONCAT(UPPER(cgr.outcome), ' - Co-op') USING utf8mb4) as nickname,
                 CASE cgr.outcome WHEN 'win' THEN 1 ELSE 0 END as position,
                 cgr.played_at,
-                'cooperative' as game_type
+                CONVERT('cooperative' USING utf8mb4) as game_type
             FROM cooperative_game_results cgr
             WHERE cgr.game_id = ?)
             ORDER BY $sort $order");
@@ -101,8 +101,9 @@ if ($game_id > 0) {
         <?php elseif ($game): ?>
             <div class="game-hero">
                 <div class="game-hero__image-container">
-                    <?php if ($game['game_image']): ?>
-                        <img src="images/game_images/<?php echo htmlspecialchars($game['game_image']); ?>" alt="<?php echo htmlspecialchars($game['game_name']); ?>" class="game-hero__image">
+                    <?php if (!empty($game['game_image'])): ?>
+                        <img src="<?php echo htmlspecialchars(get_game_image_url($game['game_image'])); ?>" alt="<?php echo htmlspecialchars($game['game_name']); ?>" class="game-hero__image" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                        <div class="game-hero__image-placeholder" style="display:none;">No Image Available</div>
                     <?php else: ?>
                         <div class="game-hero__image-placeholder">No Image Uploaded</div>
                     <?php endif; ?>
@@ -111,15 +112,15 @@ if ($game_id > 0) {
                     <h1 class="game-hero__title"><?php echo htmlspecialchars($game['game_name']); ?></h1>
                     <div class="game-hero__stats">
                         <div class="game-stat">
-                            <span class="game-stat__label">Recommended Players</span>
+                            <span class="game-stat__label" data-i18n="club.recommendedPlayers">Recommended Players</span>
                             <span class="game-stat__value"><?php echo $game['min_players'] . '-' . $game['max_players']; ?></span>
                         </div>
                         <div class="game-stat">
-                            <span class="game-stat__label">Total Recorded Matches</span>
+                            <span class="game-stat__label" data-i18n="club.totalRecordedMatches">Total Recorded Matches</span>
                             <span class="game-stat__value"><?php echo count($results); ?></span>
                         </div>
                         <div class="game-stat">
-                            <span class="game-stat__label">Club</span>
+                            <span class="game-stat__label" data-i18n="admin.club">Club</span>
                             <span class="game-stat__value"><?php echo htmlspecialchars($game['club_name']); ?></span>
                         </div>
                     </div>
@@ -128,28 +129,24 @@ if ($game_id > 0) {
 
             <div class="card">
                 <div class="card-header">
-                    <h2>Match History</h2>
+                    <h2 data-i18n="club.matchHistory">Match History</h2>
                 </div>
 
                 <?php if (count($results) > 0): ?>
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th><a href="?id=<?php echo $game_id; ?>&sort=nickname&order=<?php echo ($sort === 'nickname' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()">Winner <?php if ($sort === 'nickname') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
-                                <th><a href="?id=<?php echo $game_id; ?>&sort=game_type&order=<?php echo ($sort === 'game_type' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()">Type <?php if ($sort === 'game_type') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
-                                <th><a href="?id=<?php echo $game_id; ?>&sort=played_at&order=<?php echo ($sort === 'played_at' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()">Date Played <?php if ($sort === 'played_at') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
+                                <th><a href="?id=<?php echo $game_id; ?>&sort=nickname&order=<?php echo ($sort === 'nickname' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()"><span data-i18n="common.winner">Winner</span> <?php if ($sort === 'nickname') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
+                                <th><a href="?id=<?php echo $game_id; ?>&sort=game_type&order=<?php echo ($sort === 'game_type' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()"><span data-i18n="admin.matchType">Type</span> <?php if ($sort === 'game_type') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
+                                <th><a href="?id=<?php echo $game_id; ?>&sort=played_at&order=<?php echo ($sort === 'played_at' && $order === 'DESC') ? 'ASC' : 'DESC'; ?>" class="sort-link" onclick="saveScroll()"><span data-i18n="results.datePlayed">Date Played</span> <?php if ($sort === 'played_at') echo $order === 'ASC' ? '▲' : '▼'; ?></a></th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($results as $result): ?>
                                 <?php
-                                $detail_url = match($result['game_type']) {
-                                    'team' => 'team_game_play_details.php',
-                                    'cooperative' => 'cooperative_game_play_details.php',
-                                    default => 'game_play_details.php'
-                                };
+                                $detail_url = 'game_play_details.php?result_id=' . urlencode((string)$result['result_id']) . '&type=' . urlencode((string)$result['game_type']);
                                 ?>
-                                <tr onclick="window.location='<?php echo $detail_url; ?>?result_id=<?php echo $result['result_id']; ?>'" class="table-row--link">
+                                <tr onclick="window.location='<?php echo $detail_url; ?>'" class="table-row--link">
                                     <td>
                                         <?php if ($result['game_type'] === 'cooperative'): ?>
                                             <?php
@@ -165,8 +162,19 @@ if ($game_id > 0) {
                                             </span>
                                         <?php endif; ?>
                                     </td>
-                                    <td><?php echo ucfirst($result['game_type']); ?></td>
-                                    <td><?php echo date('F j, Y', strtotime($result['played_at'])); ?></td>
+                                    <td>
+                                        <?php
+                                        $gt_display = match($result['game_type']) {
+                                            'winner_losers' => 'Winner/Losers',
+                                            'ranked' => 'Ranked',
+                                            'teams', 'team' => 'Teams',
+                                            'cooperative' => 'Cooperative',
+                                            default => ucfirst(str_replace('_', ' ', (string)$result['game_type']))
+                                        };
+                                        echo htmlspecialchars($gt_display);
+                                        ?>
+                                    </td>
+                                    <td><?php echo date('Y/m/d', strtotime($result['played_at'])); ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>

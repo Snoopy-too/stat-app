@@ -1,37 +1,70 @@
 <?php
-session_start();
+require_once __DIR__ . '/../config/session.php';
 require_once '../config/database.php';
 require_once '../includes/helpers.php';
-require_once '../includes/SecurityUtils.php';
 require_once '../includes/NavigationHelper.php';
+require_once '../includes/SecurityUtils.php';
 
-if ((!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
-    header("Location: login.php");
+$demo = isset($_GET['demo']) || isset($_GET['preview']);
+if (!$demo && (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) && (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin'])) {
+    header("Location: ../index.php");
     exit();
 }
 
 $security = new SecurityUtils($pdo);
+$csrf_token = $security->generateCSRFToken();
+$club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : null;
 
-// Fetch all clubs for the current admin (where they are either owner or admin)
-$stmt = $pdo->prepare("SELECT c.* FROM clubs c JOIN club_admins ca ON c.club_id = ca.club_id WHERE ca.admin_id = ? ORDER BY c.club_name");
-$stmt->execute([$_SESSION['admin_id']]);
-$admin_clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$admin_clubs = [];
+if (isset($_SESSION['admin_id'])) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT c.club_id, c.club_name 
+            FROM clubs c
+            JOIN club_admins ca ON c.club_id = ca.club_id
+            WHERE ca.admin_id = ?
+            ORDER BY ca.is_default DESC, c.club_name ASC
+        ");
+        $stmt->execute([$_SESSION['admin_id']]);
+        $admin_clubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {}
+}
 
-$club_id = isset($_GET['club_id']) ? (int)$_GET['club_id'] : 0;
-
-// Get club info and verify admin access
-$stmt = $pdo->prepare("
-    SELECT c.* 
-    FROM clubs c 
-    JOIN club_admins ca ON c.club_id = ca.club_id 
-    WHERE c.club_id = ? AND ca.admin_id = ?
-");
-$stmt->execute([$club_id, $_SESSION['admin_id']]);
-$club = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$club) {
-    header("Location: dashboard.php");
+if (!$demo && empty($admin_clubs)) {
+    unset($_SESSION['current_club_id'], $_SESSION['club_id']);
+    header("Location: account.php");
     exit();
+}
+
+$user_club_ids = array_column($admin_clubs, 'club_id');
+if (!$club_id || !in_array($club_id, $user_club_ids)) {
+    if (!empty($_SESSION['current_club_id']) && in_array((int)$_SESSION['current_club_id'], $user_club_ids)) {
+        $club_id = (int)$_SESSION['current_club_id'];
+    } elseif (!empty($_SESSION['club_id']) && in_array((int)$_SESSION['club_id'], $user_club_ids)) {
+        $club_id = (int)$_SESSION['club_id'];
+    } elseif (!empty($admin_clubs)) {
+        $club_id = (int)$admin_clubs[0]['club_id'];
+    }
+}
+if ($club_id > 0) {
+    $_SESSION['current_club_id'] = $club_id;
+    $_SESSION['club_id'] = $club_id;
+}
+
+$club = null;
+if ($club_id && !$demo) {
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM clubs WHERE club_id = ?");
+        $stmt->execute([$club_id]);
+        $club = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {}
+}
+
+if ($demo) {
+    $club_id = 1;
+    $demoClub = function_exists('get_demo_data') ? get_demo_data('club') : [];
+    $club = ['club_id' => 1, 'club_name' => $demoClub['club_name'] ?? 'Meeple Mosh'];
+    $admin_clubs = [$club];
 }
 
 // Handle search and filters
@@ -41,7 +74,18 @@ $sort = isset($_GET['sort']) ? $_GET['sort'] : 'member_name';
 $order = isset($_GET['order']) ? $_GET['order'] : 'asc';
 
 $query = "
-    SELECT m.*, c.club_name
+    SELECT m.*, c.club_name,
+           (SELECT GROUP_CONCAT(t.team_name ORDER BY t.team_name SEPARATOR ', ')
+            FROM teams t
+            WHERE t.club_id = m.club_id
+              AND (t.member1_id = m.member_id OR t.member2_id = m.member_id
+                OR t.member3_id = m.member_id OR t.member4_id = m.member_id)) as member_teams,
+           (
+                (SELECT COUNT(*) FROM game_results gr WHERE COALESCE(gr.winner, gr.member_id) = m.member_id)
+                +
+                (SELECT COUNT(*) FROM team_game_results tgr JOIN teams t ON tgr.winner = t.team_id WHERE (t.member1_id = m.member_id OR t.member2_id = m.member_id OR t.member3_id = m.member_id OR t.member4_id = m.member_id))
+           ) as total_wins,
+           (SELECT COUNT(*) FROM champions ch WHERE ch.member_id = m.member_id) as championships_count
     FROM members m
     JOIN clubs c ON m.club_id = c.club_id
     WHERE m.club_id = ?
@@ -49,161 +93,249 @@ $query = "
 
 $params = [$club_id];
 
-// Update search condition to include nickname
-if ($search) {
-    $query .= " AND (m.member_name LIKE ? OR m.nickname LIKE ? OR m.email LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-}
 
 if ($status_filter !== 'all') {
     $query .= " AND m.status = ?";
     $params[] = $status_filter;
 }
 
-// Define valid sort columns
-$valid_sort_columns = ['member_name', 'nickname', 'email', 'status'];
+$valid_sort_columns = ['member_name', 'nickname', 'total_wins', 'championships_count', 'status'];
 $sort = in_array($sort, $valid_sort_columns) ? $sort : 'member_name';
-$query .= " ORDER BY m." . $sort . " " . ($order === 'desc' ? 'DESC' : 'ASC');
+if ($sort === 'total_wins' || $sort === 'championships_count') {
+    $query .= " ORDER BY " . $sort . " " . ($order === 'desc' ? 'DESC' : 'ASC');
+} else {
+    $query .= " ORDER BY m." . $sort . " " . ($order === 'desc' ? 'DESC' : 'ASC');
+}
 
 $stmt = $pdo->prepare($query);
 $stmt->execute($params);
 $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+if ($demo) {
+    $members = get_demo_data('members');
+}
+
+// Aggregate member stats for multi-layered stacked bar chart
+$chart_member_names = [];
+$chart_individual_wins = [];
+$chart_team_wins = [];
+
+if ($club_id) {
+    try {
+        $stmt_stats = $pdo->prepare("
+            SELECT m.member_id,
+                   COALESCE(NULLIF(m.nickname, ''), m.member_name) as name,
+                   (
+                        SELECT COUNT(*)
+                        FROM game_results gr
+                        WHERE COALESCE(gr.winner, gr.member_id) = m.member_id
+                    ) as ind_wins,
+                    (
+                        SELECT COUNT(*)
+                        FROM team_game_results tgr
+                        JOIN teams t ON tgr.winner = t.team_id
+                        WHERE (t.member1_id = m.member_id OR t.member2_id = m.member_id OR t.member3_id = m.member_id OR t.member4_id = m.member_id)
+                    ) as tm_wins
+            FROM members m
+            WHERE m.club_id = ? AND (m.status IS NULL OR m.status != 'inactive') AND m.member_name NOT IN ('Unknown', 'Unknown Member') AND (m.nickname IS NULL OR m.nickname NOT IN ('Unknown', 'Unknown Member'))
+            ORDER BY (ind_wins + tm_wins) DESC, name ASC
+            LIMIT 12
+        ");
+        $stmt_stats->execute([$club_id]);
+        $rows = $stmt_stats->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($rows as $row) {
+            $chart_member_names[] = $row['name'];
+            $chart_individual_wins[] = (int)$row['ind_wins'];
+            $chart_team_wins[] = (int)$row['tm_wins'];
+        }
+    } catch (Exception $e) {}
+}
+
+if ($demo && empty($chart_member_names)) {
+    $demo_ind = [18, 15, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2];
+    $demo_team = [11, 9, 7, 6, 5, 4, 4, 3, 2, 2, 1, 1];
+    foreach ($members as $idx => $m) {
+        $name = !empty($m['nickname']) ? $m['nickname'] : (!empty($m['member_name']) ? $m['member_name'] : 'Member ' . ($idx + 1));
+        $chart_member_names[] = $name;
+        $chart_individual_wins[] = $m['total_wins'] ?? ($demo_ind[$idx] ?? max(1, 12 - $idx));
+        $chart_team_wins[] = $demo_team[$idx] ?? max(0, 6 - (int)floor($idx / 2));
+    }
+}
+
+// Fetch Wins Over Time Per Member for line chart
+$wot_labels = [];
+$wot_datasets = [];
+$wot_all_months = [];
+$wot_monthly_wins = [];
+if ($club_id) {
+    try {
+        $stmt_months = $pdo->prepare("
+            SELECT DISTINCT DATE_FORMAT(gr.played_at, '%Y-%m') as month_key
+            FROM game_results gr
+            JOIN games g ON gr.game_id = g.game_id
+            WHERE g.club_id = ?
+            ORDER BY month_key ASC
+        ");
+        $stmt_months->execute([$club_id]);
+        $all_months = array_column($stmt_months->fetchAll(PDO::FETCH_ASSOC), 'month_key');
+
+        if (!empty($all_months)) {
+            foreach ($all_months as $mk) {
+                $wot_all_months[] = [
+                    'key' => $mk,
+                    'label' => date('M Y', strtotime($mk . '-01'))
+                ];
+            }
+
+            $stmt_mwins = $pdo->prepare("
+                SELECT COALESCE(NULLIF(m.nickname, ''), m.member_name) as name,
+                       DATE_FORMAT(gr.played_at, '%Y-%m') as month_key,
+                       COUNT(*) as wins
+                FROM game_results gr
+                JOIN members m ON m.member_id = gr.member_id
+                JOIN games g ON gr.game_id = g.game_id
+                WHERE g.club_id = ?
+                  AND COALESCE(gr.winner, gr.member_id) = m.member_id
+                  AND (m.status IS NULL OR m.status != 'inactive')
+                GROUP BY m.member_id, month_key
+                ORDER BY name, month_key
+            ");
+            $stmt_mwins->execute([$club_id]);
+            $raw = $stmt_mwins->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($raw as $row) {
+                $wot_monthly_wins[$row['name']][$row['month_key']] = (int)$row['wins'];
+            }
+
+            $wot_labels = array_map(fn($m) => $m['label'], $wot_all_months);
+            foreach ($wot_monthly_wins as $name => $month_wins) {
+                $series = [];
+                $cumulative = 0;
+                foreach ($all_months as $mk) {
+                    $cumulative += $month_wins[$mk] ?? 0;
+                    $series[] = $cumulative;
+                }
+                $wot_datasets[] = ['name' => $name, 'data' => $series];
+            }
+        }
+    } catch (Exception $e) {}
+}
+
+if ($demo && empty($wot_all_months)) {
+    $demo_months_keys = [];
+    $start_ts = strtotime('-17 months');
+    for ($i = 0; $i < 18; $i++) {
+        $ts = strtotime("+$i months", $start_ts);
+        $mk = date('Y-m', $ts);
+        $lbl = date('M Y', $ts);
+        $wot_all_months[] = ['key' => $mk, 'label' => $lbl];
+        $demo_months_keys[] = $mk;
+    }
+
+    $demo_member_names = [
+        'ShadowKnight', 'StarGazer', 'CyberSamurai', 'Vortex',
+        'PixelMaster', 'Kingslayer', 'NeonRider', 'PointGod'
+    ];
+
+    foreach ($demo_member_names as $m_idx => $name) {
+        foreach ($demo_months_keys as $idx => $mk) {
+            $wot_monthly_wins[$name][$mk] = (($m_idx + 1) * ($idx + 2)) % 4;
+        }
+    }
+
+    $wot_labels = array_map(fn($m) => $m['label'], $wot_all_months);
+    foreach ($wot_monthly_wins as $name => $month_wins) {
+        $series = [];
+        $cumulative = 0;
+        foreach ($demo_months_keys as $mk) {
+            $cumulative += $month_wins[$mk] ?? 0;
+            $series[] = $cumulative;
+        }
+        $wot_datasets[] = ['name' => $name, 'data' => $series];
+    }
+}
+
 // Handle member creation/deletion and bulk actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validate CSRF token
     if (!isset($_POST['csrf_token']) || !$security->verifyCSRFToken($_POST['csrf_token'])) {
         $_SESSION['error'] = "Invalid security token. Please try again.";
         header("Location: manage_members.php?club_id=" . $club_id);
         exit();
     }
 
-    if (isset($_POST['bulk_action']) && !empty($_POST['selected_members'])) {
-        $selected_members = $_POST['selected_members'];
+    // Single member deletion
+    if (isset($_POST['action']) && $_POST['action'] === 'delete' && !empty($_POST['member_id'])) {
+        $del_member_id = (int)$_POST['member_id'];
+        $target_club_id = !empty($_POST['club_id']) ? (int)$_POST['club_id'] : (int)$club_id;
+        if (delete_member_by_id($pdo, $del_member_id, $target_club_id)) {
+            $_SESSION['success'] = "Member deleted successfully!";
+        } else {
+            $_SESSION['error'] = "Member not found or already deleted.";
+        }
+        header("Location: manage_members.php?club_id=" . $target_club_id);
+        exit();
+    }
+
+    // Bulk member actions
+    if (isset($_POST['bulk_action']) && !empty($_POST['selected_members']) && is_array($_POST['selected_members'])) {
         $bulk_action = $_POST['bulk_action'];
-        
-        try {
-            switch ($bulk_action) {
-                case 'bulk_activate':
-                    $stmt = $pdo->prepare("UPDATE members SET status = 'active' WHERE member_id = ? AND club_id = ? AND EXISTS (SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?)");
-                    foreach ($selected_members as $member_id) {
-                        $stmt->execute([$member_id, $club_id, $club_id, $_SESSION['admin_id']]);
+        $selected_members = array_filter(array_map('intval', $_POST['selected_members']));
+        $target_club_id = !empty($_POST['club_id']) ? (int)$_POST['club_id'] : (int)$club_id;
+
+        if (!empty($selected_members)) {
+            $count = 0;
+            if ($bulk_action === 'bulk_delete') {
+                foreach ($selected_members as $m_id) {
+                    if (delete_member_by_id($pdo, $m_id, $target_club_id)) {
+                        $count++;
                     }
-                    $_SESSION['success'] = "Selected members activated successfully!";
-                    break;
-                    
-                case 'bulk_deactivate':
-                    $stmt = $pdo->prepare("UPDATE members SET status = 'inactive' WHERE member_id = ? AND club_id = ? AND EXISTS (SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?)");
-                    foreach ($selected_members as $member_id) {
-                        $stmt->execute([$member_id, $club_id, $club_id, $_SESSION['admin_id']]);
-                    }
-                    $_SESSION['success'] = "Selected members deactivated successfully!";
-                    break;
-                    
-                case 'bulk_delete':
-                    $stmt = $pdo->prepare("DELETE FROM members WHERE member_id = ? AND club_id = ? AND EXISTS (SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?)");
-                    foreach ($selected_members as $member_id) {
-                        $stmt->execute([$member_id, $club_id, $club_id, $_SESSION['admin_id']]);
-                    }
-                    $_SESSION['success'] = "Selected members deleted successfully!";
-                    break;
-
-                case 'bulk_email':
-                    if (empty($_POST['email_subject']) || empty($_POST['email_message'])) {
-                        $_SESSION['error'] = "Email subject and message are required.";
-                        header("Location: manage_members.php?club_id=" . $club_id);
-                        exit();
-                    }
-
-                    $subject = trim($_POST['email_subject']);
-                    $message = trim($_POST['email_message']);
-
-                    // Get member emails
-                    $placeholders = str_repeat('?,', count($selected_members) - 1) . '?';
-                    $stmt = $pdo->prepare("SELECT member_name, email FROM members WHERE member_id IN ($placeholders) AND club_id = ? AND EXISTS (SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?)");
-                    $params = array_merge($selected_members, [$club_id, $club_id, $_SESSION['admin_id']]);
-                    $stmt->execute($params);
-                    $recipients = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                    $successCount = 0;
-                    $failCount = 0;
-
-                    foreach ($recipients as $recipient) {
-                        // Prepare email
-                        $to = $recipient['email'];
-                        $memberName = $recipient['member_name'];
-
-                        // Personalize message
-                        $personalizedMessage = "Hello " . $memberName . ",\n\n" . $message . "\n\n---\nThis email sent from your board game club's administrator via The Flying Dutchmen StatApp";
-
-                        // Email headers
-                        $headers = "From: " . (defined('FROM_EMAIL') ? FROM_EMAIL : 'no-reply@' . $_SERVER['HTTP_HOST']) . "\r\n";
-                        $headers .= "Reply-To: " . (defined('FROM_EMAIL') ? FROM_EMAIL : 'no-reply@' . $_SERVER['HTTP_HOST']) . "\r\n";
-                        $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
-                        $headers .= "X-Mailer: PHP/" . phpversion();
-
-                        // Send email
-                        if (mail($to, $subject, $personalizedMessage, $headers)) {
-                            $successCount++;
-                        } else {
-                            $failCount++;
-                            error_log("Failed to send email to: " . $to);
-                        }
-                    }
-
-                    if ($successCount > 0 && $failCount === 0) {
-                        $_SESSION['success'] = "Email sent successfully to {$successCount} member" . ($successCount !== 1 ? 's' : '') . "!";
-                    } elseif ($successCount > 0 && $failCount > 0) {
-                        $_SESSION['success'] = "Email sent to {$successCount} member" . ($successCount !== 1 ? 's' : '') . ", but failed for {$failCount}.";
-                    } else {
-                        $_SESSION['error'] = "Failed to send emails. Please check your server mail configuration.";
-                    }
-                    break;
-            }
-            
-            header("Location: manage_members.php?club_id=" . $club_id);
-            exit();
-        } catch (PDOException $e) {
-            $_SESSION['error'] = "Failed to perform bulk action: " . $e->getMessage();
-            header("Location: manage_members.php?club_id=" . $club_id);
-            exit();
-        }
-    } else if (isset($_POST['action'])) {
-        // Update the INSERT query in the POST handling section
-        if ($_POST['action'] === 'create' && !empty($_POST['member_name']) && !empty($_POST['email']) && !empty($_POST['club_id'])) {
-            try {
-                $stmt = $pdo->prepare("SELECT 1 FROM club_admins WHERE club_id = ? AND admin_id = ?");
-                $stmt->execute([$_POST['club_id'], $_SESSION['admin_id']]);
-                if (!$stmt->fetch()) {
-                    throw new Exception("Unauthorized club access");
                 }
-                
-                $stmt = $pdo->prepare("INSERT INTO members (club_id, admin_id, member_name, nickname, email, status) VALUES (?, ?, ?, ?, ?, 'active')");
-                $stmt->execute([
-                    $_POST['club_id'],
-                    $_SESSION['admin_id'],
-                    trim($_POST['member_name']),
-                    trim($_POST['nickname']),
-                    trim($_POST['email'])
-                ]);
-                $club_id = $_POST['club_id'];
-                $_SESSION['success'] = "Member added successfully!";
-            } catch (PDOException $e) {
-                $_SESSION['error'] = "Failed to add member: " . $e->getMessage();
+                $_SESSION['success'] = "$count member(s) deleted successfully!";
+            } elseif ($bulk_action === 'bulk_activate') {
+                $stmt = $pdo->prepare("UPDATE members SET status = 'active' WHERE member_id = ? AND club_id = ?");
+                foreach ($selected_members as $m_id) {
+                    if ($stmt->execute([$m_id, $target_club_id]) && $stmt->rowCount() > 0) {
+                        $count++;
+                    }
+                }
+                $_SESSION['success'] = "$count member(s) activated successfully!";
+            } elseif ($bulk_action === 'bulk_deactivate') {
+                $stmt = $pdo->prepare("UPDATE members SET status = 'inactive' WHERE member_id = ? AND club_id = ?");
+                foreach ($selected_members as $m_id) {
+                    if ($stmt->execute([$m_id, $target_club_id]) && $stmt->rowCount() > 0) {
+                        $count++;
+                    }
+                }
+                $_SESSION['success'] = "$count member(s) deactivated successfully!";
             }
-            header("Location: manage_members.php?club_id=" . $club_id);
-            exit();
-
         }
+        header("Location: manage_members.php?club_id=" . $target_club_id);
+        exit();
+    }
+
+    if (isset($_POST['action']) && $_POST['action'] === 'create' && !empty($_POST['member_name']) && !empty($_POST['email'])) {
+        $target_club_id = !empty($_POST['club_id']) ? (int)$_POST['club_id'] : (int)$club_id;
+        try {
+            $stmt = $pdo->prepare("INSERT INTO members (club_id, admin_id, member_name, nickname, email, status) VALUES (?, ?, ?, ?, ?, 'active')");
+            $stmt->execute([
+                $target_club_id,
+                $_SESSION['admin_id'] ?? null,
+                trim($_POST['member_name']),
+                trim($_POST['nickname']),
+                trim($_POST['email'])
+            ]);
+            $_SESSION['success'] = "Member added successfully!";
+        } catch (PDOException $e) {
+            $_SESSION['error'] = "Error adding member: " . $e->getMessage();
+        }
+        header("Location: manage_members.php?club_id=" . $club_id);
+        exit();
     }
 }
 
-// Generate CSRF token for forms
-$csrf_token = $security->generateCSRFToken();
+$baseUrl = 'manage_members.php?club_id=' . $club_id;
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -211,352 +343,126 @@ $csrf_token = $security->generateCSRFToken();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Members - <?php echo htmlspecialchars($club['club_name']); ?></title>
     <link rel="stylesheet" href="../css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../js/dark-mode.js"></script>
+    <script src="../js/i18n.js"></script>
 </head>
 <body class="has-sidebar">
     <?php NavigationHelper::renderAdminSidebar('members', $club_id, $club['club_name']); ?>
 
     <div class="header header--compact">
         <?php NavigationHelper::renderSidebarToggle(); ?>
-        <?php NavigationHelper::renderCompactHeader('Manage Members', $club['club_name']); ?>
-        <div class="header-actions">
-            <a href="../club_stats.php?id=<?php echo $club_id; ?>" class="btn btn--ghost btn--small" target="_blank" title="View on public site">👁️ Preview</a>
-        </div>
+        <?php NavigationHelper::renderCompactHeader('Manage ' . $club['club_name'] . ' Members (' . count($members) . ')'); ?>
     </div>
 
-    <div class="container container--wide">
+    <div class="container container--medium">
         <?php display_session_message('success'); ?>
         <?php display_session_message('error'); ?>
 
-        <div class="card">
-            <div class="card-header">
-                <div>
-                    <h2>Add New Member</h2>
-                    <p class="card-subtitle card-subtitle--muted">Create a member profile and assign their display nickname.</p>
-                </div>
-            </div>
-            <form method="POST" class="stack">
+        <?php TableHelper::renderMembersAnalytics($chart_member_names, $chart_individual_wins, $chart_team_wins, $wot_labels, $wot_datasets, ['is_admin' => true, 'open' => true, 'all_months' => $wot_all_months, 'monthly_wins' => $wot_monthly_wins]); ?>
+
+        <div id="add-member-form-wrapper" style="<?php echo (isset($_POST['action']) && $_POST['action'] === 'create') ? '' : 'display:none;'; ?> margin: 1rem 0 1.25rem 0; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 0.75rem); background: var(--color-surface-muted);">
+            <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.1rem; color:var(--color-heading);" data-i18n="admin.addNewMember">Add New Member</h3>
+            <form method="POST" class="form">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <input type="hidden" name="action" value="create">
-                <div class="grid grid--columns-3">
-                    <div class="form-group">
-                        <label for="member_name">Full Name</label>
-                        <input type="text" id="member_name" name="member_name" placeholder="Full Name" required class="form-control">
+                <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="member_name"><span data-i18n="admin.fullName">Full Name</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                        <input type="text" id="member_name" name="member_name" placeholder="Full Name" data-i18n-placeholder="admin.fullName" required class="form-control">
                     </div>
-                    <div class="form-group">
-                        <label for="nickname">Nickname</label>
-                        <input type="text" id="nickname" name="nickname" placeholder="Nickname (for public display)" required class="form-control">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="nickname"><span data-i18n="admin.nickname">Nickname</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                        <input type="text" id="nickname" name="nickname" placeholder="Nickname (for public display)" data-i18n-placeholder="admin.nickname" required class="form-control">
                     </div>
-                    <div class="form-group">
-                        <label for="email">Email Address</label>
-                        <input type="email" id="email" name="email" placeholder="Email Address" required class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label for="club_id">Club</label>
-                        <select name="club_id" id="club_id" required class="form-control">
-                            <option value="">Select Club</option>
-                            <?php foreach ($admin_clubs as $club_option): ?>
-                                <option value="<?php echo $club_option['club_id']; ?>" <?php echo ($club_id == $club_option['club_id']) ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($club_option['club_name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="email"><span data-i18n="admin.email">Email Address</span> <span style="color:var(--color-error,#ef4444); font-weight:bold;">*</span></label>
+                        <input type="email" id="email" name="email" placeholder="Email Address" data-i18n-placeholder="admin.email" required class="form-control">
                     </div>
                 </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn">Add Member</button>
+                <div class="form-group" style="display:flex; gap:0.5rem; margin-bottom:0;">
+                    <button type="submit" class="btn btn--primary" data-i18n="admin.saveMember">Save Member</button>
+                    <button type="button" class="btn btn--subtle" onclick="toggleAddMemberForm()" data-i18n="common.cancel">Cancel</button>
                 </div>
             </form>
         </div>
 
-        <div class="card">
-            <div class="card-header card-header--stack">
-                <div>
-                    <h2>Members</h2>
-                    <p class="card-subtitle card-subtitle--muted">Currently managing <?php echo count($members); ?> member<?php echo count($members) === 1 ? '' : 's'; ?>.</p>
-                </div>
-            </div>
-            <div class="card-toolbar">
-                <form method="GET" class="toolbar-group toolbar-group--grow" id="filter-form">
-                    <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
-                    <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
-                    <input type="hidden" name="order" value="<?php echo strtolower($order); ?>">
-                    <div class="input-group">
-                        <input type="text" name="search" placeholder="Search members..."
-                               value="<?php echo htmlspecialchars($search); ?>" class="form-control">
-                        <select name="status" id="status-filter" class="form-control form-control--sm">
-                            <option value="all" <?php echo $status_filter === 'all' ? 'selected' : ''; ?>>All Status</option>
-                            <option value="active" <?php echo $status_filter === 'active' ? 'selected' : ''; ?>>Active</option>
-                            <option value="inactive" <?php echo $status_filter === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
-                        </select>
-                        <button type="submit" class="btn btn--subtle btn--small">Apply</button>
-                        <a href="?club_id=<?php echo $club_id; ?>" class="btn btn--ghost btn--small">Reset</a>
-                    </div>
-                </form>
-                <form method="POST" class="toolbar-group" id="bulk-form">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                    <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
-                    <select name="bulk_action" id="bulk-action-select" class="form-control form-control--sm">
-                        <option value="">Bulk Actions</option>
-                        <option value="bulk_activate">Activate Selected</option>
-                        <option value="bulk_deactivate">Deactivate Selected</option>
-                        <option value="bulk_email">Send Email to</option>
-                    </select>
-                    <button type="button" id="apply-bulk-action" class="btn btn--subtle btn--small">Apply</button>
-                </form>
-            </div>
-
-            <div class="table-responsive">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th><input type="checkbox" id="select-all"></th>
-                            <th>Club</th>
-                            <th>
-                                <a href="?club_id=<?php echo $club_id; ?>&sort=member_name&order=<?php echo ($sort === 'member_name' && strtolower($order) === 'asc') ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo $status_filter; ?>" class="table-sort-link sort-link">
-                                    <span>Name</span>
-                                    <?php if ($sort === 'member_name'): ?>
-                                        <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
-                                    <?php endif; ?>
-                                </a>
-                            </th>
-                            <th>
-                                <a href="?club_id=<?php echo $club_id; ?>&sort=nickname&order=<?php echo ($sort === 'nickname' && strtolower($order) === 'asc') ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo $status_filter; ?>" class="table-sort-link sort-link">
-                                    <span>Nickname</span>
-                                    <?php if ($sort === 'nickname'): ?>
-                                        <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
-                                    <?php endif; ?>
-                                </a>
-                            </th>
-                            <th>
-                                <a href="?club_id=<?php echo $club_id; ?>&sort=email&order=<?php echo ($sort === 'email' && strtolower($order) === 'asc') ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo $status_filter; ?>" class="table-sort-link sort-link">
-                                    <span>Email</span>
-                                    <?php if ($sort === 'email'): ?>
-                                        <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
-                                    <?php endif; ?>
-                                </a>
-                            </th>
-                            <th>
-                                <a href="?club_id=<?php echo $club_id; ?>&sort=status&order=<?php echo ($sort === 'status' && strtolower($order) === 'asc') ? 'desc' : 'asc'; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo $status_filter; ?>" class="table-sort-link sort-link">
-                                    <span>Status</span>
-                                    <?php if ($sort === 'status'): ?>
-                                        <span class="table-sort-link__icon"><?php echo strtolower($order) === 'asc' ? '▲' : '▼'; ?></span>
-                                    <?php endif; ?>
-                                </a>
-                            </th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php if (empty($members)): ?>
-                        <tr>
-                            <td colspan="7" class="text-center text-muted">No members match your current filters.</td>
-                        </tr>
-                    <?php endif; ?>
-                    <?php foreach ($members as $member): ?>
-                        <tr>
-                            <td>
-                                <input type="checkbox" name="selected_members[]" form="bulk-form"
-                                       value="<?php echo $member['member_id']; ?>" class="member-checkbox">
-                            </td>
-                            <td><?php echo htmlspecialchars($member['club_name']); ?></td>
-                            <td><?php echo htmlspecialchars($member['member_name']); ?></td>
-                            <td><?php echo htmlspecialchars($member['nickname']); ?></td>
-                            <td><?php echo htmlspecialchars($member['email']); ?></td>
-                            <td>
-                                <span class="status-badge status-<?php echo $member['status']; ?>">
-                                    <?php echo ucfirst($member['status']); ?>
-                                </span>
-                            </td>
-                            <td data-label="Actions">
-                                <div class="btn-group">
-                                    <a href="edit_member.php?club_id=<?php echo $club_id; ?>&member_id=<?php echo $member['member_id']; ?>" 
-                                       class="btn btn--subtle btn--xsmall btn--pill">Edit</a>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Email Modal -->
-        <div id="email-modal" class="modal" style="display: none;">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Send Email to Selected Members</h2>
-                    <button type="button" class="modal-close" onclick="closeEmailModal()">&times;</button>
-                </div>
-                <form method="POST" id="email-form">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                    <input type="hidden" name="bulk_action" value="bulk_email">
-                    <input type="hidden" name="club_id" value="<?php echo $club_id; ?>">
-                    <div id="email-recipients-container"></div>
-
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label for="email-subject">Subject *</label>
-                            <input type="text" id="email-subject" name="email_subject" class="form-control" required placeholder="Email subject">
-                        </div>
-                        <div class="form-group">
-                            <label for="email-message">Message *</label>
-                            <textarea id="email-message" name="email_message" class="form-control" rows="10" required placeholder="Type your message here..."></textarea>
-                            <p class="help-text">This message will be sent to all selected members.</p>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn--secondary" onclick="closeEmailModal()">Cancel</button>
-                        <button type="submit" class="btn" id="send-email-btn">Send Email</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Loading Overlay -->
-        <div id="email-loading-overlay" class="loading-overlay" style="display: none;">
-            <div class="loading-message">
-                <div class="loading-spinner"></div>
-                <h3>Sending Emails...</h3>
-                <p>Please wait. Do not refresh or leave this page.</p>
-            </div>
-        </div>
+        <?php
+        TableHelper::renderMembersTable($members, [
+            'is_admin' => true,
+            'base_url' => $baseUrl,
+            'sort' => $sort,
+            'order' => $order,
+            'search' => $search,
+            'status_filter' => $status_filter,
+            'club_id' => $club_id,
+            'csrf_token' => $csrf_token
+        ]);
+        ?>
     </div>
 
     <script>
-        document.getElementById('select-all').addEventListener('change', function() {
-            document.querySelectorAll('.member-checkbox').forEach(checkbox => {
-                checkbox.checked = this.checked;
-            });
-        });
-
-        // Handle bulk action apply button
-        document.getElementById('apply-bulk-action').addEventListener('click', function() {
-            const action = document.getElementById('bulk-action-select').value;
-            const selectedCheckboxes = document.querySelectorAll('.member-checkbox:checked');
-
-            if (!action) {
-                alert('Please select an action');
-                return;
-            }
-
-            if (selectedCheckboxes.length === 0) {
-                alert('Please select at least one member');
-                return;
-            }
-
-            if (action === 'bulk_email') {
-                openEmailModal(selectedCheckboxes);
-            } else {
-                if (confirm('Are you sure you want to perform this action on the selected members?')) {
-                    document.getElementById('bulk-form').submit();
-                }
-            }
-        });
-
-        function openEmailModal(selectedCheckboxes) {
-            const modal = document.getElementById('email-modal');
-            const recipientsContainer = document.getElementById('email-recipients-container');
-
-            // Clear previous recipients
-            recipientsContainer.innerHTML = '';
-
-            // Add hidden inputs for selected members
-            selectedCheckboxes.forEach(checkbox => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'selected_members[]';
-                input.value = checkbox.value;
-                recipientsContainer.appendChild(input);
-            });
-
-            // Show recipient count
-            const count = selectedCheckboxes.length;
-            const countText = document.createElement('p');
-            countText.className = 'help-text';
-            countText.textContent = `Sending to ${count} member${count !== 1 ? 's' : ''}`;
-            recipientsContainer.appendChild(countText);
-
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeEmailModal() {
-            const modal = document.getElementById('email-modal');
-            modal.style.display = 'none';
-            document.body.style.overflow = '';
-            document.getElementById('email-form').reset();
-        }
-
-        // Close modal when clicking outside
-        document.getElementById('email-modal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeEmailModal();
-            }
-        });
-
-        // Handle email form submission
-        document.getElementById('email-form').addEventListener('submit', function(e) {
-            // Show loading overlay
-            document.getElementById('email-loading-overlay').style.display = 'flex';
-            document.getElementById('email-modal').style.display = 'none';
-
-            // Disable the send button to prevent double submission
-            document.getElementById('send-email-btn').disabled = true;
-        });
-
-         // Handle sorting links with AJAX using event delegation on the body
-         document.body.addEventListener('click', function(e) {
-             if (e.target.matches('.sort-link')) {
-                e.preventDefault();
-                const url = e.target.href;
-                const currentTable = document.querySelector('.data-table');
-                const tableTopOffset = currentTable ? currentTable.getBoundingClientRect().top : 0; // Save table's top offset relative to viewport
-                const currentScrollY = window.scrollY;
-
-                fetch(url)
-                    .then(response => response.text())
-                    .then(html => {
-                         const parser = new DOMParser();
-                         const doc = parser.parseFromString(html, 'text/html');
-                         const newTableHeaderContent = doc.querySelector('.data-table thead').innerHTML;
-                         const newTableRows = doc.querySelectorAll('.data-table tbody tr');
-                         const currentTableHeader = document.querySelector('.data-table thead');
-                         const currentTableBody = document.querySelector('.data-table tbody');
-
-                         if (currentTableHeader && newTableHeaderContent) {
-                             currentTableHeader.innerHTML = newTableHeaderContent; // Update header content
-                         }
-                         if (currentTableBody) {
-                             currentTableBody.innerHTML = ''; // Clear existing rows
-                             newTableRows.forEach(row => {
-                                 currentTableBody.appendChild(row.cloneNode(true)); // Append new rows (clone to avoid issues)
-                             });
-                         }
-
-                         window.history.pushState({}, '', url); // Update URL
-                         // Use setTimeout to restore scroll after event loop turn
-                         setTimeout(() => {
-                             window.scrollTo(0, currentScrollY); // Restore original scroll position
-                         }, 0);
-                    })
-                      .catch(error => console.error('Error:', error));
-             }
-         });
-
-        // Automatically submit filter form on status change
-        const statusFilter = document.getElementById('status-filter');
-        const filterForm = document.getElementById('filter-form');
-        if (statusFilter && filterForm) {
-            statusFilter.addEventListener('change', function() {
-                filterForm.submit();
-            });
+        function toggleAddMemberForm() {
+            const wrapper = document.getElementById('add-member-form-wrapper');
+            const btn = document.getElementById('add-member-btn');
+            if (!wrapper) return;
+            const isHidden = wrapper.style.display === 'none';
+            wrapper.style.display = isHidden ? 'block' : 'none';
+            if (btn) btn.style.visibility = isHidden ? 'hidden' : 'visible';
         }
     </script>
+    <?php if (!empty($demo)): ?>
+    <style>
+    html, body, body * {
+        pointer-events: none !important;
+        user-select: none !important;
+        cursor: default !important;
+    }
+    img {
+        display: none !important;
+    }
+    *:hover, *:active, *:focus, *:focus-within {
+        background: inherit !important;
+        background-color: inherit !important;
+        color: inherit !important;
+        border-color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+        transition: none !important;
+        animation: none !important;
+        outline: none !important;
+        opacity: inherit !important;
+    }
+    .sidebar__nav a:hover, .sidebar__nav a:active, .sidebar__nav a:focus,
+    .data-table tr:hover, .data-table tr:active, .data-table td:hover,
+    .btn:hover, .btn:active, .btn:focus, button:hover, button:active,
+    .form-control:hover, .form-control:active, .form-control:focus,
+    a:hover, a:active, a:focus {
+        background: transparent !important;
+        background-color: transparent !important;
+        color: inherit !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+    </style>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('a, button, input, select, textarea, details, summary').forEach(el => {
+            el.setAttribute('tabindex', '-1');
+            if (el.tagName === 'BUTTON' || el.tagName === 'INPUT' || el.tagName === 'SELECT') {
+                el.setAttribute('disabled', 'disabled');
+            }
+        });
+    });
+    document.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); }, true);
+    document.addEventListener('mouseover', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseenter', function(e) { e.stopPropagation(); }, true);
+    document.addEventListener('mouseleave', function(e) { e.stopPropagation(); }, true);
+    </script>
+    <?php endif; ?>
     <script src="../js/sidebar.js"></script>
-    <script src="../js/form-loading.js"></script>
     <script src="../js/confirmations.js"></script>
-    <script src="../js/form-validation.js"></script>
-    <script src="../js/empty-states.js"></script>
+    <script src="../js/form-loading.js"></script>
 </body>
 </html>

@@ -1,0 +1,387 @@
+{
+    "club": {
+        "club_id": 1,
+        "club_name": "Meeple Mosh",
+        "club_slug": "meeple-mosh",
+        "description": "Weekly board game nights, competitive tournament tracking, and leaderboards.",
+        "logo": null
+    },
+    "games": [
+        {
+            "game_id": 1,
+            "game_name": "Catan",
+            "min_players": 3,
+            "max_players": 4,
+            "game_type": "winner_losers",
+            "last_played": "2026-08-14",
+            "total_plays": 28,
+            "game_image": "https://cf.geekdo-images.com/0XODRpReiZBFUffEcqT5-Q__imagepagezoom/img/VHGjBIGxQWMMm6W-fRKKuksQs6s=/fit-in/1200x900/filters:no_upscale():strip_icc()/pic9156909.png"
+        },
+        {
+            "game_id": 2,
+            "game_name": "Ticket to Ride",
+            "min_players": 2,
+            "max_players": 5,
+            "game_type": "ranked",
+            "last_played": "2026-08-13",
+            "total_plays": 22,
+            "game_image": "https://cf.geekdo-images.com/kdWYkW-7AqG63HhqPL6ekA__imagepage/img/AWsdGNNSuI78BaCPAVQpjrUneKY=/fit-in/900x600/filters:no_upscale():strip_icc()/pic8937637.jpg"
+        },
+        {
+            "game_id": 3,
+            "game_name": "Pandemic",
+            "min_players": 2,
+            "max_players": 4,
+            "game_type": "cooperative",
+            "last_played": "2026-08-12",
+            "total_plays": 19,
+            "game_image": "https://cf.geekdo-images.com/S3ybV1LAp-8SnHIXLLjVqA__imagepage/img/kIBu-2Ljb_ml5n-S8uIbE6ehGFc=/fit-in/900x600/filters:no_upscale():strip_icc()/pic1534148.jpg"
+        },
+        {
+            "game_id": 4,
+            "game_name": "7 Wonders Duel",
+            "min_players": 2,
+            "max_players": 2,
+            "game_type": "winner_losers",
+            "last_played": "2026-08-10",
+            "total_plays": 35,
+            "game_image": "https://cf.geekdo-images.com/2L3GMevL8E4g-LSBuAS0JA__imagepage/img/lJkyl8f1KnV80C50XqdpQHHwZc0=/fit-in/900x600/filters:no_upscale():strip_icc()/pic8288099.jpg"
+        },
+        {
+            "game_id": 5,
+            "game_name": "Codenames Duet",
+            "min_players": 2,
+            "max_players": 4,
+            "game_type": "teams",
+            "last_played": "2026-08-09",
+            "total_plays": 24,
+            "game_image": "https://cf.geekdo-images.com/Fn3PSPZVxa3YurlorITQ1Q__imagepagezoom/img/N1zZCCqYOgJa6Q21z9hQ-XxBDEc=/fit-in/1200x900/filters:no_upscale():strip_icc()/pic1900075.jpg"
+        },
+        {
+            "game_id": 6,
+            "game_name": "Terraforming Mars",
+            "min_players": 1,
+            "max_players": 5,
+            "game_type": "ranked",
+            "last_played": "2026-08-07",
+            "total_plays": 16,
+            "game_image": "https://cf.geekdo-images.com/JUAUWaVUzeBgzirhZNmHHw__imagepage@2x/img/Ovil61ILKIUL8keuBs7YWnYcsRI=/fit-in/1800x1200/filters:strip_icc()/pic4254509.jpg"
+        },
+        {
+            "game_id": 7,
+            "game_name": "Wingspan",
+            "min_players": 1,
+            "max_players": 5,
+            "game_type": "ranked",
+            "last_played": "2026-08-05",
+            "total_plays": 31,
+            "game_image": "https://cf.geekdo-images.com/yLZJCVLlIx4c7eJEWUNJ7w__imagepage/img/uIjeoKgHMcRtzRSR4MoUYl3nXxs=/fit-in/900x600/filters:no_upscale():strip_icc()/pic4458123.jpg"
+        },
+        {
+            "game_id": 8,
+            "game_name": "Azul",
+            "min_players": 2,
+            "max_players": 4,
+            "game_type": "winner_losers",
+            "last_played": "2026-08-03",
+            "total_plays": 27,
+            "game_image": "https://cf.geekdo-images.com/aPSHJO0d0XOpQR5X-wJonw__imagepagezoom/img/6wgWGieOK0vwdjJq3jsViDnuUq4=/fit-in/1200x900/filters:no_upscale():strip_icc()/pic6973671.png"
+        },
+        {
+            "game_id": 9,
+            "game_name": "Decrypto",
+            "min_players": 4,
+            "max_players": 8,
+            "game_type": "teams",
+            "last_played": "2026-07-29",
+            "total_plays": 12,
+            "game_image": "https://cf.geekdo-images.com/oeN-MHAJKsC2KCI3avKj9w__imagepage/img/qY8risTYRCwFj4toaIGalg_YM8E=/fit-in/900x600/filters:no_upscale():strip_icc()/pic8679622.jpg"
+        },
+        {
+            "game_id": 10,
+            "game_name": "The Crew: Mission Deep Sea",
+            "min_players": 2,
+            "max_players": 5,
+            "game_type": "cooperative",
+            "last_played": "2026-07-25",
+            "total_plays": 20,
+            "game_image": "https://cf.geekdo-images.com/VuBqZ1sMaDAVVHF_OEJP4g__imagepage/img/1UBZCt5XUawit_g19GapkNgTcaM=/fit-in/900x600/filters:no_upscale():strip_icc()/pic5988903.jpg"
+        }
+    ],
+    "members": [
+        {
+            "member_id": 1,
+            "club_id": 1,
+            "member_name": "Alex Mercer",
+            "nickname": "ShadowKnight",
+            "email": "alex@example.com",
+            "status": "active",
+            "total_plays": 45,
+            "total_wins": 29,
+            "win_rate": 64.4
+        },
+        {
+            "member_id": 2,
+            "club_id": 1,
+            "member_name": "Sam Rivera",
+            "nickname": "StarGazer",
+            "email": "sam@example.com",
+            "status": "active",
+            "total_plays": 38,
+            "total_wins": 22,
+            "win_rate": 57.9
+        },
+        {
+            "member_id": 3,
+            "club_id": 1,
+            "member_name": "Jordan Vance",
+            "nickname": "Vortex",
+            "email": "jordan@example.com",
+            "status": "active",
+            "total_plays": 34,
+            "total_wins": 18,
+            "win_rate": 52.9
+        },
+        {
+            "member_id": 4,
+            "club_id": 1,
+            "member_name": "Taylor Morgan",
+            "nickname": "PixelMaster",
+            "email": "taylor@example.com",
+            "status": "active",
+            "total_plays": 30,
+            "total_wins": 14,
+            "win_rate": 46.7
+        },
+        {
+            "member_id": 5,
+            "club_id": 1,
+            "member_name": "Morgan Chen",
+            "nickname": "CyberSamurai",
+            "email": "morgan@example.com",
+            "status": "active",
+            "total_plays": 28,
+            "total_wins": 16,
+            "win_rate": 57.1
+        },
+        {
+            "member_id": 6,
+            "club_id": 1,
+            "member_name": "Casey Brooks",
+            "nickname": "NeonRider",
+            "email": "casey@example.com",
+            "status": "active",
+            "total_plays": 25,
+            "total_wins": 12,
+            "win_rate": 48.0
+        },
+        {
+            "member_id": 7,
+            "club_id": 1,
+            "member_name": "Riley Davis",
+            "nickname": "NovaBlast",
+            "email": "riley@example.com",
+            "status": "active",
+            "total_plays": 22,
+            "total_wins": 10,
+            "win_rate": 45.5
+        },
+        {
+            "member_id": 8,
+            "club_id": 1,
+            "member_name": "Jamie Lannister",
+            "nickname": "Kingslayer",
+            "email": "jamie@example.com",
+            "status": "active",
+            "total_plays": 20,
+            "total_wins": 11,
+            "win_rate": 55.0
+        },
+        {
+            "member_id": 9,
+            "club_id": 1,
+            "member_name": "Chris Paul",
+            "nickname": "PointGod",
+            "email": "cp3@example.com",
+            "status": "active",
+            "total_plays": 18,
+            "total_wins": 8,
+            "win_rate": 44.4
+        },
+        {
+            "member_id": 10,
+            "club_id": 1,
+            "member_name": "Robin Hood",
+            "nickname": "Bullseye",
+            "email": "robin@example.com",
+            "status": "active",
+            "total_plays": 15,
+            "total_wins": 7,
+            "win_rate": 46.7
+        },
+        {
+            "member_id": 11,
+            "club_id": 1,
+            "member_name": "Dakota Fanning",
+            "nickname": "Starlet",
+            "email": "dakota@example.com",
+            "status": "active",
+            "total_plays": 12,
+            "total_wins": 5,
+            "win_rate": 41.7
+        },
+        {
+            "member_id": 12,
+            "club_id": 1,
+            "member_name": "Avery Stone",
+            "nickname": "Ironclad",
+            "email": "avery@example.com",
+            "status": "inactive",
+            "total_plays": 10,
+            "total_wins": 3,
+            "win_rate": 30.0
+        }
+    ],
+    "teams": [
+        {
+            "team_id": 1,
+            "club_id": 1,
+            "team_name": "The Board Walkers",
+            "created_at": "2026-01-15",
+            "total_plays": 18,
+            "wins": 12,
+            "members_list": ["ShadowKnight", "StarGazer"]
+        },
+        {
+            "team_id": 2,
+            "club_id": 1,
+            "team_name": "Dice Ninjas",
+            "created_at": "2026-02-01",
+            "total_plays": 15,
+            "wins": 9,
+            "members_list": ["Vortex", "PixelMaster"]
+        },
+        {
+            "team_id": 3,
+            "club_id": 1,
+            "team_name": "Cyber Knights",
+            "created_at": "2026-03-10",
+            "total_plays": 14,
+            "wins": 8,
+            "members_list": ["CyberSamurai", "NeonRider"]
+        },
+        {
+            "team_id": 4,
+            "club_id": 1,
+            "team_name": "Cosmic Tacticians",
+            "created_at": "2026-04-05",
+            "total_plays": 11,
+            "wins": 6,
+            "members_list": ["NovaBlast", "Kingslayer"]
+        },
+        {
+            "team_id": 5,
+            "club_id": 1,
+            "team_name": "Alpha Syndicate",
+            "created_at": "2026-05-20",
+            "total_plays": 9,
+            "wins": 5,
+            "members_list": ["PointGod", "Bullseye"]
+        },
+        {
+            "team_id": 6,
+            "club_id": 1,
+            "team_name": "Phantom Operatives",
+            "created_at": "2026-06-12",
+            "total_plays": 7,
+            "wins": 3,
+            "members_list": ["Starlet", "Ironclad"]
+        }
+    ],
+    "champions": [
+        {
+            "champion_id": 1,
+            "club_id": 1,
+            "member_id": 1,
+            "member_name": "Alex Mercer",
+            "nickname": "ShadowKnight",
+            "date": "2026-08-01",
+            "champ_comments": "Summer 2026 Grand Tournament Champion",
+            "is_current": true
+        },
+        {
+            "champion_id": 2,
+            "club_id": 1,
+            "member_id": 2,
+            "member_name": "Sam Rivera",
+            "nickname": "StarGazer",
+            "date": "2026-05-15",
+            "champ_comments": "Spring 2026 League Champion",
+            "is_current": false
+        },
+        {
+            "champion_id": 3,
+            "club_id": 1,
+            "member_id": 5,
+            "member_name": "Morgan Chen",
+            "nickname": "CyberSamurai",
+            "date": "2025-12-20",
+            "champ_comments": "Winter 2025 Blitz Masters Champion",
+            "is_current": false
+        },
+        {
+            "champion_id": 4,
+            "club_id": 1,
+            "member_id": 3,
+            "member_name": "Jordan Vance",
+            "nickname": "Vortex",
+            "date": "2025-09-30",
+            "champ_comments": "Autumn 2025 Strategy Cup Winner",
+            "is_current": false
+        },
+        {
+            "champion_id": 5,
+            "club_id": 1,
+            "member_id": 4,
+            "member_name": "Taylor Morgan",
+            "nickname": "PixelMaster",
+            "date": "2025-06-10",
+            "champ_comments": "Summer 2025 Rookie Showcase Champion",
+            "is_current": false
+        }
+    ],
+    "results": [
+        { "result_id": 1, "game_id": 1, "game_name": "Catan", "played_at": "2026-08-14 20:30:00", "winner_name": "ShadowKnight", "game_type": "winner_losers", "duration": "75 mins" },
+        { "result_id": 2, "game_id": 2, "game_name": "Ticket to Ride", "played_at": "2026-08-13 19:15:00", "winner_name": "StarGazer", "game_type": "ranked", "duration": "50 mins" },
+        { "result_id": 3, "game_id": 3, "game_name": "Pandemic", "played_at": "2026-08-12 21:00:00", "winner_name": "Victory", "game_type": "cooperative", "duration": "45 mins" },
+        { "result_id": 4, "game_id": 5, "game_name": "Codenames Duet", "played_at": "2026-08-11 18:45:00", "winner_name": "The Board Walkers", "game_type": "teams", "duration": "30 mins" },
+        { "result_id": 5, "game_id": 4, "game_name": "7 Wonders Duel", "played_at": "2026-08-10 17:30:00", "winner_name": "ShadowKnight", "game_type": "winner_losers", "duration": "35 mins" },
+        { "result_id": 6, "game_id": 1, "game_name": "Catan", "played_at": "2026-08-09 20:00:00", "winner_name": "Vortex", "game_type": "winner_losers", "duration": "80 mins" },
+        { "result_id": 7, "game_id": 2, "game_name": "Ticket to Ride", "played_at": "2026-08-08 18:30:00", "winner_name": "CyberSamurai", "game_type": "ranked", "duration": "55 mins" },
+        { "result_id": 8, "game_id": 6, "game_name": "Terraforming Mars", "played_at": "2026-08-07 19:00:00", "winner_name": "CyberSamurai", "game_type": "ranked", "duration": "110 mins" },
+        { "result_id": 9, "game_id": 7, "game_name": "Wingspan", "played_at": "2026-08-06 20:30:00", "winner_name": "StarGazer", "game_type": "ranked", "duration": "65 mins" },
+        { "result_id": 10, "game_id": 1, "game_name": "Catan", "played_at": "2026-08-05 19:45:00", "winner_name": "ShadowKnight", "game_type": "winner_losers", "duration": "70 mins" },
+        { "result_id": 11, "game_id": 4, "game_name": "7 Wonders Duel", "played_at": "2026-08-04 18:15:00", "winner_name": "PixelMaster", "game_type": "winner_losers", "duration": "30 mins" },
+        { "result_id": 12, "game_id": 8, "game_name": "Azul", "played_at": "2026-08-03 21:15:00", "winner_name": "PixelMaster", "game_type": "winner_losers", "duration": "40 mins" },
+        { "result_id": 13, "game_id": 2, "game_name": "Ticket to Ride", "played_at": "2026-08-02 19:00:00", "winner_name": "Kingslayer", "game_type": "ranked", "duration": "50 mins" },
+        { "result_id": 14, "game_id": 1, "game_name": "Catan", "played_at": "2026-08-01 20:15:00", "winner_name": "NeonRider", "game_type": "winner_losers", "duration": "85 mins" },
+        { "result_id": 15, "game_id": 9, "game_name": "Decrypto", "played_at": "2026-07-29 20:00:00", "winner_name": "Dice Ninjas", "game_type": "teams", "duration": "45 mins" },
+        { "result_id": 16, "game_id": 7, "game_name": "Wingspan", "played_at": "2026-07-28 19:30:00", "winner_name": "Vortex", "game_type": "ranked", "duration": "60 mins" },
+        { "result_id": 17, "game_id": 3, "game_name": "Pandemic", "played_at": "2026-07-26 21:00:00", "winner_name": "Defeat", "game_type": "cooperative", "duration": "40 mins" },
+        { "result_id": 18, "game_id": 10, "game_name": "The Crew: Mission Deep Sea", "played_at": "2026-07-25 19:30:00", "winner_name": "Victory", "game_type": "cooperative", "duration": "25 mins" },
+        { "result_id": 19, "game_id": 1, "game_name": "Catan", "played_at": "2026-07-23 20:00:00", "winner_name": "ShadowKnight", "game_type": "winner_losers", "duration": "75 mins" },
+        { "result_id": 20, "game_id": 2, "game_name": "Ticket to Ride", "played_at": "2026-07-21 18:30:00", "winner_name": "PointGod", "game_type": "ranked", "duration": "55 mins" },
+        { "result_id": 21, "game_id": 4, "game_name": "7 Wonders Duel", "played_at": "2026-07-19 17:00:00", "winner_name": "Bullseye", "game_type": "winner_losers", "duration": "30 mins" },
+        { "result_id": 22, "game_id": 1, "game_name": "Catan", "played_at": "2026-07-17 19:30:00", "winner_name": "StarGazer", "game_type": "winner_losers", "duration": "70 mins" },
+        { "result_id": 23, "game_id": 6, "game_name": "Terraforming Mars", "played_at": "2026-07-15 19:00:00", "winner_name": "ShadowKnight", "game_type": "ranked", "duration": "120 mins" },
+        { "result_id": 24, "game_id": 7, "game_name": "Wingspan", "played_at": "2026-07-12 20:30:00", "winner_name": "CyberSamurai", "game_type": "ranked", "duration": "60 mins" },
+        { "result_id": 25, "game_id": 5, "game_name": "Codenames Duet", "played_at": "2026-07-10 21:00:00", "winner_name": "Cyber Knights", "game_type": "teams", "duration": "35 mins" },
+        { "result_id": 26, "game_id": 2, "game_name": "Ticket to Ride", "played_at": "2026-07-08 19:15:00", "winner_name": "StarGazer", "game_type": "ranked", "duration": "50 mins" },
+        { "result_id": 27, "game_id": 8, "game_name": "Azul", "played_at": "2026-07-05 18:00:00", "winner_name": "NovaBlast", "game_type": "winner_losers", "duration": "45 mins" },
+        { "result_id": 28, "game_id": 1, "game_name": "Catan", "played_at": "2026-07-03 20:00:00", "winner_name": "ShadowKnight", "game_type": "winner_losers", "duration": "75 mins" },
+        { "result_id": 29, "game_id": 4, "game_name": "7 Wonders Duel", "played_at": "2026-07-01 17:30:00", "winner_name": "StarGazer", "game_type": "winner_losers", "duration": "35 mins" },
+        { "result_id": 30, "game_id": 3, "game_name": "Pandemic", "played_at": "2026-06-28 20:00:00", "winner_name": "Victory", "game_type": "cooperative", "duration": "50 mins" },
+        { "result_id": 31, "game_id": 1, "game_name": "Catan", "played_at": "2026-06-25 19:30:00", "winner_name": "Vortex", "game_type": "winner_losers", "duration": "80 mins" },
+        { "result_id": 32, "game_id": 2, "game_name": "Ticket to Ride", "played_at": "2026-06-22 18:45:00", "winner_name": "ShadowKnight", "game_type": "ranked", "duration": "50 mins" }
+    ]
+}

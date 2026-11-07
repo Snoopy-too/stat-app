@@ -11,7 +11,7 @@ if (!$selected_date || !$club_id) {
 }
 
 // Format the date for display
-$display_date = date('F j, Y', strtotime($selected_date));
+$display_date = date('Y/m/d', strtotime($selected_date));
 
 // Fetch individual game results for the selected date and club
 $individual_results = [];
@@ -56,6 +56,7 @@ try {
     <title>Game Results for <?php echo htmlspecialchars($display_date); ?> - Board Game StatApp</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/dark-mode.js"></script>
+    <script src="js/i18n.js"></script>
     <style>
         .game-thumbnail {
             width: 48px !important;
@@ -147,10 +148,11 @@ try {
                         <?php foreach ($individual_results as $result): ?>
                         <tr>
                             <td class="col-image">
-                                <?php if ($result['game_image']): ?>
-                                    <img src="images/game_images/<?php echo htmlspecialchars($result['game_image']); ?>" alt="" class="game-thumbnail" loading="lazy">
+                                <?php if (!empty($result['game_image'])): ?>
+                                    <img src="<?php echo htmlspecialchars(get_game_image_url($result['game_image'])); ?>" alt="" class="game-thumbnail" loading="lazy" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
+                                    <div class="game-thumbnail game-thumbnail--skeleton" style="display:none;" title="No image uploaded">🎲</div>
                                 <?php else: ?>
-                                    <div class="game-thumbnail game-thumbnail--skeleton" title="No image uploaded"></div>
+                                    <div class="game-thumbnail game-thumbnail--skeleton" title="No image uploaded">🎲</div>
                                 <?php endif; ?>
                             </td>
                             <td data-label="Game">
@@ -184,14 +186,15 @@ try {
                         <?php foreach ($team_results as $result): ?>
                         <tr>
                             <td class="col-image">
-                                <?php if ($result['game_image']): ?>
-                                    <img src="images/game_images/<?php echo htmlspecialchars($result['game_image']); ?>" alt="" class="game-thumbnail" loading="lazy">
+                                <?php if (!empty($result['game_image'])): ?>
+                                    <img src="<?php echo htmlspecialchars(get_game_image_url($result['game_image'])); ?>" alt="" class="game-thumbnail" loading="lazy" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
+                                    <div class="game-thumbnail game-thumbnail--skeleton" style="display:none;" title="No image uploaded">🎲</div>
                                 <?php else: ?>
-                                    <div class="game-thumbnail game-thumbnail--skeleton" title="No image uploaded"></div>
+                                    <div class="game-thumbnail game-thumbnail--skeleton" title="No image uploaded">🎲</div>
                                 <?php endif; ?>
                             </td>
                             <td data-label="Game">
-                                <a href="team_game_play_details.php?result_id=<?php echo urlencode($result['result_id']); ?>" class="game-link game-link--button">
+                                <a href="game_play_details.php?result_id=<?php echo urlencode($result['result_id']); ?>&type=team" class="game-link game-link--button">
                                     <?php echo htmlspecialchars($result['game_name']); ?>
                                 </a>
                             </td>
